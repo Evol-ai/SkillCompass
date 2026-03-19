@@ -1,0 +1,17 @@
+{
+  "skill_name": "weak-skill",
+  "current_version": "1.0.0",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "parent": null,
+      "timestamp": "2026-03-13T09:45:01.402Z",
+      "trigger": "initial",
+      "content_hash": "sha256:2115e8c74c6d02f1b80ba386bbb6c05724a7d22699928f58bdf464b402829d1b",
+      "overall_score": null,
+      "verdict": null,
+      "target_dimension": null,
+      "correction_pattern": null
+    }
+  ]
+}

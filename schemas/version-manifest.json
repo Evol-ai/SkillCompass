@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "skill-compass/version-manifest",
+  "title": "SkillCompass Version Manifest",
+  "description": "Tracks version history and evolution metadata for a skill",
+  "type": "object",
+  "required": ["skill_name", "current_version", "versions"],
+  "properties": {
+    "skill_name": { "type": "string" },
+    "current_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-evo\\.\\d+)?$"
+    },
+    "versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["version", "parent", "timestamp", "trigger", "content_hash"],
+        "properties": {
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+(-evo\\.\\d+)?$"
+          },
+          "parent": {
+            "type": ["string", "null"],
+            "description": "Parent version string, or null for the initial version"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "trigger": {
+            "type": "string",
+            "enum": ["initial", "eval-improve", "eval-merge", "manual", "upstream"]
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "overall_score": {
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 100
+          },
+          "verdict": {
+            "type": ["string", "null"],
+            "enum": ["PASS", "CAUTION", "FAIL", null]
+          },
+          "target_dimension": {
+            "type": ["string", "null"],
+            "enum": ["structure", "trigger", "security", "functional", "comparative", "uniqueness", null]
+          },
+          "correction_pattern": {
+            "type": ["string", "null"],
+            "description": "Brief description of what was fixed in this version"
+          }
+        }
+      }
+    },
+    "upstream_origin": {
+      "type": "object",
+      "properties": {
+        "source": { "type": "string" },
+        "slug": { "type": ["string", "null"] },
+        "last_known_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}

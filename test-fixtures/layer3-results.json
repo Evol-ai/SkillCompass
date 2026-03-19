@@ -1,0 +1,71 @@
+{
+  "test_suite": "Layer 3 — Command-Specific Fixtures",
+  "test_date": "2026-03-13",
+  "evaluator": "SkillCompass v1 (flow simulation)",
+  "summary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "results": [
+    {
+      "fixture": "merge-scenario",
+      "skill_name": "api-client",
+      "command_tested": "/eval-merge",
+      "validations": {
+        "three_way_detection": true,
+        "base_version": "1.0.0",
+        "local_version": "1.0.0-evo.2",
+        "upstream_version": "1.1.0",
+        "frontmatter_merge": "field-level: both not_for and new features preserved",
+        "instructions_merge": "local auth/pagination + upstream retry/rate-limit both included",
+        "conflict_identified": "Step 4 area — local error handling vs upstream retry logic",
+        "conflict_resolution": "non-contradictory, both preserved via LLM smart merge",
+        "merged_version_number": "1.1.0-evo.1",
+        "manifest_updated": true,
+        "upstream_origin_updated": true,
+        "post_merge_eval": "expected score >= 65 (pre-merge local score)"
+      },
+      "result": "PASS"
+    },
+    {
+      "fixture": "audit-batch",
+      "skill_name": "3 skills (markdown-toc, env-checker, regex-tester)",
+      "command_tested": "/eval-audit",
+      "validations": {
+        "skills_discovered": 3,
+        "progress_display": "[1/3], [2/3], [3/3]",
+        "results_sorted_worst_first": ["env-checker (15)", "regex-tester (60)", "markdown-toc (73)"],
+        "verdict_distribution": {"PASS": 1, "CAUTION": 1, "FAIL": 1},
+        "security_flagged": "env-checker: CRITICAL — echo of DB_PASS, AWS_SECRET_ACCESS_KEY",
+        "skill_a_score": 73,
+        "skill_a_verdict": "PASS",
+        "skill_b_score": 15,
+        "skill_b_verdict": "FAIL",
+        "skill_b_d3_pass": false,
+        "skill_c_score": 60,
+        "skill_c_verdict": "CAUTION"
+      },
+      "result": "PASS"
+    },
+    {
+      "fixture": "rollback-history",
+      "skill_name": "csv-converter",
+      "command_tested": "/eval-rollback",
+      "validations": {
+        "manifest_loaded": true,
+        "versions_displayed": 5,
+        "timeline_includes_scores_and_verdicts": true,
+        "current_version_marked": "1.0.0-evo.4",
+        "rollback_target_tested": "1.0.0-evo.2",
+        "safety_snapshot_taken": true,
+        "skill_md_restored_from_snapshot": true,
+        "manifest_current_version_updated": true,
+        "later_versions_preserved_in_history": true,
+        "edge_case_lowest_version_warns_but_allows": true,
+        "all_5_snapshots_present": true
+      },
+      "result": "PASS"
+    }
+  ]
+}

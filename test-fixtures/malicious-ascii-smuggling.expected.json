@@ -1,0 +1,8 @@
+{
+  "pre_scan_exit_code": 2,
+  "blocked_by": "layer1",
+  "expected_findings": [
+    "BLOCK: prompt_injection: Unicode Tag characters detected (ASCII smuggling)"
+  ],
+  "test_description": "Tests detection of ASCII smuggling using Unicode Tag characters to hide malicious instructions"
+}

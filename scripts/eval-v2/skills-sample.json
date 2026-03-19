@@ -1,0 +1,472 @@
+[
+  {
+    "rank": 9,
+    "slug": "notion",
+    "displayName": "Notion",
+    "installsCurrent": 1475,
+    "installsAllTime": 1495,
+    "downloads": 53771,
+    "summary": "Notion API for creating and managing pages, databases, and blocks.",
+    "type": "dev",
+    "tier": "T1"
+  },
+  {
+    "rank": 15,
+    "slug": "mcporter",
+    "displayName": "Mcporter",
+    "installsCurrent": 1222,
+    "installsAllTime": 1244,
+    "downloads": 35922,
+    "summary": "Use the mcporter CLI to list, configure, auth, and call MCP servers/tools directly (HTTP or stdio), ",
+    "type": "dev",
+    "tier": "T1"
+  },
+  {
+    "rank": 40,
+    "slug": "self-improving",
+    "displayName": "Self-Improving + Proactive Agent",
+    "installsCurrent": 741,
+    "installsAllTime": 775,
+    "downloads": 63845,
+    "summary": "Self-reflection + Self-criticism + Self-learning + Self-organizing memory. Agent evaluates its own w",
+    "type": "dev",
+    "tier": "T1"
+  },
+  {
+    "rank": 17,
+    "slug": "model-usage",
+    "displayName": "Model Usage",
+    "installsCurrent": 1070,
+    "installsAllTime": 1091,
+    "downloads": 24030,
+    "summary": "Use CodexBar CLI local cost usage to summarize per-model usage for Codex or Claude, including the cu",
+    "type": "non-dev",
+    "tier": "T1"
+  },
+  {
+    "rank": 49,
+    "slug": "ordercli",
+    "displayName": "Ordercli",
+    "installsCurrent": 686,
+    "installsAllTime": 697,
+    "downloads": 5570,
+    "summary": "Foodora-only CLI for checking past orders and active order status (Deliveroo WIP).",
+    "type": "non-dev",
+    "tier": "T1"
+  },
+  {
+    "rank": 182,
+    "slug": "sql-toolkit",
+    "displayName": "SQL Toolkit",
+    "installsCurrent": 80,
+    "installsAllTime": 84,
+    "downloads": 9098,
+    "summary": "Query, design, migrate, and optimize SQL databases. Use when working with SQLite, PostgreSQL, or MyS",
+    "type": "dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 138,
+    "slug": "tencentcloud-lighthouse-skill",
+    "displayName": "Tencent Cloud Lighthouse",
+    "installsCurrent": 109,
+    "installsAllTime": 109,
+    "downloads": 5915,
+    "summary": "Manage Tencent Cloud Lighthouse (轻量应用服务器) — auto-setup mcporter + MCP, query instances, monitoring &",
+    "type": "dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 88,
+    "slug": "clawdbot-filesystem",
+    "displayName": "Filesystem Management",
+    "installsCurrent": 189,
+    "installsAllTime": 199,
+    "downloads": 14937,
+    "summary": "Advanced filesystem operations - listing, searching, batch processing, and directory analysis for Cl",
+    "type": "dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 185,
+    "slug": "skill-scanner",
+    "displayName": "Skill Scanner",
+    "installsCurrent": 79,
+    "installsAllTime": 80,
+    "downloads": 8688,
+    "summary": "Scan Clawdbot and MCP skills for malware, spyware, crypto-miners, and malicious code patterns before",
+    "type": "dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 76,
+    "slug": "claw-shell",
+    "displayName": "claw-shell",
+    "installsCurrent": 231,
+    "installsAllTime": 238,
+    "downloads": 8984,
+    "summary": "Runs shell commands inside a dedicated tmux session named claw, captures, and returns the output, wi",
+    "type": "dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 89,
+    "slug": "agent-reach",
+    "displayName": "Agent Reach",
+    "installsCurrent": 184,
+    "installsAllTime": 187,
+    "downloads": 1258,
+    "summary": "Give your AI agent eyes to see the entire internet. 7500+ GitHub stars. Search and read 14 platforms",
+    "type": "dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 134,
+    "slug": "coding",
+    "displayName": "Coding",
+    "installsCurrent": 115,
+    "installsAllTime": 121,
+    "downloads": 7650,
+    "summary": "Coding style memory that adapts to your preferences, conventions, and patterns for consistent coding",
+    "type": "dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 71,
+    "slug": "browser-automation",
+    "displayName": "Browser Automation",
+    "installsCurrent": 246,
+    "installsAllTime": 257,
+    "downloads": 20609,
+    "summary": "Automate web browser interactions using natural language via CLI commands. Use when the user asks to",
+    "type": "dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 66,
+    "slug": "capability-evolver",
+    "displayName": "Capability Evolver",
+    "installsCurrent": 294,
+    "installsAllTime": 308,
+    "downloads": 17324,
+    "summary": "A self-evolution engine for AI agents. Analyzes runtime history to identify improvements and applies",
+    "type": "dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 154,
+    "slug": "moltbook-interact",
+    "displayName": "moltbook-interact",
+    "installsCurrent": 94,
+    "installsAllTime": 103,
+    "downloads": 14998,
+    "summary": "Interact with Moltbook social network for AI agents. Post, reply, browse, and analyze engagement. Us",
+    "type": "non-dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 167,
+    "slug": "powerpoint-pptx",
+    "displayName": "Powerpoint / PPTX",
+    "installsCurrent": 88,
+    "installsAllTime": 88,
+    "downloads": 9129,
+    "summary": "Create, inspect, and edit Microsoft PowerPoint presentations and PPTX decks with reliable layouts, t",
+    "type": "non-dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 147,
+    "slug": "pdf-extract",
+    "displayName": "Pdf Extract",
+    "installsCurrent": 105,
+    "installsAllTime": 111,
+    "downloads": 9270,
+    "summary": "Extract text from PDF files for LLM processing",
+    "type": "non-dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 178,
+    "slug": "qveris",
+    "displayName": "Qveris",
+    "installsCurrent": 82,
+    "installsAllTime": 83,
+    "downloads": 6874,
+    "summary": "Search and execute dynamic tools via QVeris API. Use when needing to find and call external APIs/too",
+    "type": "non-dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 190,
+    "slug": "gcalcli-calendar",
+    "displayName": "Google Calendar (via gcalcli)",
+    "installsCurrent": 76,
+    "installsAllTime": 80,
+    "downloads": 11222,
+    "summary": "Google Calendar via gcalcli: today-only agenda by default, bounded meaning-first lookup via agenda s",
+    "type": "non-dev",
+    "tier": "T2"
+  },
+  {
+    "rank": 187,
+    "slug": "ai-humanizer",
+    "displayName": "Humanizer",
+    "installsCurrent": 79,
+    "installsAllTime": 83,
+    "downloads": 10540,
+    "summary": "Humanize AI-generated text by detecting and removing patterns typical of LLM output. Rewrites text t",
+    "type": "non-dev",
+    "tier": "T2"
+  },
+  {
+    "slug": "pr-reviewer",
+    "summary": "PR reviewer for code quality",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "docker",
+    "summary": "Docker management",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "devops",
+    "summary": "DevOps automation",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "quack-code-review",
+    "summary": "Code review with quack",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "openclaw-security-audit",
+    "summary": "OpenClaw security audit",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "k8s",
+    "summary": "Kubernetes management",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "explain-code",
+    "summary": "Explain code snippets",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "python-dataviz",
+    "summary": "Python data visualization",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "security-audit-toolkit",
+    "summary": "Security audit toolkit",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "clean-code-review",
+    "summary": "Clean code review patterns",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "data-anomaly-detector",
+    "summary": "Data anomaly detection",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "shadcn-ui",
+    "summary": "Shadcn UI components",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "docker-compose",
+    "summary": "Docker Compose management",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "agentic-security-audit",
+    "summary": "Agentic security audit",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "kubectl",
+    "summary": "Kubernetes kubectl",
+    "type": "dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "personal-notes",
+    "summary": "Personal notes management",
+    "type": "non-dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "ai-seo-writer",
+    "summary": "SEO writer for AI content",
+    "type": "non-dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "designer",
+    "summary": "Designer skill",
+    "type": "non-dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "seo-content-writer",
+    "summary": "SEO content writer",
+    "type": "non-dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "seo-competitor-analysis",
+    "summary": "SEO intelligence & competitor analysis",
+    "type": "non-dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "iot",
+    "summary": "IoT device management",
+    "type": "non-dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "meetings",
+    "summary": "Meeting management",
+    "type": "non-dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "geo-optimization",
+    "summary": "GEO optimization",
+    "type": "non-dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "ui-ux-design",
+    "summary": "UI/UX design guide",
+    "type": "non-dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  },
+  {
+    "slug": "homey-cli",
+    "summary": "Homey home automation CLI",
+    "type": "non-dev",
+    "rank": "200+",
+    "installsCurrent": "<73",
+    "installsAllTime": "N/A",
+    "downloads": "N/A",
+    "tier": "T3"
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "pre_scan_exit_code": 0,
+  "blocked_by": null,
+  "expected_findings": [],
+  "expected_scores": {
+    "d1_structure": "8-10",
+    "d2_trigger": "8-9",
+    "d3_security": "8-10",
+    "overall": "80-95"
+  },
+  "notes": [
+    "Should NOT flag legitimate npm commands as malicious",
+    "Should NOT flag GitHub API calls as dangerous (read-only)",
+    "Should recognize proper project setup patterns"
+  ],
+  "test_description": "Skill with legitimate code examples that should not trigger false positives"
+}

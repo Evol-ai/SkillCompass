@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "skill-compass/eval-result",
+  "title": "SkillCompass Evaluation Result",
+  "description": "Complete evaluation result for a SKILL.md file across six dimensions",
+  "type": "object",
+  "required": ["skill_name", "skill_path", "skill_type", "scores", "overall_score", "verdict", "weakest_dimension", "recommendations", "metadata"],
+  "properties": {
+    "skill_name": { "type": "string" },
+    "skill_path": { "type": "string" },
+    "skill_type": { "type": "string", "enum": ["atom", "composite", "meta"] },
+    "scores": {
+      "type": "object",
+      "required": ["structure", "trigger", "security", "functional", "comparative", "uniqueness"],
+      "properties": {
+        "structure": {
+          "type": "object",
+          "required": ["score", "max", "details", "sub_scores", "issues"],
+          "properties": {
+            "score": { "type": "integer", "minimum": 0, "maximum": 10 },
+            "max": { "type": "integer", "const": 10 },
+            "details": { "type": "string" },
+            "sub_scores": {
+              "type": "object",
+              "properties": {
+                "frontmatter": { "type": "number", "minimum": 0, "maximum": 10 },
+                "format": { "type": "number", "minimum": 0, "maximum": 10 },
+                "declarations": { "type": "number", "minimum": 0, "maximum": 10 }
+              }
+            },
+            "issues": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["category", "severity", "item"],
+                "properties": {
+                  "category": { "type": "string" },
+                  "severity": { "type": "string", "enum": ["error", "warning", "info"] },
+                  "item": { "type": "string" },
+                  "location": { "type": "string" }
+                }
+              }
+            },
+            "metadata": { "type": "object" }
+          }
+        },
+        "trigger": {
+          "type": "object",
+          "required": ["score", "max", "details", "sub_scores", "issues"],
+          "properties": {
+            "score": { "type": "integer", "minimum": 0, "maximum": 10 },
+            "max": { "type": "integer", "const": 10 },
+            "details": { "type": "string" },
+            "trigger_type": { "type": "string", "enum": ["description", "command", "hook", "glob", "always-on"] },
+            "sub_scores": { "type": "object" },
+            "issues": { "type": "array", "items": { "type": "object" } },
+            "metadata": { "type": "object" }
+          }
+        },
+        "security": {
+          "type": "object",
+          "required": ["score", "max", "pass", "findings", "tools_used"],
+          "properties": {
+            "score": { "type": "integer", "minimum": 0, "maximum": 10 },
+            "max": { "type": "integer", "const": 10 },
+            "pass": { "type": "boolean" },
+            "findings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["check", "severity", "description", "source"],
+                "properties": {
+                  "check": { "type": "string" },
+                  "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+                  "location": { "type": "string" },
+                  "description": { "type": "string" },
+                  "recommendation": { "type": "string" },
+                  "source": { "type": "string" }
+                }
+              }
+            },
+            "tools_used": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "details": { "type": "string" },
+            "metadata": { "type": "object" }
+          }
+        },
+        "functional": {
+          "type": "object",
+          "required": ["score", "max", "details", "sub_scores", "issues"],
+          "properties": {
+            "score": { "type": "integer", "minimum": 0, "maximum": 10 },
+            "max": { "type": "integer", "const": 10 },
+            "tier": { "type": "string", "enum": ["A", "B", "C"] },
+            "details": { "type": "string" },
+            "sub_scores": {
+              "type": "object",
+              "properties": {
+                "core_functionality": { "type": "number", "minimum": 0, "maximum": 10 },
+                "edge_handling": { "type": "number", "minimum": 0, "maximum": 10 },
+                "output_stability": { "type": "number", "minimum": 0, "maximum": 10 },
+                "output_quality": { "type": "number", "minimum": 0, "maximum": 10 },
+                "error_handling": { "type": "number", "minimum": 0, "maximum": 10 },
+                "instruction_clarity": { "type": "number", "minimum": 0, "maximum": 10 }
+              }
+            },
+            "issues": { "type": "array", "items": { "type": "object" } },
+            "metadata": { "type": "object" }
+          }
+        },
+        "comparative": {
+          "type": "object",
+          "required": ["score", "max", "delta", "details"],
+          "properties": {
+            "score": { "type": "integer", "minimum": 0, "maximum": 10 },
+            "max": { "type": "integer", "const": 10 },
+            "delta": { "type": "number" },
+            "details": { "type": "string" },
+            "scenarios": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "with_skill": { "type": "number" },
+                  "without_skill": { "type": "number" },
+                  "improvement": { "type": "number" }
+                }
+              }
+            },
+            "sub_scores": { "type": "object" },
+            "issues": { "type": "array", "items": { "type": "object" } },
+            "metadata": { "type": "object" }
+          }
+        },
+        "uniqueness": {
+          "type": "object",
+          "required": ["score", "max", "details"],
+          "properties": {
+            "score": { "type": "integer", "minimum": 0, "maximum": 10 },
+            "max": { "type": "integer", "const": 10 },
+            "details": { "type": "string" },
+            "similar_skills": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "overlap_percentage": { "type": "number" }
+                }
+              }
+            },
+            "supersession_risk": { "type": "string", "enum": ["low", "medium", "high"] },
+            "sub_scores": { "type": "object" },
+            "issues": { "type": "array", "items": { "type": "object" } },
+            "metadata": { "type": "object" }
+          }
+        }
+      }
+    },
+    "overall_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "verdict": { "type": "string", "enum": ["PASS", "CAUTION", "FAIL"] },
+    "weakest_dimension": { "type": "string", "enum": ["structure", "trigger", "security", "functional", "comparative", "uniqueness"] },
+    "recommendations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "evaluated_at": { "type": "string", "format": "date-time" },
+        "evaluator_version": { "type": "string" },
+        "feedback_applied": { "type": "boolean" }
+      }
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "skill-compass/feedback-signal",
+  "title": "SkillCompass Feedback Signal",
+  "description": "Runtime feedback data for adjusting static evaluation scores. Open standard — third parties may extend with additional fields.",
+  "type": "object",
+  "required": ["skill_name", "usage_count", "signals"],
+  "additionalProperties": true,
+  "properties": {
+    "skill_name": { "type": "string" },
+    "usage_count": { "type": "integer", "minimum": 0 },
+    "user_expertise": {
+      "type": "string",
+      "enum": ["beginner", "intermediate", "expert"],
+      "description": "Self-reported or inferred user expertise level"
+    },
+    "collection_period": {
+      "type": "object",
+      "properties": {
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" }
+      }
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "trigger_accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Percentage of correct activations (0.0-1.0)"
+        },
+        "correction_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of times user corrected skill output"
+        },
+        "correction_patterns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "pattern": { "type": "string" },
+              "count": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "adoption_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Rate at which skill suggestions were adopted"
+        },
+        "ignore_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Rate at which skill suggestions were ignored"
+        },
+        "usage_frequency": {
+          "type": "object",
+          "properties": {
+            "trend": { "type": "string", "enum": ["increasing", "stable", "decreasing"] },
+            "avg_daily": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "test_suite": "Layer 1 — Dimension-Targeted Fixtures",
+  "test_date": "2026-03-13",
+  "evaluator": "SkillCompass v1 (manual eval)",
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "hit_rate": "6/6 (100%)"
+  },
+  "results": [
+    {
+      "fixture": "d1-broken-structure",
+      "skill_name": "log-analyzer",
+      "target_dimension": "D1",
+      "scores": {
+        "D1_structure": 1,
+        "D2_trigger": 2,
+        "D3_security": 6,
+        "D4_functional": 2,
+        "D5_comparative": 2,
+        "D6_uniqueness": 3
+      },
+      "D3_pass": true,
+      "D3_findings": [],
+      "overall_score": 28,
+      "verdict": "FAIL",
+      "weakest_dimension": "D1",
+      "expected_range": "25-40",
+      "expected_verdict": "FAIL",
+      "expected_weakest": "D1",
+      "target_hit": true,
+      "notes": "No YAML frontmatter delimiters, no heading hierarchy, no declarations. D4/D5 also very low but D1 is lowest."
+    },
+    {
+      "fixture": "d2-bad-trigger",
+      "skill_name": "helper-tool",
+      "target_dimension": "D2",
+      "scores": {
+        "D1_structure": 5,
+        "D2_trigger": 1,
+        "D3_security": 7,
+        "D4_functional": 3,
+        "D5_comparative": 1,
+        "D6_uniqueness": 1
+      },
+      "D3_pass": true,
+      "D3_findings": [],
+      "overall_score": 32,
+      "verdict": "FAIL",
+      "weakest_dimension": "D2",
+      "expected_range": "25-40",
+      "expected_verdict": "FAIL",
+      "expected_weakest": "D2",
+      "target_hit": true,
+      "notes": "D2/D5/D6 all tied at 1. D2 reported as weakest by priority rule (trigger > uniqueness > comparative). Maximally vague description drags everything down."
+    },
+    {
+      "fixture": "d3-insecure",
+      "skill_name": "db-manager",
+      "target_dimension": "D3",
+      "scores": {
+        "D1_structure": 8,
+        "D2_trigger": 7,
+        "D3_security": 0,
+        "D4_functional": 6,
+        "D5_comparative": 6,
+        "D6_uniqueness": 6
+      },
+      "D3_pass": false,
+      "D3_findings": [
+        {"severity": "critical", "check": "hardcoded_secrets", "description": "Hardcoded production credentials: postgresql://admin:Sup3rS3cret!@db.prod.internal:5432/maindb"},
+        {"severity": "critical", "check": "command_injection", "description": "SQL injection via direct variable interpolation: $USER_QUERY in psql -c"},
+        {"severity": "critical", "check": "command_injection", "description": "Shell injection via unquoted variables: $TABLE_NAME, $COLUMNS, $BACKUP_FILE, $USERNAME, $PASSWORD"},
+        {"severity": "high", "check": "external_calls", "description": "No user confirmation before destructive database operations (RESTORE, CREATE USER)"},
+        {"severity": "high", "check": "data_exfiltration", "description": "AWS --profile prod exposes production credentials path"}
+      ],
+      "overall_score": 52,
+      "verdict": "FAIL",
+      "verdict_reason": "D3 gate (3 critical findings)",
+      "weakest_dimension": "D3",
+      "expected_range": "gate FAIL",
+      "expected_verdict": "FAIL",
+      "expected_weakest": "D3",
+      "target_hit": true,
+      "notes": "Well-structured skill (D1=8) with severe security vulnerabilities. Gate correctly triggers FAIL despite overall score 52."
+    },
+    {
+      "fixture": "d4-shallow-function",
+      "skill_name": "git-commit-helper",
+      "target_dimension": "D4",
+      "scores": {
+        "D1_structure": 7,
+        "D2_trigger": 7,
+        "D3_security": 8,
+        "D4_functional": 2,
+        "D5_comparative": 3,
+        "D6_uniqueness": 4
+      },
+      "D3_pass": true,
+      "D3_findings": [],
+      "overall_score": 48,
+      "verdict": "FAIL",
+      "weakest_dimension": "D4",
+      "expected_range": "42-55",
+      "expected_verdict": "FAIL",
+      "expected_weakest": "D4",
+      "target_hit": true,
+      "notes": "Good structure and trigger (D1=7, D2=7) but extremely shallow functionality: 3 trivial steps, no edge cases, no output format, 'Done.' as completion."
+    },
+    {
+      "fixture": "d5-no-value",
+      "skill_name": "file-reader",
+      "target_dimension": "D5",
+      "scores": {
+        "D1_structure": 7,
+        "D2_trigger": 5,
+        "D3_security": 9,
+        "D4_functional": 4,
+        "D5_comparative": 1,
+        "D6_uniqueness": 2
+      },
+      "D3_pass": true,
+      "D3_findings": [],
+      "overall_score": 48,
+      "verdict": "FAIL",
+      "weakest_dimension": "D5",
+      "expected_range": "38-50",
+      "expected_verdict": "FAIL",
+      "expected_weakest": "D5",
+      "target_hit": true,
+      "notes": "Well-structured and very safe (D3=9) but provides zero value — every instruction maps 1:1 to built-in Read tool capability. delta=0.0."
+    },
+    {
+      "fixture": "d6-duplicate",
+      "skill_name": "code-reviewer",
+      "target_dimension": "D6",
+      "scores": {
+        "D1_structure": 8,
+        "D2_trigger": 5,
+        "D3_security": 9,
+        "D4_functional": 5,
+        "D5_comparative": 3,
+        "D6_uniqueness": 2
+      },
+      "D3_pass": true,
+      "D3_findings": [],
+      "overall_score": 55,
+      "verdict": "CAUTION",
+      "weakest_dimension": "D6",
+      "expected_range": "48-58",
+      "expected_verdict": "FAIL or CAUTION",
+      "expected_weakest": "D6",
+      "target_hit": true,
+      "notes": "Well-written skill (D1=8, D3=9) but generic code reviewer with 70% overlap to requesting-code-review, 40% to security-review. No unique angle."
+    }
+  ]
+}

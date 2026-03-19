@@ -1,0 +1,111 @@
+{
+  "test_suite": "Layer 4 — Edge Cases / Robustness",
+  "test_date": "2026-03-13",
+  "evaluator": "SkillCompass v1 (manual eval)",
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0
+  },
+  "results": [
+    {
+      "fixture": "edge-empty",
+      "content": "0 bytes",
+      "expected_behavior": "Graceful error: 'SKILL.md is empty. Cannot evaluate.'",
+      "actual_behavior": "Error message, no scores, no crash",
+      "validations": {
+        "no_crash": true,
+        "no_nan_scores": true,
+        "no_partial_results": true,
+        "clear_error_message": true
+      },
+      "result": "PASS"
+    },
+    {
+      "fixture": "edge-no-yaml",
+      "content": "Markdown with headings but no --- frontmatter delimiters",
+      "scores": {
+        "D1_structure": 1,
+        "D2_trigger": 2,
+        "D3_security": 7,
+        "D4_functional": 2,
+        "D5_comparative": 1,
+        "D6_uniqueness": 2
+      },
+      "overall_score": 25,
+      "verdict": "FAIL",
+      "validations": {
+        "warning_no_frontmatter": true,
+        "d1_frontmatter_sub_zero": true,
+        "body_still_evaluated": true,
+        "no_crash": true
+      },
+      "result": "PASS"
+    },
+    {
+      "fixture": "edge-yaml-only",
+      "content": "Valid frontmatter, empty body",
+      "scores": {
+        "D1_structure": 3,
+        "D2_trigger": 5,
+        "D3_security": 8,
+        "D4_functional": 0,
+        "D5_comparative": 1,
+        "D6_uniqueness": 3
+      },
+      "overall_score": 28,
+      "verdict": "FAIL",
+      "validations": {
+        "warning_no_body": true,
+        "d4_zero_no_instructions": true,
+        "frontmatter_still_evaluated": true,
+        "no_crash": true
+      },
+      "result": "PASS"
+    },
+    {
+      "fixture": "edge-huge",
+      "content": "1046 lines, full-stack-scaffold skill",
+      "scores": {
+        "D1_structure": 7,
+        "D2_trigger": 7,
+        "D3_security": 7,
+        "D4_functional": 7,
+        "D5_comparative": 6,
+        "D6_uniqueness": 4
+      },
+      "overall_score": 65,
+      "verdict": "CAUTION",
+      "validations": {
+        "no_timeout": true,
+        "no_truncation": true,
+        "bloat_flagged": true,
+        "d6_scope_too_broad_noted": true,
+        "not_scored_higher_for_length": true
+      },
+      "result": "PASS"
+    },
+    {
+      "fixture": "edge-non-english",
+      "content": "Chinese-language translation skill (中文翻译助手)",
+      "scores": {
+        "D1_structure": 7,
+        "D2_trigger": 6,
+        "D3_security": 9,
+        "D4_functional": 7,
+        "D5_comparative": 6,
+        "D6_uniqueness": 7
+      },
+      "overall_score": 70,
+      "verdict": "PASS",
+      "validations": {
+        "non_ascii_name_handled": true,
+        "non_ascii_description_handled": true,
+        "all_dimensions_evaluated_normally": true,
+        "not_penalized_for_non_english": true,
+        "d2_locale_dependency_noted": true
+      },
+      "result": "PASS"
+    }
+  ]
+}

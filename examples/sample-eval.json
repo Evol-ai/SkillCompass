@@ -1,0 +1,198 @@
+{
+  "skill_name": "sql-optimizer",
+  "skill_path": "./skills/sql-optimizer/SKILL.md",
+  "skill_type": "atom",
+  "scores": {
+    "structure": {
+      "score": 6,
+      "max": 10,
+      "details": "Valid frontmatter with name and description. Missing not_for boundaries. Heading hierarchy clean but no environment requirements declared.",
+      "sub_scores": {
+        "frontmatter": 7,
+        "format": 7,
+        "declarations": 4
+      },
+      "issues": [
+        {
+          "category": "declarations",
+          "severity": "warning",
+          "item": "No scope boundaries or not_for field declared",
+          "location": "frontmatter"
+        },
+        {
+          "category": "declarations",
+          "severity": "warning",
+          "item": "No environment requirements specified",
+          "location": "frontmatter"
+        }
+      ],
+      "metadata": {}
+    },
+    "trigger": {
+      "score": 3,
+      "max": 10,
+      "details": "Vague description: 'optimizes SQL queries'. No specific keywords, no not_for, no locale awareness. Would false-trigger on any database-related query.",
+      "trigger_type": "description",
+      "sub_scores": {
+        "trigger_accuracy": 4,
+        "rejection_accuracy": 1,
+        "specificity": 3,
+        "cross_locale": null
+      },
+      "issues": [
+        {
+          "category": "rejection_accuracy",
+          "severity": "error",
+          "item": "No not_for or negative boundary statements",
+          "location": "description"
+        },
+        {
+          "category": "specificity",
+          "severity": "warning",
+          "item": "Description too broad — would overlap with general database skills",
+          "location": "description"
+        }
+      ],
+      "metadata": {
+        "trigger_type": "description",
+        "user_locale": null,
+        "description_language": "en"
+      }
+    },
+    "security": {
+      "score": 2,
+      "max": 10,
+      "pass": false,
+      "findings": [
+        {
+          "check": "command_injection",
+          "severity": "critical",
+          "location": "line 34",
+          "description": "User-provided SQL query interpolated directly into shell command: psql -c \"${user_query}\"",
+          "recommendation": "Use parameterized queries or escape user input before shell interpolation",
+          "source": "builtin"
+        },
+        {
+          "check": "excessive_permissions",
+          "severity": "medium",
+          "location": "line 12",
+          "description": "Requests Bash tool access without documenting why shell access is needed",
+          "recommendation": "Document the purpose of shell access in environment requirements",
+          "source": "builtin"
+        }
+      ],
+      "tools_used": ["builtin"],
+      "details": "CRITICAL: Command injection vulnerability. User SQL input passed directly to psql shell command without sanitization.",
+      "metadata": {
+        "pass": false,
+        "is_gate": true,
+        "checks_executed": ["hardcoded_secrets", "external_calls", "privilege_escalation", "command_injection", "prompt_injection", "data_exfiltration", "excessive_permissions"],
+        "tools_used": ["builtin"]
+      }
+    },
+    "functional": {
+      "score": 4,
+      "max": 10,
+      "tier": "A",
+      "details": "Basic query optimization flow defined but lacks edge case handling, no output format specified, error handling minimal.",
+      "sub_scores": {
+        "core_functionality": 5,
+        "edge_handling": 3,
+        "output_stability": 4,
+        "output_quality": 4,
+        "error_handling": 2,
+        "instruction_clarity": 5
+      },
+      "issues": [
+        {
+          "category": "edge_handling",
+          "severity": "warning",
+          "item": "No handling for invalid SQL input",
+          "location": "instructions"
+        },
+        {
+          "category": "output_stability",
+          "severity": "warning",
+          "item": "No output format defined — optimization suggestions vary in structure",
+          "location": "instructions"
+        },
+        {
+          "category": "error_handling",
+          "severity": "error",
+          "item": "No error handling for database connection failures",
+          "location": "instructions"
+        }
+      ],
+      "metadata": {
+        "tier": "A",
+        "skill_type": "atom",
+        "test_cases": [
+          "Simple SELECT optimization → should suggest index",
+          "Complex JOIN query → should analyze query plan",
+          "Invalid SQL → unknown behavior",
+          "Empty input → unknown behavior"
+        ]
+      }
+    },
+    "comparative": {
+      "score": 3,
+      "max": 10,
+      "delta": 0.12,
+      "details": "Moderate improvement for complex queries where tool integration helps, but minimal advantage for simple optimizations that LLMs handle well.",
+      "scenarios": [
+        {
+          "name": "Simple index suggestion",
+          "with_skill": 6,
+          "without_skill": 5,
+          "improvement": 0.1
+        },
+        {
+          "name": "Multi-table JOIN optimization",
+          "with_skill": 5,
+          "without_skill": 4,
+          "improvement": 0.1
+        },
+        {
+          "name": "Query plan analysis with EXPLAIN",
+          "with_skill": 6,
+          "without_skill": 4,
+          "improvement": 0.2
+        }
+      ],
+      "sub_scores": {},
+      "issues": [],
+      "metadata": {
+        "delta": 0.12,
+        "value_category": "domain_expertise"
+      }
+    },
+    "uniqueness": {
+      "score": 7,
+      "max": 10,
+      "details": "Good uniqueness. PostgreSQL-specific optimization with potential tool integration (EXPLAIN ANALYZE). No known overlapping skills in registry.",
+      "similar_skills": [],
+      "supersession_risk": "low",
+      "sub_scores": {},
+      "issues": [],
+      "metadata": {
+        "supersession_risk": "low",
+        "modifiers_applied": ["+1 tool-integration potential"],
+        "registry_available": false
+      }
+    }
+  },
+  "overall_score": 38,
+  "verdict": "FAIL",
+  "weakest_dimension": "security",
+  "recommendations": [
+    "CRITICAL: Fix command injection vulnerability in SQL execution (D3)",
+    "Add not_for boundaries to description to reduce false triggers (D2)",
+    "Define output format for optimization suggestions (D4)",
+    "Add error handling for database connection failures (D4)"
+  ],
+  "metadata": {
+    "evaluated_at": "2026-01-15T10:30:00Z",
+    "evaluator_version": "1.0.0",
+    "feedback_applied": false
+  }
+}

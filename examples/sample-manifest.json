@@ -1,0 +1,56 @@
+{
+  "skill_name": "sql-optimizer",
+  "current_version": "1.0.0-evo.3",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "parent": null,
+      "timestamp": "2026-01-15T10:00:00Z",
+      "trigger": "initial",
+      "content_hash": "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "overall_score": 38,
+      "verdict": "FAIL",
+      "target_dimension": null,
+      "correction_pattern": null
+    },
+    {
+      "version": "1.0.0-evo.1",
+      "parent": "1.0.0",
+      "timestamp": "2026-01-16T14:20:00Z",
+      "trigger": "eval-improve",
+      "content_hash": "sha256:b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+      "overall_score": 52,
+      "verdict": "CAUTION",
+      "target_dimension": "security",
+      "correction_pattern": "Parameterized SQL execution, removed direct shell interpolation"
+    },
+    {
+      "version": "1.0.0-evo.2",
+      "parent": "1.0.0-evo.1",
+      "timestamp": "2026-01-17T09:45:00Z",
+      "trigger": "eval-improve",
+      "content_hash": "sha256:c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+      "overall_score": 62,
+      "verdict": "CAUTION",
+      "target_dimension": "trigger",
+      "correction_pattern": "Added PostgreSQL-specific keywords, not_for boundaries, locale hints"
+    },
+    {
+      "version": "1.0.0-evo.3",
+      "parent": "1.0.0-evo.2",
+      "timestamp": "2026-01-18T16:10:00Z",
+      "trigger": "eval-improve",
+      "content_hash": "sha256:d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
+      "overall_score": 71,
+      "verdict": "PASS",
+      "target_dimension": "functional",
+      "correction_pattern": "Expanded instruction steps, added output format, edge case handling"
+    }
+  ],
+  "upstream_origin": {
+    "source": "community",
+    "slug": "sql-optimizer",
+    "last_known_version": "1.0.0",
+    "content_hash": "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+  }
+}

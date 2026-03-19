@@ -1,0 +1,32 @@
+{
+  "skill_name": "sql-optimizer",
+  "base_version": "1.0.0",
+  "local_version": "1.0.0-evo.3",
+  "upstream_version": "1.1.0",
+  "merged_version": "1.1.0-evo.1",
+  "conflicts": [
+    {
+      "region": "instructions",
+      "local_content": "## Optimization Steps\n1. Read query using Read tool\n2. Parse SQL and validate syntax\n3. Run EXPLAIN ANALYZE via parameterized psql command\n4. Analyze query plan for sequential scans\n5. Suggest index creation if sequential scan on large table",
+      "upstream_content": "## Optimization Steps\n1. Read query\n2. Run EXPLAIN ANALYZE\n3. Analyze for sequential scans, hash joins, nested loops\n4. Suggest optimizations with expected improvement percentages\n5. Generate CREATE INDEX statements",
+      "resolution": "smart_merge",
+      "merged_content": "## Optimization Steps\n1. Read query using Read tool\n2. Parse SQL and validate syntax\n3. Run EXPLAIN ANALYZE via parameterized psql command\n4. Analyze query plan for sequential scans, hash joins, nested loops\n5. Suggest optimizations with expected improvement percentages\n6. Generate CREATE INDEX statements if applicable"
+    }
+  ],
+  "merge_strategy": {
+    "frontmatter": "field-level merge, upstream added new command",
+    "description": "semantic merge, combined local not_for with upstream scope expansion",
+    "instructions": "paragraph-level merge with one conflict resolved via smart merge",
+    "scripts": "no scripts in either version"
+  },
+  "post_merge_eval": {
+    "overall_score": 73,
+    "verdict": "PASS",
+    "regression_detected": false,
+    "regression_dimensions": []
+  },
+  "metadata": {
+    "merged_at": "2026-02-01T11:00:00Z",
+    "merge_tool_version": "1.0.0"
+  }
+}

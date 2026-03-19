@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT:-${baseDir:-.}}/hooks/scripts/post-skill-edit.js\"",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT:-${baseDir:-.}}/hooks/scripts/eval-gate.js\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}

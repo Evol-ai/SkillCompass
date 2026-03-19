@@ -1,0 +1,97 @@
+version: "2026.03.19"
+description: "Known malicious patterns and domains for security scanning"
+last_updated: "2026-03-19T00:00:00Z"
+source: "Based on Snyk ToxicSkills research (2026-02)"
+
+signatures:
+  - id: "TS-001"
+    pattern: "setup-service\\.com"
+    severity: "CRITICAL"
+    description: "Known malicious domain used in skill attacks"
+    source: "snyk-toxicskills-2026-02"
+    
+  - id: "TS-002"
+    pattern: "rentry\\.co.*openclaw"
+    severity: "CRITICAL"
+    description: "Pastebin service used with openclaw keyword for malicious payloads"
+    source: "snyk-toxicskills-2026-02"
+    
+  - id: "TS-003"
+    pattern: "raw\\.githubusercontent\\.com.*\\/malicious-"
+    severity: "HIGH"
+    description: "GitHub raw content with suspicious naming pattern"
+    source: "skillcompass-internal"
+    
+  - id: "TS-004"
+    pattern: "(pastebin\\.com|hastebin\\.com|ghostbin\\.com).*\\.(sh|py|js)$"
+    severity: "HIGH"
+    description: "External paste service hosting executable scripts"
+    source: "skillcompass-internal"
+    
+  - id: "TS-005"
+    pattern: "ngrok\\.(io|com)|serveo\\.net|localhost\\.run"
+    severity: "HIGH"
+    description: "Tunneling services often used for reverse shells"
+    source: "skillcompass-internal"
+    
+  - id: "TS-006"
+    pattern: "\\b(evil|malicious|exploit|backdoor|trojan|virus)\\.(com|net|org|io)"
+    severity: "CRITICAL"
+    description: "Obviously malicious domain names"
+    source: "skillcompass-internal"
+    
+  - id: "TS-007"
+    pattern: "burpcollaborator\\.net|interact\\.sh|pipedream\\.net"
+    severity: "MEDIUM"
+    description: "Security testing/callback services that may indicate data exfiltration"
+    source: "skillcompass-internal"
+    
+  - id: "TS-008"
+    pattern: "webhook\\.site|requestbin\\.|requestcatcher\\."
+    severity: "MEDIUM"
+    description: "Request inspection services that may be used for exfiltration"
+    source: "skillcompass-internal"
+
+# Indicators of Compromise (IoCs) from known attacks
+iocs:
+  domains:
+    - "setup-service.com"
+    - "rentry.co"
+    - "evil-skills.com"
+    
+  ip_addresses:
+    # Reserved for future use when specific malicious IPs are identified
+    []
+    
+  file_hashes:
+    # SHA256 hashes of known malicious skill files
+    # Reserved for future use
+    []
+
+# Behavioral patterns (for future ML-based detection)
+behavioral_patterns:
+  - id: "BP-001"
+    name: "Excessive permission request"
+    description: "Skill requests all available tools without justification"
+    indicators:
+      - "requests_all_tools: true"
+      - "no_usage_description: true"
+      
+  - id: "BP-002"
+    name: "Hidden execution pattern"
+    description: "Code execution hidden in markdown comments or zero-width spaces"
+    indicators:
+      - "markdown_comment_with_code: true"
+      - "unicode_hidden_chars: true"
+
+# Update history
+changelog:
+  - date: "2026-03-19"
+    changes:
+      - "Initial threat signature database creation"
+      - "Added Snyk ToxicSkills confirmed malicious domains"
+      - "Added common exfiltration and tunneling services"
+      
+  - date: "2026-03-20"
+    changes:
+      - "Reserved sections for future IoCs and ML patterns"

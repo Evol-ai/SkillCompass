@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "skill-compass/merge-result",
+  "title": "SkillCompass Merge Result",
+  "description": "Result of a three-way semantic merge between local evo version and upstream update",
+  "type": "object",
+  "required": ["skill_name", "base_version", "local_version", "upstream_version", "merged_version", "conflicts", "merge_strategy", "post_merge_eval"],
+  "properties": {
+    "skill_name": { "type": "string" },
+    "base_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-evo\\.\\d+)?$"
+    },
+    "local_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-evo\\.\\d+)?$"
+    },
+    "upstream_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "merged_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-evo\\.\\d+)?$"
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["region", "resolution"],
+        "properties": {
+          "region": { "type": "string", "enum": ["frontmatter", "description", "instructions", "scripts", "other"] },
+          "local_content": { "type": "string" },
+          "upstream_content": { "type": "string" },
+          "resolution": { "type": "string", "enum": ["local", "upstream", "smart_merge", "user_choice"] },
+          "merged_content": { "type": "string" }
+        }
+      }
+    },
+    "merge_strategy": {
+      "type": "object",
+      "properties": {
+        "frontmatter": { "type": "string" },
+        "description": { "type": "string" },
+        "instructions": { "type": "string" },
+        "scripts": { "type": "string" }
+      }
+    },
+    "post_merge_eval": {
+      "type": "object",
+      "required": ["overall_score", "verdict", "regression_detected"],
+      "properties": {
+        "overall_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "verdict": { "type": "string", "enum": ["PASS", "CAUTION", "FAIL"] },
+        "regression_detected": { "type": "boolean" },
+        "regression_dimensions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "merged_at": { "type": "string", "format": "date-time" },
+        "merge_tool_version": { "type": "string" }
+      }
+    }
+  }
+}

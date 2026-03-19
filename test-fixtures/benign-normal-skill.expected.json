@@ -1,0 +1,12 @@
+{
+  "pre_scan_exit_code": 0,
+  "blocked_by": null,
+  "expected_findings": [],
+  "expected_scores": {
+    "d1_structure": "8-10",
+    "d2_trigger": "7-9", 
+    "d3_security": "9-10",
+    "overall": "75-90"
+  },
+  "test_description": "Normal skill that should pass all security layers and receive good evaluation scores"
+}
