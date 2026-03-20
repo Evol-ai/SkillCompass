@@ -298,6 +298,108 @@ After generating code, scan for OWASP Top 10 patterns.
 
 Score check: 7×0.30 + 5×0.20 + 6×0.15 + 6×0.15 + 4×0.10 + 7×0.10 = 2.1 + 1.0 + 0.9 + 0.9 + 0.4 + 0.7 = 6.0 → 6 ✓
 
+### Example D: Tier A, Score 9 — Excellent Tool-Integration Skill
+
+**Input skill excerpt:**
+```yaml
+---
+name: gcalcli-calendar
+description: >
+  Google Calendar via gcalcli: today-only agenda by default, bounded
+  meaning-first lookup via agenda search, event creation with
+  structured fields, and conflict-aware scheduling.
+commands:
+  - cal-today
+  - cal-search
+  - cal-add
+---
+# Google Calendar (via gcalcli)
+## Requirements
+- gcalcli installed and authenticated (`gcalcli init`)
+## Commands
+### /cal-today
+Show today's agenda. Output as markdown table with time, title, location.
+### /cal-search <query> [--days N]
+Search upcoming events. Default 7 days. Fallback: "No matching events."
+### /cal-add <title> --start <datetime> --end <datetime> [--location]
+Create event. Validate: end > start, no conflict with existing events.
+If conflict detected, warn user and ask for confirmation.
+## Edge Cases
+- Empty calendar → "No events today."
+- Timezone mismatch → convert to user's local timezone
+- gcalcli not installed → clear error with install instructions
+## Output Format
+Always markdown table. Dates in ISO 8601. Durations in human-readable form.
+## Error Handling
+- Auth expired → prompt re-authentication with `gcalcli init`
+- Network error → retry once, then report failure with cached last-known data
+- Invalid datetime → parse error with example of correct format
+```
+
+**Output:**
+```json
+{
+  "dimension": "D4",
+  "dimension_name": "functional",
+  "score": 9,
+  "max": 10,
+  "details": "Excellent Tier A skill with complete instruction set for all commands. Explicit edge case handling (empty, timezone, missing tool). Error recovery for auth, network, and input validation. Strict output format (markdown table, ISO 8601). Only gap: no pagination for very long agendas.",
+  "sub_scores": {
+    "core_functionality": 10,
+    "edge_handling": 9,
+    "output_stability": 9,
+    "output_quality": 9,
+    "error_handling": 8,
+    "instruction_clarity": 9
+  },
+  "issues": [
+    { "category": "edge_handling", "severity": "info", "item": "No pagination strategy for calendars with many events per day", "location": "/cal-today" }
+  ],
+  "metadata": { "tier": "A", "skill_type": "atom", "test_cases": ["Today with 3 events → markdown table", "Search 'dentist' → filtered results", "Add event with conflict → warning", "gcalcli not installed → install instructions", "Empty calendar → graceful message"] }
+}
+```
+
+Score check: 10×0.30 + 9×0.20 + 9×0.15 + 9×0.15 + 8×0.10 + 9×0.10 = 3.0 + 1.8 + 1.35 + 1.35 + 0.8 + 0.9 = 9.2 → 9 ✓
+
+### Example E: Tier B, Score 2 — Minimal Stub Skill
+
+**Input skill excerpt:**
+```yaml
+---
+name: devops
+description: DevOps automation
+---
+# DevOps
+Help with DevOps tasks.
+```
+
+**Output:**
+```json
+{
+  "dimension": "D4",
+  "dimension_name": "functional",
+  "score": 2,
+  "max": 10,
+  "details": "Tier B skill with no actionable instructions. 'Help with DevOps tasks' provides zero guidance — an LLM would have to guess what 'DevOps' means in context. No commands, no workflows, no output format, no edge cases.",
+  "sub_scores": {
+    "core_functionality": 2,
+    "edge_handling": 1,
+    "output_stability": 2,
+    "output_quality": 2,
+    "error_handling": 1,
+    "instruction_clarity": 3
+  },
+  "issues": [
+    { "category": "core_functionality", "severity": "error", "item": "No instructions beyond a single vague sentence", "location": "body" },
+    { "category": "edge_handling", "severity": "error", "item": "No edge cases, no error handling, no fallbacks", "location": "global" },
+    { "category": "output_stability", "severity": "error", "item": "No output format — every run produces different structure", "location": "global" }
+  ],
+  "metadata": { "tier": "B", "skill_type": "atom", "test_cases": ["Deploy to AWS → no guidance", "Set up CI → no guidance", "Monitor services → no guidance"] }
+}
+```
+
+Score check: 2×0.30 + 1×0.20 + 2×0.15 + 2×0.15 + 1×0.10 + 3×0.10 = 0.6 + 0.2 + 0.3 + 0.3 + 0.1 + 0.3 = 1.8 → 2 ✓
+
 ## Required Output
 
 Respond ONLY with valid JSON matching the schema above. Any non-JSON content will be discarded.
