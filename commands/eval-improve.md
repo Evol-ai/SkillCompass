@@ -1,5 +1,9 @@
 # /eval-improve — Evaluate + Directed Improvement
 
+## Prerequisites
+
+- **Recommended model: Claude Opus 4.6** (`claude-opus-4-6`). Directed improvement requires understanding complex rubric feedback and generating precise, targeted edits. Weaker models may produce unfocused rewrites that fail to address the weakest dimension or introduce regressions in other dimensions.
+
 ## Arguments
 
 - `<path>` (required): Path to the SKILL.md file to improve.

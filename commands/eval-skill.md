@@ -2,6 +2,10 @@
 
 **🚀 Enhanced with Local Validators**: This command now uses local JavaScript validators for D1, D2, and D3 dimensions to significantly reduce token consumption while maintaining evaluation quality. Complex reasoning tasks (D4, D5, D6) continue to use LLM evaluation with local pre-analysis.
 
+## Prerequisites
+
+- **Recommended model: Claude Opus 4.6** (`claude-opus-4-6`). The 6-dimension rubric requires complex multi-dimensional reasoning, nuanced security analysis, and consistent scoring across dimensions. Sonnet and Haiku may produce inconsistent dimension scores, miss subtle security findings in D3, and generate unreliable D5 comparative assessments. If not using an Opus-class model, treat results as approximate.
+
 ## Arguments
 
 - `<path>` (required): Path to the SKILL.md file to evaluate.
@@ -24,7 +28,13 @@
 
 ### Step 1: Load Target
 
-Parse arguments. Use the **Read** tool to load the target SKILL.md file. Parse YAML frontmatter.
+Parse arguments. Check current model — if not an Opus-class model, output a warning:
+```
+⚠ Warning: Current model is {model_name}. For reliable 6D evaluation, Claude Opus 4.6 is recommended. Results may be less consistent with other models.
+```
+Continue with evaluation regardless.
+
+Use the **Read** tool to load the target SKILL.md file. Parse YAML frontmatter.
 
 ### Step 2: Pre-Processing Analysis
 
