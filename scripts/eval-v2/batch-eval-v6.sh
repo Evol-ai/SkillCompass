@@ -177,8 +177,39 @@ Output ONLY the D5 JSON result with dimension, score, delta, and scenarios."
     " 2>/dev/null || echo "$d5_first")
   fi
 
-  # Average D5
-  local d5_avg=$(node -e "console.log(Math.round(($d5_first + $d5_second) / 2))" 2>/dev/null || echo "$d5_first")
+  # P1: If spread>=4, run D5 a third time and take median
+  local d5_third=""
+  local d5_spread=$(node -e "console.log(Math.abs($d5_first - $d5_second))" 2>/dev/null || echo 0)
+  if [ "$d5_spread" -ge 4 ] 2>/dev/null; then
+    local d5_log3="$RESULTS_DIR/logs/${slug}_d5_run3.log"
+    D5_PROMPT3="You are running a third D5 (Comparative) evaluation for tiebreaking.
+
+Working directory: $SC_DIR
+Skill: $skill_path
+
+Two previous D5 evaluations produced scores $d5_first and $d5_second (spread=$d5_spread).
+Read the skill file and the D5 prompt at $SC_DIR/prompts/d5-comparative.md.
+Generate a fresh set of scenarios. Output ONLY the D5 JSON result with score."
+
+    claude -p "$D5_PROMPT3" \
+      --allowedTools "Read,Glob,Grep,Bash" \
+      --max-turns 15 \
+      > "$d5_log3" 2>&1 || true
+
+    d5_third=$(node -e "
+      const fs=require('fs');const log=fs.readFileSync('$d5_log3','utf8');
+      const m=log.match(/\"score\"\\s*:\\s*(\\d+)/);
+      console.log(m?m[1]:'');
+    " 2>/dev/null || echo "")
+  fi
+
+  # Calculate D5 final: median of 3 if available, else average of 2
+  local d5_avg
+  if [ -n "$d5_third" ] && [ "$d5_third" != "" ]; then
+    d5_avg=$(node -e "const a=[$d5_first,$d5_second,$d5_third].sort((a,b)=>a-b);console.log(a[1])" 2>/dev/null || echo "$d5_first")
+  else
+    d5_avg=$(node -e "console.log(Math.round(($d5_first + $d5_second) / 2))" 2>/dev/null || echo "$d5_first")
+  fi
 
   # ---- Phase 4: Patch final JSON with averaged D5 ----
   node -e "
@@ -236,13 +267,19 @@ Output ONLY the D5 JSON result with dimension, score, delta, and scenarios."
   "score": $score,
   "d5_run1": $d5_first,
   "d5_run2": $d5_second,
+  "d5_run3": ${d5_third:-null},
+  "d5_spread": $d5_spread,
   "d5_avg": $d5_avg,
   "validator_scores": {"d1": $d1_score, "d2": $d2_score, "d3": $d3_score},
   "timestamp": "$(date -Iseconds)"
 }
 TJSON
 
-  echo "  [$(date +%H:%M:%S)] $slug — score=$score d5=${d5_first}+${d5_second}=${d5_avg} (val: d1=$d1_score d2=$d2_score d3=$d3_score) time=$((duration_ms/1000))s"
+  local d5_info="${d5_first}+${d5_second}=${d5_avg}"
+  if [ -n "$d5_third" ] && [ "$d5_third" != "" ]; then
+    d5_info="${d5_first}+${d5_second}+${d5_third}=med${d5_avg}"
+  fi
+  echo "  [$(date +%H:%M:%S)] $slug — score=$score d5=${d5_info} (val: d1=$d1_score d2=$d2_score d3=$d3_score) time=$((duration_ms/1000))s"
 }
 
 # Launch in parallel batches
