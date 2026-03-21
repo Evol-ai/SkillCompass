@@ -21,6 +21,13 @@ EXIT_CODE=0
 BLOCK_FOUND=false
 WARN_FOUND=false
 
+# Strip inline backticks to avoid false positives on documentation references
+# like `curl|wget|bash`. Fenced code blocks are NOT stripped — in skills they
+# often contain actual executable instructions that should be scanned.
+# CONTENT_STRIPPED is used for pattern matching; original CONTENT preserved
+# for line-number lookups and prompt-injection byte scanning.
+CONTENT_STRIPPED=$(echo "$CONTENT" | sed 's/`[^`]*`//g')
+
 # Helper function to calculate line numbers
 get_line_number() {
     local pattern="$1"
@@ -55,7 +62,7 @@ check_malicious_code() {
     )
     
     for i in "${!patterns[@]}"; do
-        if echo "$CONTENT" | grep -qE "${patterns[$i]}"; then
+        if echo "$CONTENT_STRIPPED" | grep -qE "${patterns[$i]}"; then
             local line=$(get_line_number "${patterns[$i]}" "$CONTENT")
             echo "[BLOCK] malicious_code: ${descriptions[$i]} (line ~$line)" >&2
             BLOCK_FOUND=true
@@ -72,7 +79,7 @@ check_data_exfiltration() {
         '(echo|cat|printf).*>>.*/authorized_keys'
         'ANTHROPIC_API_KEY|OPENAI_API_KEY|AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID'
     )
-    
+
     local descriptions=(
         "Reading and sending .env file"
         "Reading SSH private keys"
@@ -80,9 +87,9 @@ check_data_exfiltration() {
         "Modifying authorized_keys"
         "Direct reference to sensitive API keys"
     )
-    
+
     for i in "${!patterns[@]}"; do
-        if echo "$CONTENT" | grep -qE "${patterns[$i]}"; then
+        if echo "$CONTENT_STRIPPED" | grep -qE "${patterns[$i]}"; then
             local line=$(get_line_number "${patterns[$i]}" "$CONTENT")
             echo "[BLOCK] data_exfiltration: ${descriptions[$i]} (line ~$line)" >&2
             BLOCK_FOUND=true
@@ -143,7 +150,7 @@ check_known_malicious_domains() {
         local patterns=$(grep "pattern:" "$signatures_file" | sed 's/.*pattern:[[:space:]]*"\(.*\)"/\1/')
         
         while IFS= read -r pattern; do
-            if [[ -n "$pattern" ]] && echo "$CONTENT" | grep -qE "$pattern"; then
+            if [[ -n "$pattern" ]] && echo "$CONTENT_STRIPPED" | grep -qE "$pattern"; then
                 local line=$(get_line_number "$pattern" "$CONTENT")
                 echo "[BLOCK] known_malicious_domain: Pattern '$pattern' matched (line ~$line)" >&2
                 BLOCK_FOUND=true
