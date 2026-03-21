@@ -193,20 +193,20 @@ async function validateImprovement() {
       }
     }
     
-    // Rule 4: Volume anomaly detection
-    if (sizeRatio > 3.0) {
-      addFinding(
-        'size_anomaly',
-        'MEDIUM',
-        'WARN',
-        `Content size increased by ${Math.round((sizeRatio - 1) * 100)}% (ratio: ${sizeRatio.toFixed(2)})`
-      );
-    } else if (sizeRatio > 5.0) {
+    // Rule 4: Volume anomaly detection (check >5.0 first — >3.0 also matches >5.0)
+    if (sizeRatio > 5.0) {
       addFinding(
         'size_anomaly',
         'HIGH',
         'BLOCK',
         `Content size increased by ${Math.round((sizeRatio - 1) * 100)}% (ratio: ${sizeRatio.toFixed(2)}) - excessive`
+      );
+    } else if (sizeRatio > 3.0) {
+      addFinding(
+        'size_anomaly',
+        'MEDIUM',
+        'WARN',
+        `Content size increased by ${Math.round((sizeRatio - 1) * 100)}% (ratio: ${sizeRatio.toFixed(2)})`
       );
     }
     

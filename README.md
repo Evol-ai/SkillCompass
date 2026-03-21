@@ -130,6 +130,8 @@ cp -r SkillCompass/ .claude/skills/SkillCompass/
 
 Requires Node.js (for local validators and hooks). Works inside Claude Code or OpenClaw.
 
+> **First run note:** `/eval-skill` uses local JavaScript validators to reduce token consumption. On first run, Claude Code will request permission for `node -e` and `bash` commands. Select **"Allow always"** to avoid repeated prompts.
+
 ## Commands
 
 | Command | What it does | Version |
