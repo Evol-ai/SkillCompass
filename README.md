@@ -86,11 +86,11 @@ This is what no other tool does: **diagnose → targeted fix → verified improv
 
 ## It Learns From You
 
-### Correction Tracking
+### Correction Tracking *(planned — v1.1)*
 
 You use a skill, then tweak its output. Again. And again. The same fix every time.
 
-SkillCompass silently watches. When it detects a pattern:
+SkillCompass will silently watch. When it detects a pattern:
 
 ```
 Next time you invoke the skill:
@@ -100,9 +100,11 @@ Next time you invoke the skill:
 
 No interruptions while you work. It notices patterns → prompts at next invocation → generates improvement → verifies. **Your skill evolves from your behavior, not just from static analysis.**
 
+> **Status:** The data structure (`corrections.json`) and dimension-mapping design are in place. The observation hook and pattern detection module are planned for v1.1.
+
 ### Cross-Language Triggers
 
-Your skill has an English description. You work in Chinese. Does it still trigger correctly? SkillCompass detects your language and tests trigger accuracy in your language — fixing the gap most skill authors never think about.
+Your skill has an English description. You work in Chinese. Does it still trigger correctly? When `user_locale` is configured, SkillCompass tests trigger accuracy in your language via D2's cross-locale evaluation — fixing the gap most skill authors never think about.
 
 ## Is Your Skill Still Needed?
 
@@ -126,7 +128,7 @@ cp -r SkillCompass/ ~/.claude/skills/SkillCompass/
 cp -r SkillCompass/ .claude/skills/SkillCompass/
 ```
 
-Zero dependencies. Works inside Claude Code or OpenClaw.
+Requires Node.js (for local validators and hooks). Works inside Claude Code or OpenClaw.
 
 ## Commands
 
@@ -139,7 +141,7 @@ Zero dependencies. Works inside Claude Code or OpenClaw.
 | `/eval-rollback <name>` | View version history and rollback | v1 |
 | `/eval-audit <dir>` | Batch scan all skills in a directory | v1 |
 | `/eval-compare <a> <b>` | Side-by-side version comparison | v1 |
-| `/eval-evolve <path>` | Multi-round auto-evolution (up to 3 rounds) | v1.1 |
+| `/eval-evolve <path>` | Multi-round auto-evolution (requires `ralph-wiggum` plugin) | v1.1 |
 
 ## Version Management
 
@@ -250,15 +252,17 @@ SkillCompass works with other tools automatically — no point-to-point integrat
 
 Every existing tool that "evolves" or "improves" skills does it **without seeing the full picture**:
 
-| | CE / EvoMap | Claudeception | Homunculus | skill-creator | SkillCompass |
+| | CE / EvoMap | Claudeception | Homunculus | skill-creator 2.0 | SkillCompass |
 |---|---|---|---|---|---|
 | **When does it act?** | Runtime bug | Good session | Behavior patterns | Manual invocation | Anytime — proactive |
-| **Knows what's weakest?** | Only what broke | No | No | Only trigger wording | Yes — across all dimensions |
-| **Direction** | Fix the bug | Extract what worked | Summarize rules | Improve trigger rate | Target the bottleneck dimension |
-| **Verifies improvement?** | "Bug gone?" | No | No | Trigger test only | Before/after blind test, all dimensions |
-| **Catches regression?** | No | No | No | No | Auto-rollback if score drops |
+| **Knows what's weakest?** | Only what broke | No | No | User-defined evals | Yes — six dimensions, weighted |
+| **Direction** | Fix the bug | Extract what worked | Summarize rules | Improve via A/B test | Target the bottleneck dimension |
+| **Verifies improvement?** | "Bug gone?" | No | No | Eval pass rate + A/B | Before/after blind test, all dimensions |
+| **Catches regression?** | No | No | No | Eval-tied versions | Auto-rollback if score drops |
 | **Detects obsolescence?** | No | No | No | No | D6: is base model catching up? |
-| **Learns from user edits?** | No | No | Partially | No | Correction tracking → directed fix |
+| **Version management?** | No | No | No | Eval-tied only | Sidecar snapshots + rollback + merge |
+| **Security gate?** | No | No | No | No | D3: multi-layer (local + LLM), Critical = auto FAIL |
+| **Learns from user edits?** | No | No | Partially | No | Correction tracking *(v1.1)* |
 
 **The core difference: direction.**
 
@@ -376,7 +380,7 @@ After narrowing:
 
 ---
 
-### Case 3: "I Fix the Same Thing Every Time" — Direction From Your Behavior
+### Case 3: "I Fix the Same Thing Every Time" — Direction From Your Behavior *(v1.1)*
 
 A developer uses `test-generator` daily. Every time:
 1. Skill generates tests
@@ -465,6 +469,32 @@ SkillCompass defines an open `feedback-signal.schema.json` for any tool to repor
 ```
 
 Claudeception, AutoSkill, ClawHub, or your own pipeline — any tool can produce or consume this format.
+
+## Architecture: Local Validators + LLM Prompts
+
+Each dimension is evaluated by two complementary layers working together:
+
+```
+lib/ local validators (deterministic)     prompts/d{N}.md (LLM semantic)
+  regex, YAML parsing, pattern matching     decision trees, few-shot calibration,
+  fast, free, certain                       contextual judgment, novel risk detection
+            ↓                                          ↓
+     "validated facts"  ──── injected into ────→  LLM prompt
+            ↓                                          ↓
+     baseline score + confirmed findings     semantic analysis on top of confirmed facts
+                          ↓
+                   combined final score
+```
+
+| Layer | What it does | Why it matters |
+|-------|-------------|----------------|
+| `lib/` validators | Checks what CAN be verified deterministically — YAML fields, regex patterns, code structure | Reduces LLM token cost, increases scoring certainty, provides a deterministic floor |
+| `prompts/` LLM | Analyzes what REQUIRES semantic understanding — instruction quality, trigger specificity, security context | Catches what regex misses, applies rubric nuance, handles novel patterns |
+| `hooks/` gate | Pre-screens SKILL.md edits in real-time via PostToolUse hooks | Always-on protection, zero config, works with any tool |
+
+The local validators are extracted from the LLM prompt rubrics — they implement the subset of checks that don't need language understanding. The LLM then focuses its analysis on the semantic layer, using validator results as confirmed facts rather than re-analyzing basics.
+
+This dual-layer design also provides **defense in depth** for security (D3): `pre-eval-scan.sh` blocks malicious content before it enters the LLM prompt, `security-validator.js` provides deterministic pattern matching, and the D3 LLM prompt applies severity decision trees and catches novel risks. Any single layer being bypassed doesn't compromise the overall assessment.
 
 ## Contributing
 

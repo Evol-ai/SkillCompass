@@ -92,12 +92,12 @@ check_data_exfiltration() {
 
 # 1c. Prompt injection marker detection
 check_prompt_injection_markers() {
-    # Use Python to detect invisible characters
-    python3 -c "
+    # Use Python to detect invisible characters — content passed via stdin to avoid shell injection
+    cat "$SKILL_PATH" | python3 -c "
 import sys
 import re
 
-content = '''$CONTENT'''
+content = sys.stdin.read()
 
 # ASCII control characters
 ascii_control = re.findall(r'[\x00-\x08\x0e-\x1f\x7f]', content)
@@ -154,13 +154,13 @@ check_known_malicious_domains() {
 
 # 1e. High entropy string detection
 check_high_entropy_strings() {
-    python3 -c "
+    cat "$SKILL_PATH" | python3 -c "
 import sys
 import re
 import math
 from collections import Counter
 
-content = '''$CONTENT'''
+content = sys.stdin.read()
 
 def calculate_shannon_entropy(s):
     if not s:

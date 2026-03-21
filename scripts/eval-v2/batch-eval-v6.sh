@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# Batch evaluation v6 — validators + D5 multi-sample + registry injection
+# Batch evaluation v6 — lib + prompt full pipeline
 # P0: Validator fallback (5 when error)
 # P1: D5 runs twice, average
 # P2: D4 extreme few-shots (in prompt file)
 # P3: D6 registry injected + anti-over-matching (in prompt file)
+# P4: D1/D2/D3 lib results injected + LLM reads prompts for semantic layer
+# P5: D4 BasicValidator pre-analysis injected
+# P6: pre-eval-scan.sh runs before LLM (blocks malicious content)
+# P7: Verdict recalc includes D3 High finding check
 # ============================================================
 set -euo pipefail
 
@@ -29,7 +33,7 @@ TOTAL=${#SKILL_SLUGS[@]}
 echo '======================================================='
 echo "  SkillCompass — Batch Evaluation v6 (${RESULTS_TAG})"
 echo "  Skills: $TOTAL | Parallelism: $MAX_PARALLEL"
-echo "  Improvements: validators + D5 multi-sample + registry injection"
+echo "  Pipeline: lib validators + prompt semantic analysis + D5 multi-sample"
 echo '======================================================='
 echo ''
 
@@ -91,7 +95,40 @@ eval_one() {
       console.log(f.slice(0,8).join('; ')||'No findings');}catch{console.log('No findings')}
     });" 2>/dev/null || echo 'No findings')
 
-  # ---- Phase 2: LLM evaluation with all injections ----
+  # ---- Phase 1b: Pre-eval security scan (before LLM sees content) ----
+  local pre_scan_status="passed"
+  if [ -x "$SC_DIR/hooks/scripts/pre-eval-scan.sh" ]; then
+    local pre_scan_result=""
+    local pre_scan_exit=0
+    pre_scan_result=$("$SC_DIR/hooks/scripts/pre-eval-scan.sh" "$skill_path" 2>&1) || pre_scan_exit=$?
+    if [ "$pre_scan_exit" -eq 2 ]; then
+      d3_score=0; d3_pass=false
+      d3_findings="PRE-SCAN BLOCKED: $pre_scan_result"
+      pre_scan_status="BLOCKED"
+    elif [ "$pre_scan_exit" -eq 1 ]; then
+      pre_scan_status="warnings"
+    fi
+  fi
+
+  # ---- Phase 1c: D4 pre-analysis via BasicValidator ----
+  local d4_pre="{}"
+  d4_pre=$(node -e "
+    const {BasicValidator} = require('$SC_DIR/lib/basic-validator.js');
+    const r = new BasicValidator().validateBasics('$skill_path');
+    console.log(JSON.stringify({
+      wordCount: r.wordCount, lineCount: r.lineCount,
+      complexity: r.complexity,
+      codeBlockCount: r.codeBlocks.length,
+      hasPowerfulTools: r.hasTools.hasPowerfulTools,
+      hasNetworkTools: r.hasTools.hasNetworkTools
+    }));
+  " 2>/dev/null || echo '{}')
+
+  # Extract D2 trigger type for prompt context
+  local d2_trigger_type="unknown"
+  d2_trigger_type=$(echo "$d2_result" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{console.log(JSON.parse(d).trigger_type||'unknown')}catch{console.log('unknown')}})" 2>/dev/null || echo 'unknown')
+
+  # ---- Phase 2: LLM evaluation — lib results + prompt semantic analysis ----
   EVAL_PROMPT="You are running SkillCompass evaluation.
 
 Working directory: $SC_DIR
@@ -100,39 +137,57 @@ Please evaluate the following skill using /eval-skill with --scope full --format
 
 The skill is located at: $skill_path
 
-## DETERMINISTIC VALIDATOR RESULTS (MANDATORY)
+## DETERMINISTIC VALIDATOR RESULTS
 
-The following scores were produced by deterministic rule-based validators.
-These are FLOOR scores — your final D1/D2/D3 scores MUST NOT be higher than these.
-You MAY lower them further if you find additional issues the validators missed.
-
-### D1 Structure (validator score: ${d1_score}/10)
-Issues found: ${d1_issues}
-
-### D2 Trigger (validator score: ${d2_score}/10)
-(Validator checks trigger type detection, naming, description quality)
-
-### D3 Security (validator score: ${d3_score}/10, pass: ${d3_pass})
-Findings: ${d3_findings}
-IMPORTANT: If validator found critical findings (pass=false), D3 pass MUST be false.
-
-## SKILL REGISTRY FOR D6 (use directly, do not read file)
-
-${REGISTRY_CONTENT}
-
-When evaluating D6 uniqueness, use the registry above. Judge similarity by FUNCTIONAL overlap, not name overlap.
+The following were produced by local rule-based validators (regex, YAML parsing, pattern matching).
+These are confirmed facts — use them as your foundation. You add the semantic analysis layer on top.
 
 ## EVALUATION INSTRUCTIONS
 
 Steps:
 1. Read the SkillCompass SKILL.md at $SC_DIR/SKILL.md to understand the framework
 2. Read $skill_path to see the target skill
-3. For D1/D2/D3: Start from the validator scores above. Only LOWER them if you find additional issues. Do NOT raise them.
-4. For D4: Evaluate using $SC_DIR/prompts/d4-functional.md (note: new extreme few-shot examples added)
-5. For D5: Evaluate using $SC_DIR/prompts/d5-comparative.md
-6. For D6: Evaluate using $SC_DIR/prompts/d6-uniqueness.md with the registry above (note: anti-over-matching rule added)
-7. Use scoring formula from $SC_DIR/shared/scoring.md
-8. Output ONLY the final JSON result
+
+3. For D1 (Structure):
+   - Validator confirmed: score=${d1_score}/10, issues: ${d1_issues}
+   - Read $SC_DIR/prompts/d1-structure.md for the semantic rubric
+   - The validator already checked: frontmatter fields, YAML syntax, heading hierarchy, code blocks, scope boundaries
+   - YOU focus on: Progressive Disclosure assessment, overall quality judgment, few-shot calibration
+   - Final D1 score: integrate validator findings as confirmed facts with your semantic assessment
+
+4. For D2 (Trigger):
+   - Validator confirmed: score=${d2_score}/10, trigger_type=${d2_trigger_type}
+   - Read $SC_DIR/prompts/d2-trigger.md for the semantic rubric
+   - The validator already checked: trigger type detection, naming quality, rejection accuracy patterns, length
+   - YOU focus on: cross-locale evaluation, specificity judgment, trigger-type-specific quality assessment
+   - Final D2 score: integrate validator findings as confirmed facts with your semantic assessment
+
+5. For D3 (Security — GATE):
+   - Validator confirmed: score=${d3_score}/10, pass=${d3_pass}, findings: ${d3_findings}
+   - Pre-scan result: ${pre_scan_status}
+   - Read $SC_DIR/prompts/d3-security.md for severity decision trees
+   - The validator already checked: 7 L0 categories (secrets, external calls, privilege escalation, command injection, prompt injection, data exfiltration, excessive permissions)
+   - YOU focus on: applying severity decision trees to validator findings, novel risk catch-all, contextual judgment (is this a real threat or benign pattern?)
+   - CRITICAL: if validator pass=false, your pass MUST be false. You may NOT override critical findings.
+
+6. For D4 (Functional):
+   - Pre-analysis metrics: ${d4_pre}
+   - Read $SC_DIR/prompts/d4-functional.md for the full rubric
+   - The validator provided: wordCount, lineCount, complexity, codeBlockCount, tool declarations
+   - YOU do the full functional evaluation using these metrics as calibration context
+
+7. For D5: Read $SC_DIR/prompts/d5-comparative.md
+
+8. For D6: Read $SC_DIR/prompts/d6-uniqueness.md with the registry below
+
+9. Use scoring formula from $SC_DIR/shared/scoring.md
+10. Output ONLY the final JSON result
+
+## SKILL REGISTRY FOR D6 (use directly, do not read file)
+
+${REGISTRY_CONTENT}
+
+When evaluating D6 uniqueness, use the registry above. Judge similarity by FUNCTIONAL overlap, not name overlap.
 
 IMPORTANT: Output the JSON result and nothing else after the evaluation is complete.
 The JSON must include: skill_name, overall_score, verdict, scores (structure/trigger/security/functional/comparative/uniqueness each with score, details), and weakest_dimension."
@@ -232,10 +287,11 @@ Generate a fresh set of scenarios. Output ONLY the D5 JSON result with score."
         const newScore = Math.round((d1*0.10 + d2*0.15 + d3*0.20 + d4*0.30 + $d5_avg*0.15 + d6*0.10) * 10);
         parsed.overall_score_original = parsed.overall_score;
         parsed.overall_score = newScore;
-        // Re-derive verdict
+        // Re-derive verdict (matches scoring.md priority rules)
         const d3pass = s.security?.pass !== false;
+        const d3HasHigh = (s.security?.findings || []).some(f => f.severity === 'high');
         if (!d3pass || newScore < 50) parsed.verdict = 'FAIL';
-        else if (newScore < 70) parsed.verdict = 'CAUTION';
+        else if (d3HasHigh || newScore < 70) parsed.verdict = 'CAUTION';
         else parsed.verdict = 'PASS';
         fs.writeFileSync('$result_file', JSON.stringify(parsed, null, 2));
       } catch(e) {
@@ -271,6 +327,7 @@ Generate a fresh set of scenarios. Output ONLY the D5 JSON result with score."
   "d5_spread": $d5_spread,
   "d5_avg": $d5_avg,
   "validator_scores": {"d1": $d1_score, "d2": $d2_score, "d3": $d3_score},
+  "pre_scan_status": "$pre_scan_status",
   "timestamp": "$(date -Iseconds)"
 }
 TJSON
