@@ -1,4 +1,20 @@
 {
+  "name": "skill-compass",
+  "version": "1.0.0",
+  "description": "Skill evolution engine — score 6 dimensions, find the weakest link, auto-fix it, prove it worked, move to the next. Detect obsolete skills, track versions, audit at scale.",
+  "license": "MIT",
+  "author": "SkillCompass Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Evol-ai/SkillCompass.git"
+  },
+  "keywords": [
+    "skill", "evaluation", "quality", "security", "claude-code",
+    "agent", "testing", "ci-cd"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "js-yaml": "^4.1.1"
   }

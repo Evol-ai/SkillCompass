@@ -2,9 +2,9 @@
 name: skill-compass
 version: 1.0.0
 description: >
-  Skill quality evaluator — score, improve, and audit agent skills
-  with security checks, auto-fix weaknesses, version management
-  and rollback.
+  Skill evolution engine — score 6 dimensions, find the weakest link,
+  auto-fix it, prove it worked, move to the next. Detect obsolete skills,
+  track versions, audit at scale.
 commands:
   - eval-skill
   - eval-improve

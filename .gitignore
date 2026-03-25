@@ -14,3 +14,13 @@ Desktop.ini
 .vscode/
 *.code-workspace
 .claude/
+
+# Eval artifacts
+eval-results/
+eval-output/
+*.tar.gz
+*.zip
+
+# Logs
+npm-debug.log
+batch-*.log

@@ -507,4 +507,4 @@ This dual-layer design also provides **defense in depth** for security (D3): `pr
 
 ## License
 
-**AGPL-3.0** — Use, modify, distribute freely. Modifications must be open-sourced under the same license.
+**MIT** — Use, modify, distribute freely. See [LICENSE](LICENSE) for details.
