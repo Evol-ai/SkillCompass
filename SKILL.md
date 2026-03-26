@@ -120,3 +120,7 @@ From frontmatter, detect in priority order:
    - L1: re-evaluate target dimension
    - L2: full six-dimension re-evaluation
    - L3: cross-skill impact check (for composite/meta)
+
+## Security Notice
+
+This package contains regex patterns and example strings for detecting secrets, injection attacks, and malicious code (in `lib/security-validator.js`, `hooks/scripts/eval-gate.js`, `prompts/d3-security.md`). These are **detection rules for evaluating other skills**, not actual credentials or malicious code.
