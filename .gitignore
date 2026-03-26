@@ -31,4 +31,5 @@ docs/
 run-all-batches.sh
 run-batch-eval.sh
 skill-evolution-comparison-zh.md
+# Internal eval steps doc
 评测步骤.md
