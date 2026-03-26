@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="assets/skill-quality-report.png" alt="SkillCompass — Skill Quality Report" width="380" />
-</p>
-
 <h1 align="center">SkillCompass</h1>
 
 <p align="center">
@@ -128,6 +124,10 @@ Scan all skills in .claude/skills/ for security issues
 ---
 
 ## What It Does
+
+<p align="center">
+  <img src="assets/skill-quality-report.png" alt="SkillCompass — Skill Quality Report" width="520" />
+</p>
 
 The score isn't the point — **the direction is.** You instantly see which dimension is the bottleneck and what to do about it.
 
