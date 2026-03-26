@@ -62,10 +62,10 @@ git clone https://github.com/Evol-ai/SkillCompass.git
 cd SkillCompass && npm install
 
 # User-level (all projects)
-cp -r . ~/.claude/skills/skill-compass/
+rsync -a --exclude='.git' --exclude='test-fixtures' --exclude='scripts' . ~/.claude/skills/skill-compass/
 
 # Or project-level (current project only)
-cp -r . .claude/skills/skill-compass/
+rsync -a --exclude='.git' --exclude='test-fixtures' --exclude='scripts' . .claude/skills/skill-compass/
 ```
 
 > **First run:** Claude Code will request permission for `node -e` and `bash` commands. Select **"Allow always"** to avoid repeated prompts.
@@ -76,7 +76,7 @@ cp -r . .claude/skills/skill-compass/
 git clone https://github.com/Evol-ai/SkillCompass.git
 cd SkillCompass && npm install
 # Follow OpenClaw skill installation docs for your setup
-cp -r . <your-openclaw-skills-path>/skill-compass/
+rsync -a --exclude='.git' --exclude='test-fixtures' --exclude='scripts' . <your-openclaw-skills-path>/skill-compass/
 ```
 
 ---
