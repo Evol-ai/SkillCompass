@@ -51,6 +51,15 @@
             "type": ["string", "null"],
             "enum": ["structure", "trigger", "security", "functional", "comparative", "uniqueness", null]
           },
+          "dimension_scores": {
+            "type": ["object", "null"],
+            "description": "Per-dimension scores, e.g. {\"D1\":7,\"D2\":5,\"D3\":8,\"D4\":6,\"D5\":5,\"D6\":7}. Null for initial or unevaluated versions.",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10
+            }
+          },
           "correction_pattern": {
             "type": ["string", "null"],
             "description": "Brief description of what was fixed in this version"

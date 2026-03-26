@@ -67,13 +67,13 @@ function extractCommands(content) {
     const block = match[0];
     // Check if contains dangerous command patterns
     const dangerousPatterns = [
-      /(curl|wget)[^|]*\|[[:space:]]*(bash|sh|python|node)/i,
-      /base64[[:space:]]+(-d|--decode)[^|]*\|[[:space:]]*(bash|sh|eval)/i,
-      /\$\((curl|wget)[[:space:]][^)]+\)/i,
-      /nc[[:space:]]+(.*[[:space:]])?(-e|-l|-v|-p)/i,
-      /python[[:space:]]+-c[[:space:]]*["\047].*import[[:space:]]+socket/i,
+      /(curl|wget)[^|]*\|\s*(bash|sh|python|node)/i,
+      /base64\s+(-d|--decode)[^|]*\|\s*(bash|sh|eval)/i,
+      /\$\((curl|wget)\s[^)]+\)/i,
+      /nc\s+(.*\s)?(-e|-l|-v|-p)/i,
+      /python\s+-c\s*["'].*import\s+socket/i,
       /\/dev\/tcp\//i,
-      /rm[[:space:]]+-rf[[:space:]]+(\$HOME|~|\/)[[:space:]]*$/i
+      /rm\s+-rf\s+(\$HOME|~|\/)\s*$/i
     ];
     
     for (const pattern of dangerousPatterns) {
