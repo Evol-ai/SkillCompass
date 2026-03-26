@@ -6,6 +6,7 @@ description: >
   auto-fix it, prove it worked, move to the next. Detect obsolete skills,
   track versions, audit at scale.
 commands:
+  - skill-compass
   - eval-skill
   - eval-improve
   - eval-security
@@ -50,6 +51,12 @@ overall_score = round((D1×0.10 + D2×0.15 + D3×0.20 + D4×0.30 + D5×0.15 + D6
 Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 
 ## Command Dispatch
+
+### Natural Language Entry Point
+
+| Command | File | Purpose |
+|---------|------|---------|
+| /skill-compass | `commands/skill-compass.md` | Accept plain language, route to the right command automatically. |
 
 ### Essential Commands
 
