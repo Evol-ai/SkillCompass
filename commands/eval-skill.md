@@ -301,7 +301,7 @@ When `--format json` (default), include the recommendation in the JSON output:
 ```json
 {
   "action": {
-    "type": "evolve|quick_fix|rollback|merge|rebuild|remove",
+    "type": "polish|evolve|quick_fix|rollback|merge|rebuild|remove",
     "summary": "human-readable one-line recommendation",
     "command": "/eval-improve|/eval-rollback {version}|/eval-merge|null",
     "executable": true|false
