@@ -173,10 +173,43 @@ Partial evaluations do NOT update manifest scores (to avoid overwriting complete
 *Full scope only.* Based on verdict and dimension scores, output a recommended action. Follow this decision tree **in order** — the first matching branch wins:
 
 **For PASS verdict (score >= 70, D3 pass):**
+
+Check if any dimension scored below 8:
+
+If all dimensions >= 8:
 ```
 ✓ PASS (score: {score}/100)
-  No action needed. Re-evaluate after significant changes.
+  All dimensions ≥ 8. No further improvement suggested.
 ```
+
+If any dimension < 8:
+```
+✓ PASS (score: {score}/100)
+  Lowest dimension: {Dx} ({Dx_score}/10).
+  Impact: {plain-language summary of top issues from Dx evaluation — what real
+  problem users will experience if this isn't fixed}.
+  Continue improving?
+```
+
+The **Impact** line must be derived from the `issues` array of the lowest-scoring dimension. Translate technical findings into user-facing consequences:
+- D1 issues → "skill may not be discovered or activated correctly"
+- D2 issues → "users searching for this capability may not find it"
+- D3 issues → "security risk: {specific finding in plain language}"
+- D4 issues → "users may get inconsistent results when {specific edge case}"
+- D5 issues → "skill adds little value over direct prompting for {scenario}"
+- D6 issues → "overlaps significantly with {similar_skill} — may be redundant"
+
+**Polish loop rules** (applies when user chooses to continue after PASS):
+- Run `/eval-improve` targeting the lowest dimension.
+- After improvement, re-evaluate. If still PASS, repeat the check above (with updated Impact).
+- **Plateau detection:** if the same dimension fails to improve for 2 consecutive attempts, output:
+  ```
+  {Dx} ({Dx_score}/10) — improvement plateaued after 2 attempts.
+  This may be limited by the skill's inherent scope: {brief reason from issues}.
+  Continue improving other dimensions, or accept current score?
+  ```
+  If user chooses to continue, target the next-lowest dimension instead.
+- The polish loop ends when the user declines to continue.
 
 **For CAUTION verdict (score 50-69):**
 
@@ -278,7 +311,18 @@ When `--format json` (default), include the recommendation in the JSON output:
 
 `executable: true` means SkillCompass can execute the action upon user confirmation (`/eval-improve`, `/eval-rollback`, `/eval-merge`). `executable: false` means the action is a suggestion only (remove, rebuild, find alternative).
 
-For PASS verdict, set `"action": null`.
+For PASS verdict with all dimensions >= 8, set `"action": null`.
+For PASS verdict with any dimension < 8, set:
+```json
+{
+  "action": {
+    "type": "polish",
+    "summary": "{Dx} ({score}/10): {impact summary from issues}",
+    "command": "/eval-improve --dimension {Dx}",
+    "executable": true
+  }
+}
+```
 
 ### Step 20: CI Exit Code
 

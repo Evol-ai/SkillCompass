@@ -16,7 +16,7 @@ commands:
   - eval-rollback
   - eval-evolve
 metadata:
-  openclaw:
+  clawdbot:
     emoji: "🧭"
     homepage: https://github.com/Evol-ai/SkillCompass
     requires:
