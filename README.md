@@ -8,7 +8,7 @@
 
 - **What it is:** An evaluation-driven skill evolution engine for Claude Code / OpenClaw skill packages — six-dimension scoring, directed improvement, version management.
 - **Pain it solves:** Turns "tweak and hope" into diagnose → targeted fix → verified improvement.
-- **Use in 30 seconds:** `/eval-skill .claude/skills/my-skill/SKILL.md` — instant six-dimension quality report showing exactly what's weakest and what to do next.
+- **Use in 30 seconds:** `/skill-compass evaluate {skill}` — instant six-dimension quality report showing exactly what's weakest and what to improve next.
 
 > Find the weakest link → fix it → prove it worked → next weakness → repeat.
 
@@ -44,9 +44,9 @@ git clone https://github.com/Evol-ai/SkillCompass.git
 cd SkillCompass && npm install
 
 # 2. Install to user-level (all projects) or project-level (current project only)
-cp -r SkillCompass/ ~/.claude/skills/SkillCompass/
+cp -r . ~/.claude/skills/skill-compass/
 # or
-cp -r SkillCompass/ .claude/skills/SkillCompass/
+cp -r . .claude/skills/skill-compass/
 ```
 
 > First run will ask permission for `node -e` and `bash`. Select "Allow always".
@@ -56,9 +56,8 @@ cp -r SkillCompass/ .claude/skills/SkillCompass/
 ```bash
 git clone https://github.com/Evol-ai/SkillCompass.git
 cd SkillCompass && npm install
-mkdir -p ~/.openclaw/workspace/skills/skill-compass
-cp -r ./* ~/.openclaw/workspace/skills/skill-compass/
-openclaw gateway restart
+# Follow OpenClaw skill installation docs for your setup
+cp -r . <your-openclaw-skills-path>/skill-compass/
 ```
 
 ### Usage
@@ -105,8 +104,6 @@ Scan all skills in .claude/skills/ for security issues
 
 ## What It Does
 
-![SkillCompass — Skill Quality Report](assets/skill-quality-report.png)
-
 The score isn't the point — **the direction is.** You instantly see which dimension is the bottleneck and what to do about it.
 
 Each `/eval-improve` round follows a closed loop: **fix the weakest → re-evaluate → verify improvement → next weakest**. No fix is saved unless the re-evaluation confirms it actually helped.
@@ -118,8 +115,8 @@ Each `/eval-improve` round follows a closed loop: **fix the weakest → re-evalu
 | ID | Dimension | Weight | What it evaluates |
 |----|-----------|--------|-------------------|
 | D1 | Structure | 10% | Frontmatter validity, markdown format, declarations |
-| D2 | Trigger | 15% | Activation quality — command, hook, glob, or description triggers |
-| D3 | Security | 20% | Gate dimension — secrets, injection, permissions, exfiltration. Critical = auto FAIL |
+| D2 | Trigger | 15% | Activation quality, rejection accuracy, discoverability |
+| D3 | Security | 20% | Secrets, injection, permissions, exfiltration |
 | D4 | Functional | 30% | Core quality, edge cases, output stability, error handling |
 | D5 | Comparative | 15% | Value over direct prompting (with vs without skill) |
 | D6 | Uniqueness | 10% | Overlap with similar skills, model supersession risk |
@@ -128,7 +125,7 @@ Each `/eval-improve` round follows a closed loop: **fix the weakest → re-evalu
 overall_score = round((D1×0.10 + D2×0.15 + D3×0.20 + D4×0.30 + D5×0.15 + D6×0.10) × 10)
 ```
 
-- **PASS:** score >= 70 AND D3 pass
+- **PASS:** score ≥ 70 AND D3 pass
 - **CAUTION:** 50–69, or D3 High findings
 - **FAIL:** score < 50, or D3 Critical (gate override)
 
@@ -142,7 +139,7 @@ overall_score = round((D1×0.10 + D2×0.15 + D3×0.20 + D4×0.30 + D5×0.15 + D6
 - **Closed-Loop Improve.** `/eval-improve` auto re-evaluates after each fix. Only saves if the target improved and nothing regressed. Fails? Auto-discard.
 - **Scope Control.** `--scope gate` = D1+D3 only (~8K tokens). `--scope target --dimension D4` = single dimension + security gate. Full eval when you need the whole picture.
 - **Tiered Verification.** Edit scope auto-classified: L0 syntax → L1 single dimension → L2 full re-eval → L3 cross-skill. Small edits get quick checks.
-- **D1+D2 Grouping.** Both metadata dimensions weak (<=5)? Improved together in one round — they share the frontmatter layer.
+- **D1+D2 Grouping.** Both metadata dimensions are weak (≤5)? Improved together in one round — they share the frontmatter layer.
 
 ### Safety
 
@@ -196,4 +193,4 @@ Signals include: `trigger_accuracy`, `correction_count`, `correction_patterns`, 
 
 ## License
 
-**MIT** — Use, modify, distribute freely. No requirement to open-source modifications. See [LICENSE](LICENSE) for details.
+**MIT** — Use, modify, distribute freely. See [LICENSE](LICENSE) for details.
