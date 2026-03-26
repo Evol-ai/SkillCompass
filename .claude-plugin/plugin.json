@@ -1,11 +1,15 @@
 {
   "name": "skill-compass",
   "version": "1.0.0",
-  "description": "Evaluation-driven skill evolution engine — six-dimension quality assessment, targeted improvement, and version management for AI agent skills",
+  "description": "Skill evolution engine — score 6 dimensions, find the weakest link, auto-fix it, prove it worked, move to the next. Detect obsolete skills, track versions, audit at scale.",
   "author": {
-    "name": "AI Symbiote"
+    "name": "SkillCompass"
   },
-  "homepage": "https://github.com/AIsymbiote/skill-compass",
-  "license": "AGPL-3.0",
-  "keywords": ["evaluation", "skill-quality", "security-audit", "evolution", "version-management"]
+  "homepage": "https://github.com/Evol-ai/SkillCompass",
+  "license": "MIT",
+  "keywords": [
+    "evaluation", "skill-quality", "security-audit", "evolution",
+    "version-management", "code-review", "skill-testing", "quality-gate",
+    "ci-cd", "linting", "skill-improvement", "auto-fix"
+  ]
 }

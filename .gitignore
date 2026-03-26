@@ -14,3 +14,20 @@ Desktop.ini
 .vscode/
 *.code-workspace
 .claude/
+
+# Eval artifacts
+eval-results/
+eval-output/
+*.tar.gz
+*.zip
+
+# Logs
+npm-debug.log
+batch-*.log
+
+# Internal docs and scripts (not part of product)
+CLAUDE.md
+docs/
+run-all-batches.sh
+run-batch-eval.sh
+skill-evolution-comparison-zh.md

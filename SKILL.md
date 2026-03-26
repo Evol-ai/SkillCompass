@@ -2,17 +2,9 @@
 name: skill-compass
 version: 1.0.0
 description: >
-  Evaluate and improve your skills — six-dimension quality scoring
-  (structure, trigger, security, function, value, uniqueness),
-  targeted improvement that fixes the weakest dimension,
-  security audit with built-in checks, version snapshots with rollback.
-  Works as a quality gate for Auto-Updater, Claudeception, and
-  Self-Improving Agent outputs.
-  Use when you need to: assess skill quality, check skill security,
-  improve a weak skill, audit all installed skills, compare versions,
-  merge upstream updates, or rollback a broken change.
-  Not for: general code review, runtime debugging, creating new skills
-  from scratch, or evaluating non-skill files.
+  Skill evolution engine — score 6 dimensions, find the weakest link,
+  auto-fix it, prove it worked, move to the next. Detect obsolete skills,
+  track versions, audit at scale.
 commands:
   - eval-skill
   - eval-improve

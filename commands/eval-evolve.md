@@ -8,7 +8,9 @@
 
 ## Prerequisites
 
-This command requires the **ralph-wiggum** plugin. If not installed:
+- **Recommended model: Claude Opus 4.6** (`claude-opus-4-6`). Multi-round evolution requires consistent scoring across iterations to detect genuine improvements vs noise. Weaker models may cause the evolution loop to oscillate rather than converge.
+
+- This command requires the **ralph-wiggum** plugin. If not installed:
 
 ```
 claude plugin install ralph-wiggum@claude-code-plugins

@@ -37,6 +37,14 @@ source for similarity analysis.
 If `{KNOWN_SKILLS}` was provided by the caller, merge it with the registry (deduplicate by name).
 If `{KNOWN_SKILLS}` is empty or null, use the registry alone. Do NOT skip similarity analysis.
 
+**If the registry is injected in the prompt below as `SKILL_REGISTRY_CONTENT`, use that directly instead of reading the file.**
+
+### Anti-Over-Matching Rule
+
+Similarity MUST be judged by **functional overlap** (does it do the same thing?), NOT by name or description keyword overlap. Two skills named "code-review" and "code-reviewer" may have 0% functional overlap if one reviews PRs and the other lints CSS. Conversely, skills with different names may have high overlap if they solve the same problem.
+
+Example: "docker" and "docker-compose" — name overlap ~50%, but functional overlap only 15% (one manages individual containers, the other orchestrates multi-service stacks). Correct overlap: 15%, not 50%.
+
 Additional sources (if accessible):
 1. **Project skills**: `.claude/skills/**/SKILL.md` in the project root
 2. **User skills**: `~/.claude/skills/**/SKILL.md`
@@ -212,6 +220,47 @@ description: Provides clean code principles and naming conventions for any progr
   }
 }
 ```
+
+### Example C: Name-Similar But Functionally Different (Score 7)
+
+**Input skill excerpt:**
+```yaml
+---
+name: docker-compose
+description: >
+  Docker Compose management for multi-service stacks. Create, validate,
+  and manage docker-compose.yml files. Start/stop service groups,
+  check health, and manage volumes across services.
+commands:
+  - compose-up
+  - compose-validate
+---
+```
+
+**Known skills:** `[{"name": "docker", "description": "Docker container management — build, run, stop, inspect individual containers"}]`
+
+**Output:**
+```json
+{
+  "dimension": "D6",
+  "dimension_name": "uniqueness",
+  "score": 7,
+  "max": 10,
+  "details": "Despite similar naming, functional overlap with 'docker' skill is only 15%. This skill manages multi-service orchestration (compose files, service groups, cross-service health), while 'docker' manages individual containers. Different abstraction level, different use cases. Low obsolescence risk due to tool integration.",
+  "sub_scores": {},
+  "issues": [],
+  "metadata": {
+    "similar_skills": [
+      { "name": "docker", "overlap_percentage": 15 }
+    ],
+    "supersession_risk": "low",
+    "modifiers_applied": ["+1 tool-integration"],
+    "registry_available": true
+  }
+}
+```
+
+Note: Name overlap ("docker" appears in both) does NOT imply functional overlap. The 15% overlap reflects only shared basic container operations.
 
 ## Required Output
 

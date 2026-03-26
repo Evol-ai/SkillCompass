@@ -2,6 +2,10 @@
 
 **🚀 Enhanced with Local Validators**: This command now uses local JavaScript validators for D1, D2, and D3 dimensions to significantly reduce token consumption while maintaining evaluation quality. Complex reasoning tasks (D4, D5, D6) continue to use LLM evaluation with local pre-analysis.
 
+## Prerequisites
+
+- **Recommended model: Claude Opus 4.6** (`claude-opus-4-6`). The 6-dimension rubric requires complex multi-dimensional reasoning, nuanced security analysis, and consistent scoring across dimensions. Sonnet and Haiku may produce inconsistent dimension scores, miss subtle security findings in D3, and generate unreliable D5 comparative assessments. If not using an Opus-class model, treat results as approximate.
+
 ## Arguments
 
 - `<path>` (required): Path to the SKILL.md file to evaluate.
@@ -24,7 +28,13 @@
 
 ### Step 1: Load Target
 
-Parse arguments. Use the **Read** tool to load the target SKILL.md file. Parse YAML frontmatter.
+Parse arguments. Check current model — if not an Opus-class model, output a warning:
+```
+⚠ Warning: Current model is {model_name}. For reliable 6D evaluation, Claude Opus 4.6 is recommended. Results may be less consistent with other models.
+```
+Continue with evaluation regardless.
+
+Use the **Read** tool to load the target SKILL.md file. Parse YAML frontmatter.
 
 ### Step 2: Pre-Processing Analysis
 
@@ -158,18 +168,119 @@ Output to stdout. If `--format md` or `--format all`: use the **Write** tool to 
 
 Partial evaluations do NOT update manifest scores (to avoid overwriting complete evaluations with partial data).
 
-### Step 18: First-Run Guidance
+### Step 18: Action Recommendation
 
-If this is the first evaluation for this skill (manifest was just created in Step 17), append guidance to the output:
+*Full scope only.* Based on verdict and dimension scores, output a recommended action. Follow this decision tree **in order** — the first matching branch wins:
 
+**For PASS verdict (score >= 70, D3 pass):**
 ```
-First evaluation complete. Next steps:
-  - Score < 70? Run /eval-improve to fix the weakest dimension
-  - D3 FAIL?    /eval-improve will target security first
-  - Score >= 70? Your skill passes. Re-evaluate after significant changes.
+✓ PASS (score: {score}/100)
+  No action needed. Re-evaluate after significant changes.
 ```
 
-### Step 19: CI Exit Code
+**For CAUTION verdict (score 50-69):**
+
+Check if only one dimension is dragging the score down (one dim <= 4, all others >= 6):
+```
+⚠ CAUTION (score: {score}/100)
+  Only {Dx} is below threshold ({Dx_score}/10).
+  Quick fix: /eval-improve --scope target --dimension {Dx}
+```
+
+Otherwise (multiple dimensions in the 4-5 range):
+```
+⚠ CAUTION (score: {score}/100)
+  Multiple dimensions need improvement. Weakest: {Dx}.
+  Recommended: /eval-improve
+```
+
+If D5 delta < 0.1 (marginal value), add a note:
+```
+  Note: D5 comparative value is marginal ({delta}). Consider whether this skill is worth maintaining.
+```
+
+**For FAIL verdict (score < 50):**
+
+Evaluate in this order:
+
+1. **Check for regression** (manifest has a previous version with verdict=PASS):
+```
+✗ FAIL (score: {score}/100) — Regression detected (was PASS at v{X.Y.Z})
+  Options:
+    1. /eval-rollback {version} — restore last passing version
+    2. /eval-improve — fix current version
+```
+
+2. **Check D5 value** (D5 delta < 0):
+```
+✗ FAIL (score: {score}/100)
+  D5 analysis: this skill degrades agent performance (delta: {delta}).
+  Recommended: remove this skill. Prompting the LLM directly produces better results.
+```
+
+3. **Check D5 marginal + D6 low** (D5 delta < 0.1 AND D6 <= 2):
+```
+✗ FAIL (score: {score}/100)
+  D5 value is marginal ({delta}) and D6 uniqueness is very low ({D6_score}/10).
+  The LLM's native capabilities already cover this skill's purpose.
+  Recommended: remove this skill.
+```
+
+4. **Check D6 high overlap** (D6 similar_skills has entry with overlap > 60% AND that skill scores higher):
+```
+✗ FAIL (score: {score}/100)
+  D6 found a better alternative: {similar_skill_name} ({overlap}% overlap, score: {their_score}).
+  Recommended: /eval-merge — merge unique parts into the existing skill.
+  Install alternative: claude install {similar_skill_name}
+```
+
+5. **Check rebuild threshold** (4+ dimensions scored <= 2, OR D3 has 5+ Critical findings):
+```
+✗ FAIL (score: {score}/100)
+  Too many fundamental issues ({N} dimensions scored ≤ 2) for incremental improvement.
+  Options:
+    1. Find an alternative skill on ClawHub or the skill registry
+    2. Create a new skill from scratch: /skill-creator create
+    3. Remove this skill if it's not essential
+```
+
+6. **Check D3 gate failure** (D3 pass = false, but skill has value):
+```
+✗ FAIL (score: {score}/100) — Security gate failure
+  {N} critical security finding(s) must be fixed first.
+  Recommended: /eval-improve — security will be addressed in round 1.
+```
+
+7. **Default FAIL** (has value, fixable):
+```
+✗ FAIL (score: {score}/100)
+  Weakest dimension: {Dx} ({Dx_score}/10).
+  Recommended: /eval-improve — estimated {N} rounds to reach PASS.
+```
+  Estimate rounds as: count of dimensions scoring below 5, minimum 1, maximum 5.
+
+**Important:** Actions that SkillCompass executes upon user confirmation: `/eval-improve`, `/eval-rollback`, `/eval-merge`. All other recommendations (remove, install alternative, /skill-creator) are suggestions only — the user must execute them independently.
+
+### Step 19: Action Field in JSON Output
+
+When `--format json` (default), include the recommendation in the JSON output:
+
+```json
+{
+  "action": {
+    "type": "evolve|quick_fix|rollback|merge|rebuild|remove",
+    "summary": "human-readable one-line recommendation",
+    "command": "/eval-improve|/eval-rollback {version}|/eval-merge|null",
+    "executable": true|false
+  }
+}
+```
+
+`executable: true` means SkillCompass can execute the action upon user confirmation (`/eval-improve`, `/eval-rollback`, `/eval-merge`). `executable: false` means the action is a suggestion only (remove, rebuild, find alternative).
+
+For PASS verdict, set `"action": null`.
+
+### Step 20: CI Exit Code
 
 If `--ci` flag is set, exit with:
 - `0` if verdict is PASS

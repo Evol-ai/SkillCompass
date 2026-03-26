@@ -9,9 +9,18 @@
     "skill_name": { "type": "string" },
     "skill_path": { "type": "string" },
     "skill_type": { "type": "string", "enum": ["atom", "composite", "meta"] },
+    "partial": {
+      "type": "boolean",
+      "description": "True when scope is not full (gate or target). Absent or false for full evaluations."
+    },
+    "evaluated_dimensions": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["D1", "D2", "D3", "D4", "D5", "D6"] },
+      "description": "List of dimensions actually evaluated. Present only when partial is true."
+    },
     "scores": {
       "type": "object",
-      "required": ["structure", "trigger", "security", "functional", "comparative", "uniqueness"],
+      "description": "All six dimensions required for full evaluation. For partial evaluations, only evaluated dimensions are present.",
       "properties": {
         "structure": {
           "type": "object",
@@ -161,11 +170,40 @@
       }
     },
     "overall_score": { "type": "integer", "minimum": 0, "maximum": 100 },
-    "verdict": { "type": "string", "enum": ["PASS", "CAUTION", "FAIL"] },
-    "weakest_dimension": { "type": "string", "enum": ["structure", "trigger", "security", "functional", "comparative", "uniqueness"] },
+    "verdict": {
+      "type": "string",
+      "enum": ["PASS", "CAUTION", "FAIL", "PASS (partial)", "CAUTION (partial)", "FAIL (partial)"]
+    },
+    "weakest_dimension": {
+      "type": ["string", "null"],
+      "enum": ["structure", "trigger", "security", "functional", "comparative", "uniqueness", null],
+      "description": "Lowest-scored dimension. Null when only gate scope evaluated."
+    },
     "recommendations": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "action": {
+      "type": ["object", "null"],
+      "description": "Recommended next action based on verdict. Null for PASS verdict.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["evolve", "quick_fix", "rollback", "merge", "rebuild", "remove"]
+        },
+        "summary": {
+          "type": "string",
+          "description": "Human-readable one-line recommendation"
+        },
+        "command": {
+          "type": ["string", "null"],
+          "description": "Executable command (e.g., /eval-improve), or null for suggestion-only actions"
+        },
+        "executable": {
+          "type": "boolean",
+          "description": "True if SkillCompass can execute the action upon user confirmation"
+        }
+      }
     },
     "metadata": {
       "type": "object",

@@ -21,6 +21,13 @@ EXIT_CODE=0
 BLOCK_FOUND=false
 WARN_FOUND=false
 
+# Strip inline backticks to avoid false positives on documentation references
+# like `curl|wget|bash`. Fenced code blocks are NOT stripped — in skills they
+# often contain actual executable instructions that should be scanned.
+# CONTENT_STRIPPED is used for pattern matching; original CONTENT preserved
+# for line-number lookups and prompt-injection byte scanning.
+CONTENT_STRIPPED=$(echo "$CONTENT" | sed 's/`[^`]*`//g')
+
 # Helper function to calculate line numbers
 get_line_number() {
     local pattern="$1"
@@ -55,7 +62,7 @@ check_malicious_code() {
     )
     
     for i in "${!patterns[@]}"; do
-        if echo "$CONTENT" | grep -qE "${patterns[$i]}"; then
+        if echo "$CONTENT_STRIPPED" | grep -qE "${patterns[$i]}"; then
             local line=$(get_line_number "${patterns[$i]}" "$CONTENT")
             echo "[BLOCK] malicious_code: ${descriptions[$i]} (line ~$line)" >&2
             BLOCK_FOUND=true
@@ -72,7 +79,7 @@ check_data_exfiltration() {
         '(echo|cat|printf).*>>.*/authorized_keys'
         'ANTHROPIC_API_KEY|OPENAI_API_KEY|AWS_SECRET_ACCESS_KEY|AWS_ACCESS_KEY_ID'
     )
-    
+
     local descriptions=(
         "Reading and sending .env file"
         "Reading SSH private keys"
@@ -80,9 +87,9 @@ check_data_exfiltration() {
         "Modifying authorized_keys"
         "Direct reference to sensitive API keys"
     )
-    
+
     for i in "${!patterns[@]}"; do
-        if echo "$CONTENT" | grep -qE "${patterns[$i]}"; then
+        if echo "$CONTENT_STRIPPED" | grep -qE "${patterns[$i]}"; then
             local line=$(get_line_number "${patterns[$i]}" "$CONTENT")
             echo "[BLOCK] data_exfiltration: ${descriptions[$i]} (line ~$line)" >&2
             BLOCK_FOUND=true
@@ -92,12 +99,12 @@ check_data_exfiltration() {
 
 # 1c. Prompt injection marker detection
 check_prompt_injection_markers() {
-    # Use Python to detect invisible characters
-    python3 -c "
+    # Use Python to detect invisible characters — content passed via stdin to avoid shell injection
+    cat "$SKILL_PATH" | python3 -c "
 import sys
 import re
 
-content = '''$CONTENT'''
+content = sys.stdin.read()
 
 # ASCII control characters
 ascii_control = re.findall(r'[\x00-\x08\x0e-\x1f\x7f]', content)
@@ -143,7 +150,7 @@ check_known_malicious_domains() {
         local patterns=$(grep "pattern:" "$signatures_file" | sed 's/.*pattern:[[:space:]]*"\(.*\)"/\1/')
         
         while IFS= read -r pattern; do
-            if [[ -n "$pattern" ]] && echo "$CONTENT" | grep -qE "$pattern"; then
+            if [[ -n "$pattern" ]] && echo "$CONTENT_STRIPPED" | grep -qE "$pattern"; then
                 local line=$(get_line_number "$pattern" "$CONTENT")
                 echo "[BLOCK] known_malicious_domain: Pattern '$pattern' matched (line ~$line)" >&2
                 BLOCK_FOUND=true
@@ -154,13 +161,13 @@ check_known_malicious_domains() {
 
 # 1e. High entropy string detection
 check_high_entropy_strings() {
-    python3 -c "
+    cat "$SKILL_PATH" | python3 -c "
 import sys
 import re
 import math
 from collections import Counter
 
-content = '''$CONTENT'''
+content = sys.stdin.read()
 
 def calculate_shannon_entropy(s):
     if not s:
