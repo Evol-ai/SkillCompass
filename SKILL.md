@@ -3,8 +3,8 @@ name: skill-compass
 version: 1.0.0
 description: >
   Skill evolution engine — score 6 dimensions, find the weakest link,
-  auto-fix it, prove it worked, move to the next. Detect obsolete skills,
-  track versions, audit at scale.
+  auto-fix it, prove it worked, repeat. Detect obsolescence, track
+  versions, audit at scale.
 commands:
   - skill-compass
   - eval-skill
