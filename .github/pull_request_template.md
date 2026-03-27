@@ -21,7 +21,7 @@ Fixes #<!-- issue number -->
 
 - [ ] No secrets or credentials in the diff
 - [ ] Conventional commit messages (`fix:`, `feat:`, `docs:`, `refactor:`, `chore:`)
-- [ ] PR targets `dev` branch (not `main`)
+- [ ] Feature and fix PRs target `dev`; only release PRs from `dev` or `release/*` target `main`
 - [ ] Self-reviewed the diff before submitting
 - [ ] Changes to `prompts/` or `lib/` have been tested with at least one real /eval-skill run
 

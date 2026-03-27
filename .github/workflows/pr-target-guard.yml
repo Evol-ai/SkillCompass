@@ -1,0 +1,31 @@
+name: PR Target Guard
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  enforce-base-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR base branch
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          echo "Base branch: ${BASE_REF}"
+          echo "Head branch: ${HEAD_REF}"
+
+          if [ "${BASE_REF}" = "dev" ]; then
+            exit 0
+          fi
+
+          if [ "${BASE_REF}" = "main" ] && { [ "${HEAD_REF}" = "dev" ] || [[ "${HEAD_REF}" == release/* ]]; }; then
+            exit 0
+          fi
+
+          echo "::error title=Wrong base branch::Open feature and fix pull requests against 'dev'. Only release pull requests from 'dev' or 'release/*' may target 'main'."
+          exit 1

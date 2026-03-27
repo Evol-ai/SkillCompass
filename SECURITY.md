@@ -2,6 +2,17 @@
 
 SkillCompass is a **security evaluation tool** — like antivirus software that must read files to scan them, SkillCompass must read, analyze, and sometimes modify skill files to evaluate and improve their quality. The behaviors described below are **intentional product features with built-in safeguards**, not security risks.
 
+## Reporting a Vulnerability
+
+If you believe you have found a vulnerability in SkillCompass itself, **do not open a public issue**.
+
+Use GitHub's private vulnerability reporting flow:
+- [Report a vulnerability](https://github.com/Evol-ai/SkillCompass/security/advisories/new)
+- Include the affected branch or version, reproduction steps, impact, and any proposed mitigation
+- We will use the private advisory thread to coordinate triage and remediation updates
+
+If your report is about an insecure third-party skill evaluated by SkillCompass, report it to that skill's maintainer instead of this repository.
+
 ## Zero Network Activity
 
 SkillCompass makes **no network calls whatsoever**. All evaluation, validation, and improvement happens entirely on the local machine. No data is transmitted, no remote endpoints are contacted, no telemetry is collected. The only external dependency is Node.js (for local JavaScript validators).

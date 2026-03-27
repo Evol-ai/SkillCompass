@@ -29,13 +29,10 @@ npm install
 ### Run tests locally
 
 ```bash
-# Syntax check all validators
-for f in lib/*.js hooks/scripts/*.js; do node -c "$f"; done
-
-# Security validator smoke test
-node -e "const {SecurityValidator}=require('./lib/security-validator.js'); \
-  console.log(new SecurityValidator().validate('test-fixtures/benign-normal-skill/SKILL.md').pass)"
+npm run verify:local
 ```
+
+This command is cross-platform and works in macOS, Linux, PowerShell, and Codespaces.
 
 ### Project structure
 
@@ -55,7 +52,7 @@ test-fixtures/  — 25 test skills (benign, malicious, edge cases)
 2. **Make changes** — keep them focused (one concern per PR)
 3. **Test** — run the syntax checks and smoke tests above
 4. **Commit** — use conventional commits: `fix:`, `feat:`, `docs:`, `refactor:`, `chore:`
-5. **Open PR** against `dev` branch (not `main`)
+5. **Open PR** against `dev` branch for normal work. Only release PRs from `dev` or `release/*` should target `main`.
 6. **Describe** what changed and why
 
 ### PR Checklist
@@ -73,7 +70,7 @@ test-fixtures/  — 25 test skills (benign, malicious, edge cases)
 
 ## Reporting Security Issues
 
-If you find a security vulnerability in SkillCompass itself (not in a skill being evaluated), please email the maintainers instead of opening a public issue. See [SECURITY.md](SECURITY.md) for the trust model.
+If you find a security vulnerability in SkillCompass itself (not in a skill being evaluated), use GitHub's private vulnerability reporting flow instead of opening a public issue. See [SECURITY.md](SECURITY.md) for the reporting link and trust model.
 
 ## License
 

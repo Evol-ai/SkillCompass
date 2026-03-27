@@ -12,6 +12,9 @@
     "skill", "evaluation", "quality", "security", "claude-code",
     "agent", "testing", "ci-cd"
   ],
+  "scripts": {
+    "verify:local": "node scripts/tests/verify-local.js"
+  },
   "engines": {
     "node": ">=18.0.0"
   },

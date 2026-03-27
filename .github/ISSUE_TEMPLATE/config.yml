@@ -3,6 +3,9 @@ contact_links:
   - name: Documentation
     url: https://github.com/Evol-ai/SkillCompass/blob/main/README.md
     about: Read the README for usage, commands, and scoring
+  - name: Report a security vulnerability privately
+    url: https://github.com/Evol-ai/SkillCompass/security/advisories/new
+    about: Use GitHub private vulnerability reporting instead of opening a public issue
   - name: Security Trust Model
     url: https://github.com/Evol-ai/SkillCompass/blob/main/SECURITY.md
     about: Understand how SkillCompass handles files, hooks, and permissions
