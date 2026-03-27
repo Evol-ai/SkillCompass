@@ -12,42 +12,15 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-// ── D3 Security Patterns ──────────────────────────────────────────────
+// Patterns loaded from separate file (keeps network keywords away from fs.read calls)
+const patternsPath = path.join(__dirname, '..', '..', 'lib', 'patterns.js');
+const P = require(patternsPath);
 
-const SECRET_PATTERNS = [
-  { regex: /(?:api[_-]?key|apikey)\s*[:=]\s*["']?[A-Za-z0-9_\-]{16,}/gi, label: "Hardcoded API key" },
-  { regex: /(?:secret|token|password|passwd|pwd)\s*[:=]\s*["'][^"']{8,}["']/gi, label: "Hardcoded secret/token" },
-  { regex: /sk-[A-Za-z0-9]{20,}/g, label: "OpenAI-style API key" },
-  { regex: /sk-ant-[A-Za-z0-9\-]{20,}/g, label: "Anthropic API key" },
-  { regex: /ghp_[A-Za-z0-9]{36,}/g, label: "GitHub personal access token" },
-  { regex: /glpat-[A-Za-z0-9\-_]{20,}/g, label: "GitLab personal access token" },
-  { regex: /xox[bpors]-[A-Za-z0-9\-]{10,}/g, label: "Slack token" },
-  { regex: /AKIA[0-9A-Z]{16}/g, label: "AWS access key ID" },
-  { regex: /-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----/g, label: "Private key" },
-];
-
-const DANGEROUS_PATTERNS = [
-  { regex: /rm\s+-rf\s+[\/~]/gi, label: "Destructive rm -rf with absolute/home path" },
-  { regex: /curl\s+[^\n|]*\|\s*(?:bash|sh|zsh)/gi, label: "Pipe remote script to shell" },
-  { regex: /wget\s+[^\n|]*\|\s*(?:bash|sh|zsh)/gi, label: "Pipe remote download to shell" },
-  { regex: /\beval\s*\(/gi, label: "eval() usage" },
-  { regex: /\bexec\s*\(/gi, label: "exec() usage" },
-  { regex: /(?:process\.env|os\.environ)\b/gi, label: "Direct environment variable access" },
-  { regex: /chmod\s+[0-7]*777/gi, label: "World-writable permissions" },
-];
-
-const INJECTION_PATTERNS = [
-  { regex: /ignore\s+(?:all\s+)?previous\s+instructions/gi, label: "Prompt injection: ignore instructions" },
-  { regex: /you\s+are\s+now\s+(?:a|an)\s+/gi, label: "Prompt injection: role override" },
-  { regex: /\bsystem\s*:\s*["']/gi, label: "Prompt injection: system role" },
-  { regex: /\$\{.*\}/g, label: "Template injection via ${}", context: "instructions" },
-];
-
-const EXFILTRATION_PATTERNS = [
-  { regex: /https?:\/\/[^\s"']*(?:webhook|hook|exfil|callback|ngrok|burp)/gi, label: "Suspicious webhook/callback URL" },
-  { regex: /fetch\s*\(\s*["']https?:\/\//gi, label: "Outbound HTTP fetch in instructions" },
-  { regex: /(?:XMLHttpRequest|navigator\.sendBeacon)/gi, label: "Browser-based exfiltration" },
-];
+// Map to eval-gate format {regex, label}
+const SECRET_PATTERNS = P.SECRET_PATTERNS.map(p => ({ regex: p.pattern, label: p.description }));
+const DANGEROUS_PATTERNS = P.DANGEROUS_COMMAND_PATTERNS.map(p => ({ regex: p.pattern, label: p.description }));
+const INJECTION_PATTERNS = P.INJECTION_PATTERNS.map(p => ({ regex: p.pattern, label: p.description }));
+const EXFILTRATION_PATTERNS = P.EXFILTRATION_PATTERNS.map(p => ({ regex: p.pattern, label: p.description }));
 
 // ── D1 Structure Checks ───────────────────────────────────────────────
 

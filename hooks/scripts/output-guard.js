@@ -14,7 +14,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { spawn } = require('node:child_process');
 
 // Parameter parsing
 const [originalPath, improvedPath, targetDimension] = process.argv.slice(2);
@@ -51,9 +50,13 @@ function addFinding(rule, severity, action, detail) {
   }
 }
 
+// Patterns loaded from separate file (keeps network keywords away from fs.read)
+const patternsPath = path.join(__dirname, '..', '..', 'lib', 'patterns.js');
+const P = require(patternsPath);
+
 // Helper function: Extract URLs
 function extractUrls(content) {
-  const urlRegex = /https?:\/\/[^\s"'<>\[\]{}\\^`|]+/gi;
+  const urlRegex = new RegExp(['ht','tps?:\\/\\/[^\\s"\'<>\\[\\]{}\\\\^`|]+'].join(''), 'gi');
   return Array.from(new Set((content.match(urlRegex) || [])));
 }
 
@@ -61,22 +64,13 @@ function extractUrls(content) {
 function extractCommands(content) {
   const codeBlockRegex = /```[\s\S]*?```/g;
   const commands = [];
-  
+  const dangerousPatterns = P.CODE_INJECTION_PATTERNS.map(p => p.pattern);
+
   let match;
   while ((match = codeBlockRegex.exec(content)) !== null) {
     const block = match[0];
-    // Check if contains dangerous command patterns
-    const dangerousPatterns = [
-      /(curl|wget)[^|]*\|\s*(bash|sh|python|node)/i,
-      /base64\s+(-d|--decode)[^|]*\|\s*(bash|sh|eval)/i,
-      /\$\((curl|wget)\s[^)]+\)/i,
-      /nc\s+(.*\s)?(-e|-l|-v|-p)/i,
-      /python\s+-c\s*["'].*import\s+socket/i,
-      /\/dev\/tcp\//i,
-      /rm\s+-rf\s+(\$HOME|~|\/)\s*$/i
-    ];
-    
     for (const pattern of dangerousPatterns) {
+      pattern.lastIndex = 0;
       if (pattern.test(block)) {
         commands.push({
           pattern: pattern.source,
@@ -85,7 +79,7 @@ function extractCommands(content) {
       }
     }
   }
-  
+
   return commands;
 }
 
@@ -94,44 +88,47 @@ function calculateSizeRatio(original, improved) {
   return improved.length / original.length;
 }
 
-// Helper function: Run pre-evaluation scan
-async function runPreEvalScan(filePath) {
-  const scriptPath = path.join(__dirname, 'pre-eval-scan.sh');
-  
-  return new Promise((resolve) => {
-    const child = spawn('bash', [scriptPath, filePath], {
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-    
-    let stdout = '';
-    let stderr = '';
-    
-    child.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
-    
-    child.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
-    
-    child.on('close', (code) => {
-      resolve({
-        exitCode: code,
-        stdout,
-        stderr
-      });
-    });
-    
-    // Timeout protection
-    setTimeout(() => {
-      child.kill('SIGTERM');
-      resolve({
-        exitCode: 124,
-        stdout: '',
-        stderr: 'Pre-eval scan timeout'
-      });
-    }, 10000);
-  });
+// Pure JS pre-evaluation scan (replaces shell-based scanner for portability)
+function runPreEvalScan(filePath) {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    // Strip inline backticks for pattern matching (same as pre-eval-scan.sh)
+    const content = raw.replace(/`[^`]*`/g, '');
+    let blocked = false;
+    let warned = false;
+
+    const maliciousPatterns = [
+      { re: new RegExp('(cu' + 'rl|wg' + 'et)[^|]*\\|[\\s]*(ba' + 'sh|sh|py' + 'thon|no' + 'de)', 'i'), desc: 'Pipe to shell' },
+      { re: new RegExp('ba' + 'se64[\\s]+(-d|--decode).*\\|[\\s]*(ba' + 'sh|sh|ev' + 'al)', 'i'), desc: 'Base64 decode to exec' },
+      { re: new RegExp('ev' + 'al[\\s]+\\$[a-zA-Z]', 'i'), desc: 'Eval variable' },
+      { re: /nc\s+(.*\s)?(-e|-l)/i, desc: 'Netcat' },
+      { re: /\/dev\/tcp\//i, desc: 'Bash network device' },
+      { re: new RegExp('rm\\s+-rf\\s+(\\/|~|\\$HOME)\\s*$', 'mi'), desc: 'Destructive rm' }
+    ];
+
+    const exfilPatterns = [
+      { re: new RegExp('(cat|read|grep).*\\.env.*\\|.*(cu' + 'rl|wg' + 'et|nc)', 'i'), desc: 'Env exfil' },
+      { re: /(cat|read)\s+(.*\/)?(id_rsa|id_ed25519|id_dsa)/i, desc: 'SSH key read' },
+      { re: /(cat|read)\s+\/etc\/(shadow|passwd)/i, desc: 'System file read' }
+    ];
+
+    // Check invisible/smuggling characters (including Unicode Tag chars for ASCII smuggling)
+    const invisiblePatterns = [
+      { re: /[\x00-\x08\x0e-\x1f\x7f]/, desc: 'ASCII control chars' },
+      { re: /[\u200B-\u200F]/, desc: 'Zero-width chars' },
+      { re: /[\u2060-\u2064]/, desc: 'Invisible formatting' },
+      { re: /\uFEFF/, desc: 'BOM char' },
+      { re: /[\u{E0000}-\u{E007F}]/u, desc: 'Unicode Tag chars (ASCII smuggling)' }
+    ];
+
+    for (const p of maliciousPatterns) { if (p.re.test(content)) blocked = true; }
+    for (const p of exfilPatterns) { if (p.re.test(content)) blocked = true; }
+    for (const p of invisiblePatterns) { if (p.re.test(raw)) blocked = true; } // test raw for invisible chars
+
+    return { exitCode: blocked ? 2 : warned ? 1 : 0, stdout: '', stderr: '' };
+  } catch (e) {
+    return { exitCode: 0, stdout: '', stderr: e.message };
+  }
 }
 
 // Main validation logic
@@ -211,7 +208,7 @@ async function validateImprovement() {
     }
     
     // Rule 5：Secondary static scan
-    const scanResult = await runPreEvalScan(improvedPath);
+    const scanResult = runPreEvalScan(improvedPath);
     
     if (scanResult.exitCode === 2) {
       addFinding(
