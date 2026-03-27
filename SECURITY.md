@@ -1,74 +1,76 @@
 # Security & Trust Model
 
-SkillCompass is a security-aware evaluation tool. Some of its behaviors may appear suspicious to automated scanners but are necessary for its core function. This document explains each one.
+SkillCompass is a **security evaluation tool** — like antivirus software that must read files to scan them, SkillCompass must read, analyze, and sometimes modify skill files to evaluate and improve their quality. The behaviors described below are **intentional product features with built-in safeguards**, not security risks.
 
-## Gate-Bypass Mechanism
+## Zero Network Activity
 
-**What:** Creates `.skill-compass/.gate-bypass` with a 5-second expiry timestamp.
+SkillCompass makes **no network calls whatsoever**. All evaluation, validation, and improvement happens entirely on the local machine. No data is transmitted, no remote endpoints are contacted, no telemetry is collected. The only external dependency is Node.js (for local JavaScript validators).
 
-**Why:** When `/eval-improve` writes an improved SKILL.md, the PostToolUse hook (`eval-gate.js`) would immediately re-scan the write and emit warnings — creating a noisy loop. The bypass suppresses this for 5 seconds, then auto-expires.
+## Gate-Bypass (Temporary Hook Suppression)
 
-**Safeguards:**
-- Expires automatically (timestamp-based, not permanent)
+**What:** `/eval-improve` creates `.skill-compass/.gate-bypass` with a 5-second expiry.
+
+**Why it's necessary:** Without this, writing an improved SKILL.md triggers the eval-gate hook, which re-scans the file and emits warnings — creating an infinite loop (improve → gate fires → re-check → gate fires again). The bypass is a standard debounce mechanism.
+
+**Why it's safe:**
+- Auto-expires after 5 seconds (timestamp-based, cannot persist)
 - Only suppresses SkillCompass's own hooks, not other plugins
-- The improvement itself is validated by `output-guard.js` before writing
+- The improvement is already validated by output-guard before writing
+- Identical pattern to how linters suppress re-lint during auto-fix
 
-## File Writing
+## File Writing (SKILL.md, Manifests, Snapshots)
 
-**What:** Writes to SKILL.md, `.skill-compass/` manifests, snapshots, and corrections.
+**What:** Modifies SKILL.md and writes to `.skill-compass/` sidecar directory.
 
-**Why:** `/eval-improve` must modify the skill to fix weaknesses. `/eval-rollback` restores previous versions. Version management requires saving snapshots.
+**Why it's necessary:** An improvement tool that cannot write improvements is useless. Version management requires saving snapshots for rollback.
 
-**Safeguards:**
-- All writes are preceded by SHA-256 snapshots (rollback always available)
-- Auto-rollback triggers if any dimension drops >2 points after improvement
-- `output-guard.js` validates every improvement for URL injection, dangerous commands, and size anomalies before writing
+**Why it's safe:**
+- Every write is preceded by a SHA-256 snapshot (undo always available)
+- `output-guard.js` validates all improvements before writing — blocks new URLs, dangerous commands, and size anomalies
+- Auto-rollback if any dimension drops >2 points after improvement
+- Version history is append-only; no snapshots are ever deleted automatically
 
-## Local Script Execution
+## Local Script Execution (Node.js + Bash)
 
-**What:** Runs `node -e` to invoke JavaScript validators and `bash hooks/scripts/pre-eval-scan.sh` for static security scanning.
+**What:** Runs `node -e` for JavaScript validators and `bash pre-eval-scan.sh` for static security scanning.
 
-**Why:** Local validators (D1 Structure, D2 Trigger, D3 Security) reduce LLM token consumption by ~60% on clear-cut issues. The pre-eval scanner blocks malicious content before it reaches the LLM.
+**Why it's necessary:** Local validators handle deterministic checks (YAML structure, regex-based secret detection, trigger analysis) without consuming LLM tokens — saving ~60% on clear-cut issues. The pre-eval scanner blocks malicious patterns before they reach the LLM context.
 
-**Safeguards:**
-- All scripts are bundled in the package (no remote downloads)
-- No network calls — all validation is local
-- Scripts are read-only analysis tools, not installers
+**Why it's safe:**
+- All scripts are bundled in the package — no remote downloads, no install scripts
+- Scripts perform read-only analysis (no side effects beyond writing evaluation results)
+- Source code is fully inspectable in `lib/` and `hooks/scripts/`
 
-## Batch & CI Modes
+## Batch Auto-Fix and CI Mode
 
-**What:** `--fix` auto-improves FAIL skills. `--ci` runs without interactive prompts.
+**What:** `--fix` auto-improves failing skills. `--ci` runs without interactive prompts.
 
-**Why:** Teams need automated quality gates in CI/CD pipelines. Batch audit enables evaluating all skills in a directory.
+**Why it's necessary:** Teams need automated quality gates in CI/CD pipelines, just like `eslint --fix` or `prettier --write`.
 
-**Safeguards:**
-- `--fix` requires explicit `--budget` parameter (prevents unbounded execution)
-- `--ci` only suppresses prompts, not safety checks
-- All auto-fixes still go through output-guard validation
+**Why it's safe:**
+- `--fix` requires explicit `--budget` parameter — prevents unbounded execution
+- `--ci` suppresses prompts but not safety checks (output-guard still validates)
+- Exit codes (0/1/2) follow standard CI conventions
 
-## Autonomous Evolution
+## Autonomous Multi-Round Evolution
 
-**What:** `/eval-evolve` chains eval → improve → re-eval for multiple rounds.
+**What:** `/eval-evolve` chains evaluate → improve → re-evaluate for up to 6 rounds.
 
-**Why:** Some skills need 3-6 rounds of improvement across different dimensions to reach PASS.
+**Why it's necessary:** Complex skills often need improvements across multiple dimensions to reach PASS quality.
 
-**Safeguards:**
-- Requires user to explicitly invoke the command
-- Default max 6 iterations, configurable via `--max-iterations`
-- Requires external plugin (ralph-wiggum) — not bundled
-- Each round has the same auto-rollback protection as single-round improve
+**Why it's safe:**
+- Only runs when user explicitly invokes the command
+- Hard cap at `--max-iterations` (default 6)
+- Requires separate plugin (ralph-wiggum) — not bundled, user must install independently
+- Each round has full auto-rollback protection
 
-## Reading User Skill Directories
+## Reading Installed Skills Directory
 
-**What:** Globs `~/.claude/skills/` and `.claude/skills/` for SKILL.md files.
+**What:** Reads `~/.claude/skills/` and `.claude/skills/` for SKILL.md files.
 
-**Why:** D6 Uniqueness evaluation needs to compare against installed skills to detect overlap and redundancy.
+**Why it's necessary:** D6 Uniqueness evaluation compares the target skill against installed skills to detect overlap and redundancy — preventing users from maintaining duplicate skills.
 
-**Safeguards:**
-- Read-only — never modifies other skills
-- Only reads SKILL.md files, ignores all other file types
-- Results are used solely for scoring, not transmitted anywhere
-
-## No Network Activity
-
-SkillCompass makes zero network calls. All evaluation, validation, and improvement happens locally. The only external dependency is Node.js (for JavaScript validators).
+**Why it's safe:**
+- Strictly read-only — never modifies, deletes, or copies other skills
+- Only reads SKILL.md frontmatter for comparison, ignores all other files
+- Results used solely for local scoring, never transmitted
