@@ -21,6 +21,8 @@ metadata:
     homepage: https://github.com/Evol-ai/SkillCompass
     requires:
       bins: [node]
+    files: ["lib/*", "hooks/scripts/*", "prompts/*", "shared/*", "schemas/*"]
+    type: executable
 ---
 
 # SkillCompass
