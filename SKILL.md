@@ -125,4 +125,4 @@ From frontmatter, detect in priority order:
 
 ## Security Notice
 
-This package contains regex patterns and example strings for detecting secrets, injection attacks, and malicious code (in `lib/security-validator.js`, `hooks/scripts/eval-gate.js`, `prompts/d3-security.md`). These are **detection rules for evaluating other skills**, not actual credentials or malicious code.
+This is a **security evaluation tool** — like antivirus software, it must read and analyze files to scan them. All behaviors (file writing, local script execution, gate-bypass debounce, batch auto-fix) are intentional features with built-in safeguards. No network calls are made. See **[SECURITY.md](SECURITY.md)** for the full trust model, safeguard documentation, and rationale for each behavior.
