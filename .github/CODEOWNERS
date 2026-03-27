@@ -1,0 +1,17 @@
+# SkillCompass Code Owners
+# These owners are automatically requested for review on PRs touching their areas.
+
+# Default — all PRs
+* @krishna-505
+
+# Evaluation prompts and scoring (high impact — affects all evaluations)
+/prompts/ @krishna-505
+/shared/scoring.md @krishna-505
+
+# Security-sensitive code
+/lib/security-validator.js @krishna-505
+/lib/patterns.js @krishna-505
+/hooks/scripts/ @krishna-505
+
+# Schemas (breaking changes affect all consumers)
+/schemas/ @krishna-505

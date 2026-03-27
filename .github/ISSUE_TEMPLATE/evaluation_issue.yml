@@ -1,0 +1,63 @@
+name: Evaluation Issue
+description: Report an incorrect or questionable evaluation result
+title: "[Eval] "
+labels: [evaluation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template when SkillCompass produces a score or verdict that seems wrong for a specific skill.
+
+  - type: input
+    id: skill
+    attributes:
+      label: Skill name or path
+      placeholder: "e.g., my-skill or ./path/to/SKILL.md"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: dimension
+    attributes:
+      label: Which dimension seems wrong?
+      options:
+        - D1 Structure
+        - D2 Trigger
+        - D3 Security
+        - D4 Functional
+        - D5 Comparative
+        - D6 Uniqueness
+        - Overall score / verdict
+    validations:
+      required: true
+
+  - type: input
+    id: actual_score
+    attributes:
+      label: Score SkillCompass gave
+      placeholder: "e.g., D4 = 3/10, overall = 45"
+    validations:
+      required: true
+
+  - type: input
+    id: expected_score
+    attributes:
+      label: What you think the score should be (approximately)
+      placeholder: "e.g., D4 should be 6-7"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reasoning
+    attributes:
+      label: Why the score seems wrong
+      placeholder: Explain what the skill does well/poorly that the evaluation missed or misjudged.
+    validations:
+      required: true
+
+  - type: textarea
+    id: eval_json
+    attributes:
+      label: Evaluation JSON (if available)
+      placeholder: Paste the eval-result.json output.
+      render: json

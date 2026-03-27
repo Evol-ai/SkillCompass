@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/Evol-ai/SkillCompass/blob/main/README.md
+    about: Read the README for usage, commands, and scoring
+  - name: Security Trust Model
+    url: https://github.com/Evol-ai/SkillCompass/blob/main/SECURITY.md
+    about: Understand how SkillCompass handles files, hooks, and permissions

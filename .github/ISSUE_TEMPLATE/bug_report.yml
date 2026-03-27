@@ -1,0 +1,105 @@
+name: Bug Report
+description: Something isn't working as expected
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight Checklist
+      options:
+        - label: I searched existing issues and this hasn't been reported
+          required: true
+        - label: I'm using the latest version of SkillCompass
+          required: true
+        - label: This is a single bug (not multiple issues combined)
+          required: true
+
+  - type: checkboxes
+    id: regression
+    attributes:
+      label: Regression?
+      options:
+        - label: This was working before and broke in a recent version
+
+  - type: input
+    id: last_working_version
+    attributes:
+      label: Last working version (if regression)
+      placeholder: "e.g., 1.0.2"
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      placeholder: A clear description of what went wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1. Run `...`
+        2. With skill `...`
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: What should have happened.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: What actually happened. Include JSON output or error message if available.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: model
+    attributes:
+      label: Model
+      options:
+        - Claude Opus 4.6
+        - Claude Sonnet 4.6
+        - Claude Haiku 4.5
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: node_version
+    attributes:
+      label: Node.js version
+      placeholder: "e.g., v22.13.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - Codespace
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      placeholder: Paste relevant eval-result.json, screenshots, or logs.
