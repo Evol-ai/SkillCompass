@@ -12,6 +12,7 @@ Analyze the user's message and match to one of these intents:
 
 | Intent keywords | Maps to | Command file |
 |-----------------|---------|-------------|
+| setup, inventory, health check, scan my skills, what skills do I have | setup | `commands/setup.md` |
 | evaluate, score, review, check, assess, rate, diagnose | eval-skill | `commands/eval-skill.md` |
 | improve, fix, upgrade, enhance, optimize, evolve (single round) | eval-improve | `commands/eval-improve.md` |
 | security, scan, audit security, vulnerability, safe | eval-security | `commands/eval-security.md` |

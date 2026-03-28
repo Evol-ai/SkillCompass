@@ -7,6 +7,7 @@ description: >
   versions, audit at scale.
 commands:
   - skill-compass
+  - setup
   - eval-skill
   - eval-improve
   - eval-security
@@ -59,6 +60,7 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 | Command | File | Purpose |
 |---------|------|---------|
 | /skill-compass | `commands/skill-compass.md` | Accept plain language, route to the right command automatically. |
+| /setup | `commands/setup.md` | Skill inventory + health check. Auto-triggers on first run. |
 
 ### Essential Commands
 
@@ -82,9 +84,10 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 
 `{baseDir}` refers to the directory containing this SKILL.md file (the skill package root). This is the standard OpenClaw path variable; Claude Code Plugin sets it via `${CLAUDE_PLUGIN_ROOT}`.
 
-1. Parse the command name and arguments from the user's input.
-2. Use the **Read** tool to load `{baseDir}/commands/{command-name}.md`.
-3. Follow the loaded command instructions exactly.
+1. **First-run check**: If `.skill-compass/.setup-done` does not exist, load and execute `{baseDir}/commands/setup.md` before proceeding with the user's command. The setup will ask the user whether to proceed or skip.
+2. Parse the command name and arguments from the user's input.
+3. Use the **Read** tool to load `{baseDir}/commands/{command-name}.md`.
+4. Follow the loaded command instructions exactly.
 
 ## Output Format
 
