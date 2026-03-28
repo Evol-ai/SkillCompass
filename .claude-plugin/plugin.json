@@ -1,15 +1,26 @@
 {
   "name": "skill-compass",
   "version": "1.0.0",
-  "description": "Skill evolution engine — score 6 dimensions, find the weakest link, auto-fix it, prove it worked, repeat. Detect obsolescence, track versions, audit at scale.",
+  "description": "Local-only skill evaluation engine for Claude Code/OpenClaw. Scores six dimensions, reads installed skill roots plus optional .skill-compass/config.json, and stores reports and inventory state under .skill-compass/.",
   "author": {
     "name": "SkillCompass"
   },
   "homepage": "https://github.com/Evol-ai/SkillCompass",
   "license": "MIT",
   "keywords": [
-    "evaluation", "skill-quality", "security-audit", "evolution",
-    "version-management", "code-review", "skill-testing", "quality-gate",
-    "ci-cd", "linting", "skill-improvement", "auto-fix"
+    "evaluation",
+    "skill-quality",
+    "security-audit",
+    "evolution",
+    "version-management",
+    "code-review",
+    "skill-testing",
+    "quality-gate",
+    "ci-cd",
+    "linting",
+    "skill-improvement",
+    "auto-fix",
+    "openclaw",
+    "local-state"
   ]
 }
