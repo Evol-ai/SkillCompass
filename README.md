@@ -12,6 +12,7 @@
 </p>
 
 <p align="center">
+  <a href="https://clawhub.ai/skill/skill-compass"><img src="https://img.shields.io/badge/ClawHub-skill--compass-orange.svg" alt="ClawHub" /></a>
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg" alt="Node >= 18" />
   <img src="https://img.shields.io/badge/model-Claude%20Opus%204.6-purple.svg" alt="Claude Opus 4.6" />
