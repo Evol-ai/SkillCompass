@@ -121,9 +121,12 @@ Use the **Read** tool to load `{baseDir}/prompts/d5-comparative.md`. Apply to ta
 
 Use the **Read** tool to load `{baseDir}/prompts/d6-uniqueness.md`. Load the built-in registry from `{baseDir}/shared/skill-registry.json`. Also use the **Glob** tool to find `**/SKILL.md` files in these locations (in order):
 1. `.claude/skills/` in the project root
-2. `~/.claude/skills/`
+2. `.openclaw/skills/` in the project root, if present
+3. any extra roots from `skills.load.extraDirs` in `~/.openclaw/openclaw.json`
+4. `~/.claude/skills/`
+5. `~/.openclaw/skills/`, if present
 
-Exclude: `test-fixtures/`, `node_modules/`, `archive/`, `.git/`, `.skill-compass/`.
+Exclude: `test-fixtures/`, `node_modules/`, `archive/`, `.git/`, `.skill-compass/`, and `{baseDir}` itself.
 
 Pass both skill content and combined known skills list.
 

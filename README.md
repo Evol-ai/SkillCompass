@@ -12,6 +12,7 @@
 </p>
 
 <p align="center">
+  <a href="https://clawhub.ai/skill/skill-compass"><img src="https://img.shields.io/badge/ClawHub-skill--compass-orange.svg" alt="ClawHub" /></a>
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg" alt="Node >= 18" />
   <img src="https://img.shields.io/badge/model-Claude%20Opus%204.6-purple.svg" alt="Claude Opus 4.6" />
@@ -68,7 +69,7 @@ rsync -a --exclude='.git'  . ~/.claude/skills/skill-compass/
 rsync -a --exclude='.git'  . .claude/skills/skill-compass/
 ```
 
-> **First run:** Claude Code will request permission for `node -e` and `bash` commands. Select **"Allow always"** to avoid repeated prompts.
+> **First run:** Claude Code will request permission for `node -e` and `bash` commands. Select **"Allow always"** to avoid repeated prompts. SkillCompass may also offer a ~5 second local inventory on first use, then continue your original command automatically.
 
 ### OpenClaw
 
@@ -77,6 +78,18 @@ git clone https://github.com/Evol-ai/SkillCompass.git
 cd SkillCompass && npm install
 # Follow OpenClaw skill installation docs for your setup
 rsync -a --exclude='.git'  . <your-openclaw-skills-path>/skill-compass/
+```
+
+If your OpenClaw skills live outside the default scan roots, add them to `skills.load.extraDirs` in `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "skills": {
+    "load": {
+      "extraDirs": ["<your-openclaw-skills-path>"]
+    }
+  }
+}
 ```
 
 ---
@@ -89,6 +102,7 @@ Two ways to invoke SkillCompass:
 
 ```
 /skill-compass evaluate ./my-skill/SKILL.md
+/setup
 /skill-compass improve the nano-banana skill
 /skill-compass security scan ./my-skill/SKILL.md
 /skill-compass audit all skills in .claude/skills/
@@ -102,6 +116,7 @@ No slash command needed — Claude automatically recognizes the intent:
 
 ```
 Evaluate the nano-banana skill for me
+Show me my installed skills
 Improve this skill — fix the weakest dimension
 Scan all skills in .claude/skills/ for security issues
 ```
@@ -111,6 +126,7 @@ Scan all skills in .claude/skills/ for security issues
 
 | Intent | Maps to |
 |--------|---------|
+| Show my installed skills / first-run inventory | `setup` |
 | Evaluate / score / review a skill | `eval-skill` |
 | Improve / fix / upgrade a skill | `eval-improve` |
 | Security scan a skill | `eval-security` |
@@ -120,6 +136,8 @@ Scan all skills in .claude/skills/ for security issues
 | Rollback to previous version | `eval-rollback` |
 
 </details>
+
+`/setup` is the interactive inventory flow. On first use, the same inventory can be offered as a brief helper before another command, but it should always return to the original command instead of replacing it.
 
 ---
 
