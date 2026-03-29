@@ -33,6 +33,7 @@ npm run verify:local
 ```
 
 This command is cross-platform and works in macOS, Linux, PowerShell, and Codespaces.
+GitHub Actions also runs the same verification on `dev`/`main` pushes and pull requests.
 
 ### Project structure
 

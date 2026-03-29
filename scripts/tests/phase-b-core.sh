@@ -25,7 +25,7 @@ Please run /eval-skill on the skill at: $skill_path
 $extra
 
 Output the complete evaluation result as a JSON object.
-The JSON MUST include: skill_name, overall_score, verdict, weakest_dimension, and dimensions (D1-D6 each with score and details). For D3 include pass (boolean).
+The JSON MUST follow the current schema: include skill_name, overall_score, verdict, weakest_dimension, and scores.structure|trigger|security|functional|comparative|uniqueness. The security score must include pass (boolean).
 Output ONLY the JSON in a code block, no other text after it.
 PROMPT
 }

@@ -147,8 +147,9 @@ extract_json() {
   " 2>/dev/null
 }
 
-# Normalize eval-skill JSON: converts all dimension keys to D1-D6 canonical format
-# Handles: structure→D1, D1_structure→D1, "D5 (Comparative)"→D5, security→D3, etc.
+# Normalize eval-skill JSON for legacy bash assertions.
+# Converts the public `scores.*` contract into internal D1-D6 keys while still
+# accepting older `dimensions.*` payloads.
 # Usage: json=$(extract_json "$log" "overall_score" | normalize_eval_json)
 #   or:  json=$(normalize_eval_json <<< "$raw_json")
 normalize_eval_json() {

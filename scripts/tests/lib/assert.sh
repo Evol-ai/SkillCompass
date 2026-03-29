@@ -7,7 +7,7 @@
 # ============================================================
 
 # assert_field_eq <json> <field_path> <expected_value>
-# Uses jq-style dot notation: .overall_score, .dimensions.D3.pass, etc.
+# Uses jq-style dot notation: .overall_score, .scores.security.pass, .dimensions.D3.pass, etc.
 assert_field_eq() {
   local json="$1" path="$2" expected="$3"
   local actual

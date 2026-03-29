@@ -69,7 +69,7 @@ rsync -a --exclude='.git'  . ~/.claude/skills/skill-compass/
 rsync -a --exclude='.git'  . .claude/skills/skill-compass/
 ```
 
-> **First run:** Claude Code will request permission for `node -e` and `bash` commands. Select **"Allow always"** to avoid repeated prompts. SkillCompass may also offer a ~5 second local inventory on first use, then continue your original command automatically.
+> **First run:** Claude Code will request permission for `node -e` and `node` commands. Select **"Allow always"** to avoid repeated prompts. SkillCompass may also offer a ~5 second local inventory on first use, then continue your original command automatically.
 
 ### OpenClaw
 

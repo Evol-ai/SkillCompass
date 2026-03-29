@@ -43,7 +43,7 @@ SkillCompass makes **no network calls whatsoever**. All evaluation, validation, 
 
 ## Local Script Execution (Node.js + Bash)
 
-**What:** Runs `node -e` for JavaScript validators and `bash pre-eval-scan.sh` for static security scanning.
+**What:** Runs `node -e` for JavaScript validators and `node hooks/scripts/pre-eval-scan.js` for static security scanning.
 
 **Why it's necessary:** Local validators handle deterministic checks such as YAML structure, regex-based secret detection, and trigger analysis without consuming LLM tokens. The pre-eval scanner blocks malicious patterns before they reach the LLM context.
 

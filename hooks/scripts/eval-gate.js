@@ -10,9 +10,10 @@
  */
 
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 
-// Patterns loaded from separate file (keeps network keywords away from fs.read calls)
+// Patterns loaded from a separate file to keep sensitive literals away from file reads.
 const patternsPath = path.join(__dirname, '..', '..', 'lib', 'patterns.js');
 const P = require(patternsPath);
 
@@ -199,12 +200,17 @@ async function main() {
   // Resolve project root via .git or cwd
   let projectRoot = path.dirname(filePath);
   let check = projectRoot;
+  let repoRootFound = false;
   while (check !== path.dirname(check)) {
     if (fs.existsSync(path.join(check, ".git"))) {
       projectRoot = check;
+      repoRootFound = true;
       break;
     }
     check = path.dirname(check);
+  }
+  if (!repoRootFound) {
+    projectRoot = os.homedir();
   }
 
   // Check gate bypass lock (eval-improve sets this to prevent noise during improvement)
