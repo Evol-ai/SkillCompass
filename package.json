@@ -1,7 +1,7 @@
 {
   "name": "skill-compass",
   "version": "1.0.0",
-  "description": "Local-only skill evaluation engine for Claude Code/OpenClaw. Scores six dimensions, reads installed skill roots plus optional .skill-compass/config.json, and stores reports and inventory state under .skill-compass/.",
+  "description": "Local-only skill quality and security evaluator for Claude Code/OpenClaw. Scores six dimensions, runs local validators, and stores reports and snapshots under .skill-compass/.",
   "license": "MIT",
   "author": "SkillCompass Contributors",
   "repository": {
@@ -21,7 +21,9 @@
     "local-state"
   ],
   "scripts": {
-    "verify:local": "node scripts/tests/verify-local.js"
+    "verify:local": "node scripts/tests/verify-local.js",
+    "verify:clawhub": "node scripts/tests/verify-clawhub.js",
+    "prepare:clawhub:canary": "node scripts/release/prepare-clawhub-canary.js"
   },
   "engines": {
     "node": ">=18.0.0"

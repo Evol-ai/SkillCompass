@@ -2,9 +2,9 @@
 name: skill-compass
 version: 1.0.0
 description: >
-  Skill evolution engine - score 6 dimensions, find the weakest link,
-  auto-fix it, prove it worked, repeat. Detect obsolescence, track
-  versions, audit at scale.
+  Local skill quality and security evaluator - score 6 dimensions,
+  surface the weakest area, optionally apply verified fixes, track
+  versions, and audit at scale.
 commands:
   - skill-compass
   - setup
@@ -78,7 +78,7 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 | /eval-compare | `commands/eval-compare.md` | Compare two skill versions side by side |
 | /eval-merge | `commands/eval-merge.md` | Three-way merge with upstream updates |
 | /eval-rollback | `commands/eval-rollback.md` | Restore a previous skill version |
-| /eval-evolve | `commands/eval-evolve.md` | Autonomous multi-round evolution. Requires `ralph-wiggum` plugin. |
+| /eval-evolve | `commands/eval-evolve.md` | Optional plugin-assisted multi-round refinement. Requires explicit user opt-in. |
 
 ### Dispatch Procedure
 
@@ -130,6 +130,6 @@ From frontmatter, detect in priority order:
 
 ## Security Notice
 
-This includes installed-skill discovery, optional local sidecar config reads, and local `.skill-compass/` state writes.
+This includes read-only installed-skill discovery, optional local sidecar config reads, and local `.skill-compass/` state writes.
 
-This is a **security evaluation tool** - like antivirus software, it must read and analyze files to scan them. All behaviors (reading installed skill roots, reading optional local sidecar config, writing sidecar state, local script execution, gate-bypass debounce, batch auto-fix) are intentional features with built-in safeguards. No network calls are made. See **[SECURITY.md](SECURITY.md)** for the full trust model, safeguard documentation, and rationale for each behavior.
+This is a **local evaluation and hardening tool**. Read-only evaluation commands are the default starting point. Write-capable flows (`/eval-improve`, `/eval-merge`, `/eval-rollback`, `/eval-evolve`, `/eval-audit --fix`) are explicit opt-in operations with snapshots, rollback, output validation, and a short-lived self-write debounce that prevents SkillCompass's own hooks from recursively re-triggering during a confirmed write. No network calls are made. See **[SECURITY.md](SECURITY.md)** for the full trust model and safeguards.

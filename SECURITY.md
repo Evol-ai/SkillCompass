@@ -1,6 +1,6 @@
 # Security & Trust Model
 
-SkillCompass is a **security evaluation tool**. Like antivirus software that must read files to scan them, SkillCompass must read, analyze, and sometimes modify skill files to evaluate and improve their quality. The behaviors described below are intentional product features with built-in safeguards, not security risks.
+SkillCompass is a **local skill evaluation tool**. Like antivirus software that must read files to scan them, SkillCompass must read, analyze, and in explicit opt-in flows sometimes modify skill files to evaluate and improve their quality. The behaviors described below are intentional product features with built-in safeguards.
 
 ## Reporting a Vulnerability
 
@@ -17,15 +17,15 @@ If your report is about an insecure third-party skill evaluated by SkillCompass,
 
 SkillCompass makes **no network calls whatsoever**. All evaluation, validation, and improvement happens entirely on the local machine. No data is transmitted, no remote endpoints are contacted, no telemetry is collected. The only external dependency is Node.js for local JavaScript validators.
 
-## Gate-Bypass (Temporary Hook Suppression)
+## Transient Self-Write Debounce
 
-**What:** `/eval-improve` creates `.skill-compass/.gate-bypass` with a 5-second expiry.
+**What:** `/eval-improve` creates `.skill-compass/.write-lock` with a 5-second expiry.
 
-**Why it's necessary:** Without this, writing an improved SKILL.md triggers the eval-gate hook, which re-scans the file and emits warnings, creating an infinite loop. The bypass is a standard debounce mechanism.
+**Why it's necessary:** Without this, writing an improved SKILL.md triggers the eval-gate hook, which re-scans the file and emits warnings, creating an infinite loop. The lock is a narrow debounce signal for SkillCompass's own write path.
 
 **Why it's safe:**
 - Auto-expires after 5 seconds and cannot persist indefinitely
-- Only suppresses SkillCompass's own hooks, not other plugins
+- Only suppresses SkillCompass's own hook noise during a confirmed write window, not other plugins
 - The improvement is already validated by `output-guard.js` before writing
 - This is the same class of suppression used by linters during auto-fix
 
@@ -62,8 +62,9 @@ SkillCompass makes **no network calls whatsoever**. All evaluation, validation, 
 - `--fix` requires an explicit `--budget` parameter to prevent unbounded execution
 - `--ci` suppresses prompts but not safety checks
 - Exit codes `(0/1/2)` follow normal CI conventions
+- Read-only evaluation commands remain available when write access is not desired
 
-## Autonomous Multi-Round Evolution
+## Optional Plugin-Assisted Multi-Round Evolution
 
 **What:** `/eval-evolve` chains evaluate -> improve -> re-evaluate for up to 6 rounds.
 
@@ -74,12 +75,13 @@ SkillCompass makes **no network calls whatsoever**. All evaluation, validation, 
 - Hard cap at `--max-iterations` with a default of 6
 - Requires a separate plugin (`ralph-wiggum`), which is not bundled
 - Each round has full auto-rollback protection
+- The read-only commands (`/eval-skill`, `/eval-security`) do not depend on this flow
 
 ## Reading Installed Skills Directory
 
 **What:** Reads common skill roots such as `~/.claude/skills/`, `.claude/skills/`, `~/.openclaw/skills/`, `.openclaw/skills/`, plus any extra roots configured through the standard OpenClaw config field `skills.load.extraDirs` in `~/.openclaw/openclaw.json`.
 
-**Why it's necessary:** D6 Uniqueness evaluation and `/setup` inventory compare the target skill against installed skills to detect overlap, broken installs, and redundant packages.
+**Why it's necessary:** D6 Uniqueness evaluation and `/setup` inventory compare the target skill against installed skills to detect overlap, broken installs, and redundant packages. This discovery is read-only.
 
 **Why it's safe:**
 - Strictly read-only; discovery never modifies, deletes, or copies other skills

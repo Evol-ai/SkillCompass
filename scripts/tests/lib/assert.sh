@@ -6,18 +6,43 @@
 # On failure, prints reason to stderr.
 # ============================================================
 
+# json_get_field <json> <field_path>
+# Resolves a jq-style path and maps legacy .dimensions.D{N} assertions to the
+# public .scores.{name} contract when scores are present.
+json_get_field() {
+  local json="$1" path="$2"
+  echo "$json" | node -e "
+    const j = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+    const rawPath = '$path';
+    const parts = rawPath.split('.').filter(Boolean);
+    const dimMap = { D1:'structure', D2:'trigger', D3:'security', D4:'functional', D5:'comparative', D6:'uniqueness' };
+
+    let resolved = parts.slice();
+    if (parts[0] === 'dimensions' && dimMap[parts[1]] && j.scores) {
+      resolved = ['scores', dimMap[parts[1]], ...parts.slice(2)];
+    }
+
+    let v = j;
+    for (const p of resolved) {
+      v = v?.[p];
+    }
+
+    if (v === undefined || v === null) {
+      process.stdout.write('');
+    } else if (typeof v === 'object') {
+      process.stdout.write(JSON.stringify(v));
+    } else {
+      process.stdout.write(String(v));
+    }
+  " 2>/dev/null
+}
+
 # assert_field_eq <json> <field_path> <expected_value>
-# Uses jq-style dot notation: .overall_score, .scores.security.pass, .dimensions.D3.pass, etc.
+# Uses jq-style dot notation: .overall_score, .scores.security.pass, .scores.uniqueness.details, etc.
 assert_field_eq() {
   local json="$1" path="$2" expected="$3"
   local actual
-  actual=$(echo "$json" | node -e "
-    const j = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-    const path = '$path'.split('.').filter(Boolean);
-    let v = j;
-    for (const p of path) { v = v?.[p]; }
-    process.stdout.write(String(v));
-  " 2>/dev/null)
+  actual=$(json_get_field "$json" "$path")
   if [ "$actual" = "$expected" ]; then
     return 0
   else
@@ -30,13 +55,8 @@ assert_field_eq() {
 assert_field_lte() {
   local json="$1" path="$2" max="$3"
   local actual
-  actual=$(echo "$json" | node -e "
-    const j = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-    const path = '$path'.split('.').filter(Boolean);
-    let v = j;
-    for (const p of path) { v = v?.[p]; }
-    process.stdout.write(String(Number(v)));
-  " 2>/dev/null)
+  actual=$(json_get_field "$json" "$path")
+  actual=$(node -e "process.stdout.write(String(Number(process.argv[1] || 'NaN')))" "$actual" 2>/dev/null)
   if [ "$(echo "$actual <= $max" | bc -l 2>/dev/null || node -e "process.stdout.write(String($actual <= $max))")" = "1" ] || \
      [ "$(node -e "process.stdout.write(String(Number('$actual') <= Number('$max')))" 2>/dev/null)" = "true" ]; then
     return 0
@@ -50,13 +70,8 @@ assert_field_lte() {
 assert_field_gte() {
   local json="$1" path="$2" min="$3"
   local actual
-  actual=$(echo "$json" | node -e "
-    const j = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-    const path = '$path'.split('.').filter(Boolean);
-    let v = j;
-    for (const p of path) { v = v?.[p]; }
-    process.stdout.write(String(Number(v)));
-  " 2>/dev/null)
+  actual=$(json_get_field "$json" "$path")
+  actual=$(node -e "process.stdout.write(String(Number(process.argv[1] || 'NaN')))" "$actual" 2>/dev/null)
   if [ "$(node -e "process.stdout.write(String(Number('$actual') >= Number('$min')))" 2>/dev/null)" = "true" ]; then
     return 0
   else
@@ -69,13 +84,8 @@ assert_field_gte() {
 assert_field_between() {
   local json="$1" path="$2" min="$3" max="$4"
   local actual
-  actual=$(echo "$json" | node -e "
-    const j = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-    const path = '$path'.split('.').filter(Boolean);
-    let v = j;
-    for (const p of path) { v = v?.[p]; }
-    process.stdout.write(String(Number(v)));
-  " 2>/dev/null)
+  actual=$(json_get_field "$json" "$path")
+  actual=$(node -e "process.stdout.write(String(Number(process.argv[1] || 'NaN')))" "$actual" 2>/dev/null)
   if [ "$(node -e "process.stdout.write(String(Number('$actual') >= Number('$min') && Number('$actual') <= Number('$max')))" 2>/dev/null)" = "true" ]; then
     return 0
   else
@@ -88,13 +98,7 @@ assert_field_between() {
 assert_field_exists() {
   local json="$1" path="$2"
   local exists
-  exists=$(echo "$json" | node -e "
-    const j = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-    const path = '$path'.split('.').filter(Boolean);
-    let v = j;
-    for (const p of path) { v = v?.[p]; }
-    process.stdout.write(String(v !== undefined && v !== null));
-  " 2>/dev/null)
+  exists=$(node -e "process.stdout.write(String(process.argv[1] !== ''))" "$(json_get_field "$json" "$path")" 2>/dev/null)
   if [ "$exists" = "true" ]; then
     return 0
   else
@@ -108,14 +112,11 @@ assert_field_exists() {
 assert_field_contains() {
   local json="$1" path="$2" substr="$3"
   local contains
-  contains=$(echo "$json" | node -e "
-    const j = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-    const path = '$path'.split('.').filter(Boolean);
-    let v = j;
-    for (const p of path) { v = v?.[p]; }
-    const s = typeof v === 'string' ? v : JSON.stringify(v);
-    process.stdout.write(String(s.toLowerCase().includes('$substr'.toLowerCase())));
-  " 2>/dev/null)
+  contains=$(node -e "
+    const s = (process.argv[1] || '').toLowerCase();
+    const needle = (process.argv[2] || '').toLowerCase();
+    process.stdout.write(String(s.includes(needle)));
+  " "$(json_get_field "$json" "$path")" "$substr" 2>/dev/null)
   if [ "$contains" = "true" ]; then
     return 0
   else
@@ -173,7 +174,7 @@ assert_array_length_gte() {
 }
 
 # normalize_dimension <dim_string>
-# Converts dimension names to canonical D1-D6 format
+# Converts public names and legacy aliases into a shared canonical form for comparisons
 normalize_dimension() {
   local dim="$1"
   local lower
@@ -194,13 +195,7 @@ normalize_dimension() {
 assert_dimension_eq() {
   local json="$1" path="$2" expected="$3"
   local actual raw
-  raw=$(echo "$json" | node -e "
-    const j = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-    const path = '$path'.split('.').filter(Boolean);
-    let v = j;
-    for (const p of path) { v = v?.[p]; }
-    process.stdout.write(String(v));
-  " 2>/dev/null)
+  raw=$(json_get_field "$json" "$path")
   actual=$(normalize_dimension "$raw")
   expected=$(normalize_dimension "$expected")
   if [ "$actual" = "$expected" ]; then
@@ -218,7 +213,7 @@ assert_dimension_in_bottom_n() {
   local result
   result=$(echo "$json" | node -e "
     const j = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-    const dims = j.dimensions || {};
+    const dims = j.scores || j.dimensions || {};
     const normalize = (d) => {
       const m = {structure:'D1',trigger:'D2',security:'D3',functional:'D4',comparative:'D5',uniqueness:'D6'};
       return m[d.toLowerCase()] || d.toUpperCase();

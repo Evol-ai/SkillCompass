@@ -24,7 +24,7 @@ $extra
 
 Output the comparison result as a JSON object with:
 - skill_name, version_a, version_b
-- delta_table (object with D1-D6 showing old_score, new_score, delta)
+- delta_table (object keyed by structure|trigger|security|functional|comparative|uniqueness, each with old_score, new_score, delta)
 - significant_changes (array of dimensions where |delta| > 2)
 - overall_delta
 
