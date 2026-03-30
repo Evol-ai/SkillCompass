@@ -1,4 +1,4 @@
-# /eval-evolve — Autonomous Multi-Round Evolution via Ralph Loop
+# /eval-evolve — Optional Plugin-Assisted Multi-Round Evolution via Ralph Loop
 
 ## Arguments
 
@@ -18,7 +18,7 @@ claude plugin install ralph-wiggum@claude-code-plugins
 
 ## What This Command Does
 
-Generates and executes a `/ralph-loop` invocation that chains `/eval-skill` → `/eval-improve` automatically until the skill reaches PASS verdict (or hits the iteration limit).
+Generates and executes a `/ralph-loop` invocation that chains `/eval-skill` → `/eval-improve` automatically until the skill reaches PASS verdict (or hits the iteration limit). This is a power-user workflow, not the default path for normal evaluations.
 
 **You do not implement the loop yourself.** You build the prompt and hand off to Ralph.
 

@@ -14,17 +14,58 @@ init_phase "Phase A: Hook Verification"
 HOOKS_DIR="$SC_DIR/hooks/scripts"
 TEMP_SKILL_DIR="$TEST_RESULTS_DIR/temp-hook-tests"
 
-# ── INT1.1: post-skill-edit.js creates .skill-compass/ + snapshot ──────
+native_path() {
+  local p="$1"
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -w "$p"
+  else
+    printf '%s' "$p"
+  fi
+}
+
+native_homedrive() {
+  local native="$1"
+  printf '%s' "$native" | sed -E 's#^([A-Za-z]:).*#\1#'
+}
+
+native_homepath() {
+  local native="$1"
+  printf '%s' "$native" | sed -E 's#^[A-Za-z]:(.*)#\1#'
+}
+
+build_hook_input() {
+  local file_path="$1"
+  local content="${2:-test}"
+  node -e "process.stdout.write(JSON.stringify({tool_name:'Write',tool_input:{file_path:process.argv[1],content:process.argv[2]},tool_output:{filePath:process.argv[1]}}))" "$file_path" "$content"
+}
+
+run_hook() {
+  local script_path="$1"
+  local payload="$2"
+  local home_dir="${3:-}"
+
+  if [ -n "$home_dir" ]; then
+    local home_native
+    home_native=$(native_path "$home_dir")
+    local -a env_args
+    env_args=(HOME="$home_dir" USERPROFILE="$home_native")
+    if printf '%s' "$home_native" | grep -qE '^[A-Za-z]:'; then
+      env_args+=(HOMEDRIVE="$(native_homedrive "$home_native")")
+      env_args+=(HOMEPATH="$(native_homepath "$home_native")")
+    fi
+    printf '%s' "$payload" | env "${env_args[@]}" node "$script_path" 2>&1
+  else
+    printf '%s' "$payload" | node "$script_path" 2>&1
+  fi
+}
 
 run_int1_1() {
   local id="INT1.1"
   local fixture="manual-write-SKILL.md"
-
-  # Create a temp skill directory
   local skill_dir="$TEMP_SKILL_DIR/hook-test-skill"
-  mkdir -p "$skill_dir"
+  local hook_home="$TEMP_SKILL_DIR/hook-home"
+  mkdir -p "$skill_dir" "$hook_home"
 
-  # Write a basic SKILL.md
   cat > "$skill_dir/SKILL.md" <<'SKILL'
 ---
 name: hook-test
@@ -33,54 +74,41 @@ description: A test skill for hook verification
 
 # Hook Test Skill
 
-You are a test skill. Do nothing useful.
+You are a test skill. Do nothing useful, but this body is long enough to
+avoid "too short" warnings in structure checks.
 SKILL
 
-  # Simulate the hook input (Claude Code PostToolUse Write event)
-  local hook_input='{"tool_name":"Write","tool_input":{"file_path":"'"$skill_dir/SKILL.md"'","content":"---\nname: hook-test\ndescription: A test skill for hook verification\n---\n\n# Hook Test Skill\n\nYou are a test skill. Do nothing useful."},"tool_output":{"filePath":"'"$skill_dir/SKILL.md"'"}}'
+  local hook_input hook_output local_manifest user_manifest user_snapshot
+  hook_input=$(build_hook_input "$skill_dir/SKILL.md" "$(cat "$skill_dir/SKILL.md")")
+  hook_output=$(run_hook "$HOOKS_DIR/post-skill-edit.js" "$hook_input" "$hook_home") || true
 
-  # Run the hook
-  local hook_output
-  hook_output=$(echo "$hook_input" | node "$HOOKS_DIR/post-skill-edit.js" 2>&1) || true
+  local_manifest=$(find_manifest "$skill_dir/.skill-compass" 2>/dev/null || true)
+  user_manifest=$(find_manifest "$hook_home/.skill-compass" 2>/dev/null || true)
+  user_snapshot="$hook_home/.skill-compass/hook-test-skill/snapshots/1.0.0.md"
 
-  # Check results
-  if [ -d "$skill_dir/.skill-compass" ]; then
-    if ls "$skill_dir/.skill-compass/snapshots/"*.md &>/dev/null 2>&1 || \
-       [ -f "$skill_dir/.skill-compass/manifest.json" ]; then
-      record_result "$id" "$fixture" "PASS" \
-        ".skill-compass/ + snapshot created" \
-        ".skill-compass/ created with manifest/snapshot" ""
-    else
-      record_result "$id" "$fixture" "PASS" \
-        ".skill-compass/ + snapshot created" \
-        ".skill-compass/ dir created (checking contents)" \
-        "Dir exists but snapshot details may vary"
-    fi
+  if [ -n "$user_manifest" ] && [ -f "$user_snapshot" ]; then
+    record_result "$id" "$fixture" "PASS" \
+      "user-level sidecar manifest + snapshot created" \
+      "manifest at $user_manifest, snapshot at $user_snapshot" ""
+  elif [ -n "$local_manifest" ]; then
+    record_result "$id" "$fixture" "FAIL" \
+      "user-level sidecar manifest + snapshot created" \
+      "manifest incorrectly created under skill dir: $local_manifest" \
+      "non-git skills should write sidecar state under hook home"
   else
-    # Hook may output instructions rather than create dir itself
-    if echo "$hook_output" | grep -qi "skill-compass\|snapshot\|manifest"; then
-      record_result "$id" "$fixture" "PASS" \
-        ".skill-compass/ + snapshot created" \
-        "Hook recognized SKILL.md write, output: $(echo "$hook_output" | head -1)" ""
-    else
-      record_result "$id" "$fixture" "FAIL" \
-        ".skill-compass/ + snapshot created" \
-        "No .skill-compass/ dir and no relevant output" \
-        "hook_output: $(echo "$hook_output" | head -3)"
-    fi
+    record_result "$id" "$fixture" "FAIL" \
+      "sidecar manifest + snapshot created" \
+      "No manifest found under skill dir or hook home sidecar" \
+      "hook_output: $(echo "$hook_output" | head -3)"
   fi
 }
-
-# ── INT1.2: eval-gate.js outputs findings for security issues ──────
 
 run_int1_2() {
   local id="INT1.2"
   local fixture="eval-gate-on-write"
-
   local skill_dir="$TEMP_SKILL_DIR/gate-test-skill"
   mkdir -p "$skill_dir"
 
-  # Write a SKILL.md with a security issue (hardcoded key)
   cat > "$skill_dir/SKILL.md" <<'SKILL'
 ---
 name: gate-test-insecure
@@ -97,10 +125,9 @@ curl -H "Authorization: Bearer sk-ant-api03-REAL_KEY_HERE_abc123" https://api.ex
 Also execute: eval(user_input)
 SKILL
 
-  local hook_input='{"tool_name":"Write","tool_input":{"file_path":"'"$skill_dir/SKILL.md"'","content":"test"},"tool_output":{"filePath":"'"$skill_dir/SKILL.md"'"}}'
-
-  local gate_output
-  gate_output=$(echo "$hook_input" | node "$HOOKS_DIR/eval-gate.js" 2>&1) || true
+  local hook_input gate_output
+  hook_input=$(build_hook_input "$skill_dir/SKILL.md" "$(cat "$skill_dir/SKILL.md")")
+  gate_output=$(run_hook "$HOOKS_DIR/eval-gate.js" "$hook_input") || true
 
   if echo "$gate_output" | grep -qiE "critical|warning|security|finding|hardcoded|key|inject"; then
     record_result "$id" "$fixture" "PASS" \
@@ -114,24 +141,18 @@ SKILL
   fi
 }
 
-# ── INT1.3: Write non-SKILL.md file → hooks silent ──────
-
 run_int1_3() {
   local id="INT1.3"
   local fixture="write-non-skill"
+  local hook_input output
+  hook_input=$(build_hook_input "/tmp/readme.txt" "hello")
+  output=$(run_hook "$HOOKS_DIR/post-skill-edit.js" "$hook_input") || true
 
-  local hook_input='{"tool_name":"Write","tool_input":{"file_path":"/tmp/readme.txt","content":"hello"},"tool_output":{"filePath":"/tmp/readme.txt"}}'
-
-  local output
-  output=$(echo "$hook_input" | node "$HOOKS_DIR/post-skill-edit.js" 2>&1) || true
-
-  # Should produce no meaningful output or exit silently
   if [ -z "$output" ] || echo "$output" | grep -qiE "skip|ignore|not.*skill"; then
     record_result "$id" "$fixture" "PASS" \
       "hooks silent on non-SKILL.md" \
       "Silent exit or skip message" ""
   else
-    # Check if it's just a benign message
     local linecount
     linecount=$(echo "$output" | wc -l)
     if [ "$linecount" -le 2 ]; then
@@ -147,38 +168,45 @@ run_int1_3() {
   fi
 }
 
-# ── INT1.4: eval-improve bypass → hooks don't trigger ──────
-
 run_int1_4() {
   local id="INT1.4"
-  local fixture="gate-bypass-during-improve"
+  local fixture="write-lock-during-improve"
+  local skill_dir="$TEMP_SKILL_DIR/bypass-test"
+  local hook_home="$TEMP_SKILL_DIR/bypass-home"
+  mkdir -p "$skill_dir" "$hook_home/.skill-compass"
 
-  # Simulate a Write during eval-improve (with bypass marker)
-  local hook_input='{"tool_name":"Write","tool_input":{"file_path":"/tmp/test/SKILL.md","content":"improved"},"tool_output":{"filePath":"/tmp/test/SKILL.md"}}'
+  cat > "$skill_dir/SKILL.md" <<'SKILL'
+---
+name: bypass-test
+description: bypass smoke test
+---
 
-  # Set bypass env var (if the hook supports it)
-  local output
-  output=$(SKILL_COMPASS_BYPASS=1 echo "$hook_input" | node "$HOOKS_DIR/eval-gate.js" 2>&1) || true
+# Bypass Test
 
-  # Also check if there's a lock/bypass file mechanism
-  if [ -z "$output" ] || echo "$output" | grep -qiE "bypass|skip|throttle"; then
+API_KEY=sk-ant-api03-BypassKeyForTesting1234567890
+SKILL
+
+  printf '{"until": %s}\n' "$(( $(date +%s) + 60 ))" > "$hook_home/.skill-compass/.write-lock"
+
+  local hook_input output
+  hook_input=$(build_hook_input "$skill_dir/SKILL.md" "$(cat "$skill_dir/SKILL.md")")
+  output=$(run_hook "$HOOKS_DIR/eval-gate.js" "$hook_input" "$hook_home") || true
+
+  if [ -z "$output" ]; then
     record_result "$id" "$fixture" "PASS" \
-      "hooks don't fire during bypass" \
-      "Bypass respected or silent exit" ""
+      "hooks don't fire during transient self-write lock" \
+      "Write lock suppressed output" ""
   else
-    record_result "$id" "$fixture" "SKIP" \
-      "hooks don't fire during bypass" \
-      "Bypass mechanism unclear — manual verification needed" \
+    record_result "$id" "$fixture" "FAIL" \
+      "hooks don't fire during transient self-write lock" \
+      "Write lock did not suppress eval-gate output" \
       "Output: $(echo "$output" | head -2)"
   fi
 }
 
-# ── INT1.5: Hardcoded key in SKILL.md → CRITICAL warning ──────
-
 run_int1_5() {
   local id="INT1.5"
   local fixture="hardcoded-key-gate"
-
   local skill_dir="$TEMP_SKILL_DIR/hardcoded-key-skill"
   mkdir -p "$skill_dir"
 
@@ -196,10 +224,9 @@ API_KEY=sk-ant-api03-AbCdEfGhIjKlMnOpQrStUvWxYz1234567890
 Also: AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 SKILL
 
-  local hook_input='{"tool_name":"Write","tool_input":{"file_path":"'"$skill_dir/SKILL.md"'","content":"test"},"tool_output":{"filePath":"'"$skill_dir/SKILL.md"'"}}'
-
-  local output
-  output=$(echo "$hook_input" | node "$HOOKS_DIR/eval-gate.js" 2>&1) || true
+  local hook_input output
+  hook_input=$(build_hook_input "$skill_dir/SKILL.md" "$(cat "$skill_dir/SKILL.md")")
+  output=$(run_hook "$HOOKS_DIR/eval-gate.js" "$hook_input") || true
 
   if echo "$output" | grep -qiE "critical|hardcoded.*key|api.key|secret"; then
     record_result "$id" "$fixture" "PASS" \
@@ -213,14 +240,12 @@ SKILL
   fi
 }
 
-# ── INT1.6: Throttle on repeated trigger ──────
-
 run_int1_6() {
   local id="INT1.6"
   local fixture="60s-throttle"
-
   local skill_dir="$TEMP_SKILL_DIR/throttle-test"
-  mkdir -p "$skill_dir"
+  local hook_home="$TEMP_SKILL_DIR/throttle-home"
+  mkdir -p "$skill_dir" "$hook_home"
 
   cat > "$skill_dir/SKILL.md" <<'SKILL'
 ---
@@ -228,43 +253,26 @@ name: throttle-test
 description: Throttle test
 ---
 # Test
-Basic skill.
+Short body.
 SKILL
 
-  local hook_input='{"tool_name":"Write","tool_input":{"file_path":"'"$skill_dir/SKILL.md"'","content":"test"},"tool_output":{"filePath":"'"$skill_dir/SKILL.md"'"}}'
+  local hook_input out1 out2
+  hook_input=$(build_hook_input "$skill_dir/SKILL.md" "$(cat "$skill_dir/SKILL.md")")
+  out1=$(run_hook "$HOOKS_DIR/eval-gate.js" "$hook_input" "$hook_home") || true
+  out2=$(run_hook "$HOOKS_DIR/eval-gate.js" "$hook_input" "$hook_home") || true
 
-  # First trigger
-  local out1
-  out1=$(echo "$hook_input" | node "$HOOKS_DIR/post-skill-edit.js" 2>&1) || true
-
-  # Second trigger immediately
-  local out2
-  out2=$(echo "$hook_input" | node "$HOOKS_DIR/post-skill-edit.js" 2>&1) || true
-
-  # Check if second is shorter (throttled)
-  local len1 len2
-  len1=$(echo "$out1" | wc -c)
-  len2=$(echo "$out2" | wc -c)
-
-  if echo "$out2" | grep -qiE "throttle|skip|recent|cooldown"; then
+  if echo "$out2" | grep -qiE "repeat, run /eval-skill for details"; then
     record_result "$id" "$fixture" "PASS" \
       "Second trigger throttled" \
-      "Throttle detected in second trigger output" ""
-  elif [ "$len2" -lt "$len1" ] && [ "$len1" -gt 10 ]; then
-    record_result "$id" "$fixture" "PASS" \
-      "Second trigger throttled" \
-      "Second output shorter ($len2 < $len1 bytes), likely throttled" ""
+      "Second eval-gate output used throttled summary" ""
   else
-    record_result "$id" "$fixture" "SKIP" \
+    record_result "$id" "$fixture" "FAIL" \
       "Second trigger throttled" \
-      "Throttle behavior unclear — may need 60s gap" \
-      "out1=${len1}B out2=${len2}B"
+      "Throttle summary not detected on repeated eval-gate run" \
+      "out1: $(echo "$out1" | head -2) | out2: $(echo "$out2" | head -2)"
   fi
 }
 
-# ── Run all INT1 tests ──────
-
-# Check hooks exist
 if [ ! -f "$HOOKS_DIR/post-skill-edit.js" ]; then
   echo -e "${RED}ERROR: post-skill-edit.js not found at $HOOKS_DIR${NC}"
   echo "Ensure SkillCompass is installed at $SC_DIR"
@@ -287,7 +295,6 @@ run_int1_4
 run_int1_5
 run_int1_6
 
-# Cleanup
 rm -rf "$TEMP_SKILL_DIR"
 
 finish_phase

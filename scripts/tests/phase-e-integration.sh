@@ -156,7 +156,7 @@ SKILL
 
 Please run /eval-skill on the skill at: $skill_dir/SKILL.md
 
-Output the complete evaluation as JSON with overall_score, verdict, dimensions (D1-D6), and weakest_dimension."
+Output the complete evaluation as JSON with overall_score, verdict, weakest_dimension, and scores.structure|trigger|security|functional|comparative|uniqueness."
 
   local log_file
   log_file=$(run_claude_eval "$prompt" "$id") || true
@@ -404,20 +404,20 @@ run_int4_1() {
 
 Run /eval-security on: $fixture_path/SKILL.md
 
-Use only built-in L0 scanning (no external MCP tools). Output JSON with D3 score and findings."
+Use only built-in L0 scanning (no external MCP tools). Output JSON with the standalone security result fields, including score, pass, and findings."
 
   local log_file
   log_file=$(run_claude_eval "$prompt" "$id") || true
 
   local json
-  json=$(extract_json "$log_file" "D3") || json=$(extract_json "$log_file" "pass") || {
+  json=$(extract_json "$log_file" "pass") || json=$(extract_json "$log_file" "dimension_name") || {
     record_result "$id" "$fixture" "FAIL" "L0 scan works" "no JSON" ""
     return
   }
 
   record_result "$id" "$fixture" "PASS" \
     "L0 built-in scan works without external tools" \
-    "D3 security scan completed" ""
+    "security scan completed" ""
 }
 
 run_int4_3() {
@@ -432,13 +432,13 @@ Run /eval-security on: $FIXTURES_DIR/atom-formatter/SKILL.md
 Assume NO MCP security tools are available (no skill-security-scan, no custom tools).
 The system should fall back to L0 built-in scanning without errors.
 
-Output JSON with D3 results."
+Output JSON with the standalone security result fields, including pass and findings."
 
   local log_file
   log_file=$(run_claude_eval "$prompt" "$id") || true
 
   local json
-  json=$(extract_json "$log_file" "D3") || json=$(extract_json "$log_file" "pass") || {
+  json=$(extract_json "$log_file" "pass") || json=$(extract_json "$log_file" "dimension_name") || {
     local text_out
     text_out=$(extract_text "$log_file")
     if echo "$text_out" | grep -qiE "fallback\|L0\|built.in\|no.*tool"; then
@@ -473,9 +473,9 @@ run_int5_1() {
 
 Run /eval-skill on: $fixture_path/SKILL.md
 
-Focus on the D6 (uniqueness) dimension. Check if the evaluation references skill-registry.json when scoring D6.
+Focus on the uniqueness dimension. Check if the evaluation references skill-registry.json when scoring uniqueness.
 
-Output JSON with full dimensions including D6 details."
+Output JSON with full scores.structure|trigger|security|functional|comparative|uniqueness, including uniqueness details."
 
   local log_file
   log_file=$(run_claude_eval "$prompt" "$id") || true
@@ -489,19 +489,19 @@ Output JSON with full dimensions including D6 details."
   local d6_details
   d6_details=$(echo "$json" | node -e "
     const j=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
-    process.stdout.write(String(j.dimensions?.D6?.details||''));
+    process.stdout.write(String(j.scores?.uniqueness?.details||j.dimensions?.D6?.details||''));
   " 2>/dev/null)
 
   # Accept: registry, overlap, similar, duplicate, supersession — all indicate registry-aware evaluation
   if echo "$d6_details" | grep -qiE "registry\|existing.*skill\|overlap\|similar\|duplicate\|supersession\|adjacent.*skill"; then
     record_result "$id" "$fixture" "PASS" \
-      "D6 references registry/similar skills" \
-      "Registry-aware evaluation detected in D6 details" ""
+      "uniqueness references registry/similar skills" \
+      "Registry-aware evaluation detected in uniqueness details" ""
   else
     record_result "$id" "$fixture" "FAIL" \
-      "D6 references registry/similar skills" \
-      "No registry/similarity reference in D6 details" \
-      "D6 details: $(echo "$d6_details" | head -1)"
+      "uniqueness references registry/similar skills" \
+      "No registry/similarity reference in uniqueness details" \
+      "uniqueness details: $(echo "$d6_details" | head -1)"
   fi
 }
 
@@ -509,14 +509,14 @@ run_int5_3() {
   local id="INT5.3"
   local fixture="registry-missing"
 
-  # Test D6 still works when registry file is absent
+  # Test uniqueness still works when registry file is absent
   local prompt="Working directory: $SC_DIR
 
 Run /eval-skill on: $FIXTURES_DIR/atom-formatter/SKILL.md
 
-Note: If skill-registry.json does not exist, D6 should still score based on LLM baseline knowledge.
+Note: If skill-registry.json does not exist, uniqueness should still score based on LLM baseline knowledge.
 
-Output JSON with D6 score and details."
+Output JSON with uniqueness score and details."
 
   local log_file
   log_file=$(run_claude_eval "$prompt" "$id") || true
@@ -528,16 +528,16 @@ Output JSON with D6 score and details."
   }
 
   local d6
-  d6=$(echo "$json" | node -e "const j=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));process.stdout.write(String(j.dimensions?.D6?.score||0))" 2>/dev/null)
+  d6=$(echo "$json" | node -e "const j=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));process.stdout.write(String(j.scores?.uniqueness?.score||j.dimensions?.D6?.score||0))" 2>/dev/null)
 
   if [ "$(node -e "process.stdout.write(String(Number('$d6')>0))" 2>/dev/null)" = "true" ]; then
     record_result "$id" "$fixture" "PASS" \
-      "D6 works without registry, LLM baseline" \
-      "D6=$d6 (scored without registry)" ""
+      "uniqueness works without registry, LLM baseline" \
+      "uniqueness=$d6 (scored without registry)" ""
   else
     record_result "$id" "$fixture" "FAIL" \
-      "D6 works without registry" \
-      "D6=$d6" ""
+      "uniqueness works without registry" \
+      "uniqueness=$d6" ""
   fi
 }
 

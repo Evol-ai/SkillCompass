@@ -82,7 +82,7 @@ Based on `--scope`:
 **Enhanced Local Processing**: Run comprehensive local security validation:
 
 1. Execute `node -e "const {SecurityValidator} = require('./lib/security-validator.js'); const result = new SecurityValidator().validate('{skillPath}'); console.log(JSON.stringify(result, null, 2));"` using the **Bash** tool
-2. Run pre-evaluation scan: `{baseDir}/hooks/scripts/pre-eval-scan.sh '{skillPath}'` using the **Bash** tool
+2. Run pre-evaluation scan: `node "{baseDir}/hooks/scripts/pre-eval-scan.js" "{skillPath}"` using the **Bash** tool
 3. If local validation detects Critical findings, set `gate_failed = true` and use local results
 4. For L1/L2 supplementation: use the **Read** tool to load `{baseDir}/shared/tool-instructions.md` and follow detection procedures only if local validation passes
 5. Merge findings with `"tools_used": ["local", "pre-eval-scan", ...]` and prioritize Critical findings from any source

@@ -147,8 +147,9 @@ extract_json() {
   " 2>/dev/null
 }
 
-# Normalize eval-skill JSON: converts all dimension keys to D1-D6 canonical format
-# Handles: structure→D1, D1_structure→D1, "D5 (Comparative)"→D5, security→D3, etc.
+# Normalize eval-skill JSON for bash assertions.
+# Keeps the public `scores.*` contract intact while adding internal D1-D6 aliases
+# under `dimensions` for compatibility with older assertion helpers.
 # Usage: json=$(extract_json "$log" "overall_score" | normalize_eval_json)
 #   or:  json=$(normalize_eval_json <<< "$raw_json")
 normalize_eval_json() {
@@ -175,10 +176,9 @@ normalize_eval_json() {
       return dimMap[key] || (key.match(/^d[1-6]$/) ? key.toUpperCase() : s);
     }
 
-    // Normalize 'scores' → 'dimensions' (some evals use 'scores' as the top-level key)
+    // Mirror public scores into legacy dimensions aliases when present.
     if (j.scores && !j.dimensions) {
       j.dimensions = j.scores;
-      delete j.scores;
     }
 
     // Normalize weakest_dimension
