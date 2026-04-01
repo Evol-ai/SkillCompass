@@ -60,7 +60,7 @@ assert_eval_public_contract() {
       trigger: ['score', 'max', 'details', 'sub_scores', 'issues'],
       security: ['score', 'max', 'pass', 'findings', 'tools_used'],
       functional: ['score', 'max', 'details', 'sub_scores', 'issues'],
-      comparative: ['score', 'max', 'delta', 'details'],
+      comparative: ['score', 'max', 'details', 'metadata'],
       uniqueness: ['score', 'max', 'details'],
     };
     const dimKeyToId = {
@@ -104,6 +104,13 @@ assert_eval_public_contract() {
               errors.push('missing scores.security.findings[' + index + '].' + field);
             }
           }
+        }
+      }
+      if (key === 'comparative') {
+        if (!value.metadata || typeof value.metadata !== 'object') {
+          errors.push('scores.comparative.metadata must be a non-null object');
+        } else if (typeof value.metadata.delta !== 'number') {
+          errors.push('missing or invalid scores.comparative.metadata.delta (must be a number)');
         }
       }
     }
@@ -228,7 +235,7 @@ run_eval_skill_test() {
   local fixture_path
   fixture_path=$(require_fixture "$fixture") || {
     record_result "$id" "$fixture" "SKIP" "fixture exists" "fixture $fixture not found" ""
-    return
+    return 0
   }
 
   local skill_path="$fixture_path/SKILL.md"
@@ -243,7 +250,7 @@ run_eval_skill_test() {
     local text_out
     text_out=$(extract_text "$log_file" | tail -20)
     record_result "$id" "$fixture" "FAIL" "valid JSON output" "no JSON extracted" "last output: $(echo "$text_out" | head -5)"
-    return
+    return 0
   }
 
   if ! assert_eval_public_contract "$raw_json" "$scope_mode"; then
@@ -252,7 +259,7 @@ run_eval_skill_test() {
     record_result "$id" "$fixture" "FAIL" \
       "public eval JSON contract with scores.*" \
       "$contract_err" ""
-    return 1
+    return 0
   fi
 
   # Save raw JSON using the public contract
