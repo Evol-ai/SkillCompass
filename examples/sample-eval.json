@@ -137,33 +137,32 @@
     "comparative": {
       "score": 3,
       "max": 10,
-      "delta": 0.12,
       "details": "Moderate improvement for complex queries where tool integration helps, but minimal advantage for simple optimizations that LLMs handle well.",
-      "scenarios": [
-        {
-          "name": "Simple index suggestion",
-          "with_skill": 6,
-          "without_skill": 5,
-          "improvement": 0.1
-        },
-        {
-          "name": "Multi-table JOIN optimization",
-          "with_skill": 5,
-          "without_skill": 4,
-          "improvement": 0.1
-        },
-        {
-          "name": "Query plan analysis with EXPLAIN",
-          "with_skill": 6,
-          "without_skill": 4,
-          "improvement": 0.2
-        }
-      ],
       "sub_scores": {},
       "issues": [],
       "metadata": {
         "delta": 0.12,
-        "value_category": "domain_expertise"
+        "value_category": "domain_expertise",
+        "scenarios": [
+          {
+            "name": "Simple index suggestion",
+            "with_skill": 6,
+            "without_skill": 5,
+            "improvement": 0.1
+          },
+          {
+            "name": "Multi-table JOIN optimization",
+            "with_skill": 5,
+            "without_skill": 4,
+            "improvement": 0.1
+          },
+          {
+            "name": "Query plan analysis with EXPLAIN",
+            "with_skill": 6,
+            "without_skill": 4,
+            "improvement": 0.2
+          }
+        ]
       }
     },
     "uniqueness": {
