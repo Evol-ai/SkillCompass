@@ -66,7 +66,14 @@ record_result() {
     SKIP) _SKIP=$((_SKIP + 1)); color="$YELLOW" ;;
   esac
 
+  # Keep progress logs on stderr so stdout stays safe for captured JSON.
+  exec 5>&1
+  exec 1>&2
+
   echo -e "  [${color}${status}${NC}] ${BOLD}$id${NC} ($fixture) — $actual"
+
+  exec 1>&5
+  exec 5>&-
 
   # Write individual result JSON
   cat > "$RESULTS_JSON_DIR/${id}.json" <<REOF
@@ -119,32 +126,46 @@ run_claude_eval() {
 extract_json() {
   local log_file="$1"
   local key="${2:-overall_score}"  # Key to look for in JSON
+  local retries="${EXTRACT_JSON_RETRIES:-4}"
+  local retry_delay="${EXTRACT_JSON_RETRY_DELAY:-0.4}"
+  local attempt output
 
-  node -e "
-    const fs = require('fs');
-    const log = fs.readFileSync('$log_file', 'utf8');
-    // Find all JSON blocks
-    const re = /\`\`\`(?:json)?\s*(\{[\s\S]*?\})\s*\`\`\`/g;
-    let match, last = null;
-    while ((match = re.exec(log)) !== null) {
-      try {
-        const obj = JSON.parse(match[1]);
-        if ('$key' in obj || Object.keys(obj).length > 2) last = obj;
-      } catch {}
-    }
-    // Also try bare JSON (no code fences)
-    if (!last) {
-      const bare = log.match(/\{[\s\S]*\"$key\"[\s\S]*\}/);
-      if (bare) {
-        try { last = JSON.parse(bare[0]); } catch {}
+  for ((attempt = 1; attempt <= retries; attempt++)); do
+    if output=$(node -e "
+      const fs = require('fs');
+      const log = fs.readFileSync('$log_file', 'utf8');
+      // Find all JSON blocks
+      const re = /\`\`\`(?:json)?\s*(\{[\s\S]*?\})\s*\`\`\`/g;
+      let match, last = null;
+      while ((match = re.exec(log)) !== null) {
+        try {
+          const obj = JSON.parse(match[1]);
+          if ('$key' in obj || Object.keys(obj).length > 2) last = obj;
+        } catch {}
       }
-    }
-    if (last) {
-      process.stdout.write(JSON.stringify(last));
-    } else {
-      process.exit(1);
-    }
-  " 2>/dev/null
+      // Also try bare JSON (no code fences)
+      if (!last) {
+        const bare = log.match(/\{[\s\S]*\"$key\"[\s\S]*\}/);
+        if (bare) {
+          try { last = JSON.parse(bare[0]); } catch {}
+        }
+      }
+      if (last) {
+        process.stdout.write(JSON.stringify(last));
+      } else {
+        process.exit(1);
+      }
+    " 2>/dev/null); then
+      printf '%s' "$output"
+      return 0
+    fi
+
+    if [ "$attempt" -lt "$retries" ]; then
+      sleep "$retry_delay"
+    fi
+  done
+
+  return 1
 }
 
 # Normalize eval-skill JSON for bash assertions.
