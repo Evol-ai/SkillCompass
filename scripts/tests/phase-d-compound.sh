@@ -85,7 +85,7 @@ run_t2_1() {
     record_result "$id" "$fixture" "FAIL" "valid improve JSON" "no JSON extracted" ""
     return
   }
-  json=$(echo "$raw_json" | normalize_eval_json) || json="$raw_json"
+  json="$raw_json"
 
   echo "$raw_json" > "$RESULTS_JSON_DIR/${id}_raw.json"
 
@@ -118,7 +118,7 @@ run_t2_2() {
   cp -r "$fixture_path/"* "$work_dir/" 2>/dev/null || cp "$fixture_path/SKILL.md" "$work_dir/"
 
   local prompt
-  prompt=$(build_improve_prompt "$work_dir/SKILL.md" "This skill has a D3 security gate failure. The improve command should prioritize fixing D3 (security) before other dimensions.")
+  prompt=$(build_improve_prompt "$work_dir/SKILL.md" "This skill has a security gate failure. The improve command should prioritize fixing security before other dimensions.")
   local log_file
   log_file=$(run_claude_eval "$prompt" "$id") || true
 
@@ -127,21 +127,21 @@ run_t2_2() {
     # Check text for gate-first behavior
     local text_out
     text_out=$(extract_text "$log_file")
-    if echo "$text_out" | grep -qiE "security first\|gate.*first\|fix.*D3\|D3.*priority" || \
-       log_contains "$log_file" "security first|gate.*first|fix.*D3|D3.*priority"; then
+    if echo "$text_out" | grep -qiE "security first\|gate.*first\|fix.*security\|security.*priority" || \
+       log_contains "$log_file" "security first|gate.*first|fix.*security|security.*priority"; then
       record_result "$id" "$fixture" "PASS" \
-        "Gate-first: fix D3 before others" \
-        "D3 prioritization detected in output" ""
+        "Gate-first: fix security before others" \
+        "security prioritization detected in output" ""
     else
       record_result "$id" "$fixture" "FAIL" "valid improve JSON" "no JSON extracted" ""
     fi
     return
   }
-  json=$(echo "$raw_json" | normalize_eval_json) || json="$raw_json"
+  json="$raw_json"
 
   echo "$raw_json" > "$RESULTS_JSON_DIR/${id}_raw.json"
 
-  # Check that D3 was improved (pass should become true)
+  # Check that security was improved (pass should become true)
   local improved_dims
   improved_dims=$(echo "$json" | node -e "
     const j=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
@@ -149,15 +149,15 @@ run_t2_2() {
     process.stdout.write(JSON.stringify(d));
   " 2>/dev/null)
 
-  if assert_array_contains_normalized "$json" ".improved_dimensions" "D3" 2>/dev/null || \
-     echo "$improved_dims" | grep -qiE "D3\|security"; then
+  if assert_array_contains_normalized "$json" ".improved_dimensions" "security" 2>/dev/null || \
+     echo "$improved_dims" | grep -qiE "security"; then
     record_result "$id" "$fixture" "PASS" \
-      "Gate-first: D3 fixed, pass=true" \
-      "D3/security in improved dimensions: $improved_dims" ""
+      "Gate-first: security fixed, pass=true" \
+      "security in improved dimensions: $improved_dims" ""
   else
     record_result "$id" "$fixture" "FAIL" \
-      "Gate-first: D3 fixed" \
-      "D3 not in improved dims: $improved_dims" ""
+      "Gate-first: security fixed" \
+      "security not in improved dims: $improved_dims" ""
   fi
 }
 
@@ -175,7 +175,7 @@ run_t2_3() {
   cp -r "$fixture_path/"* "$work_dir/" 2>/dev/null || cp "$fixture_path/SKILL.md" "$work_dir/"
 
   local prompt
-  prompt=$(build_improve_prompt "$work_dir/SKILL.md" "This skill has both D1 (structure) and D2 (trigger) as weak dimensions. The improve command should group them and improve both in a single pass.")
+  prompt=$(build_improve_prompt "$work_dir/SKILL.md" "This skill has both structure and trigger as weak dimensions. The improve command should group them and improve both in a single pass.")
   local log_file
   log_file=$(run_claude_eval "$prompt" "$id") || true
 
@@ -184,14 +184,14 @@ run_t2_3() {
     # Fallback: check log for improvement evidence
     if log_contains "$log_file" "improved|dimensions.*improved|after.*score"; then
       record_result "$id" "$fixture" "PASS" \
-        "D1+D2 grouping, both improved" \
+        "structure+trigger grouping, both improved" \
         "Improvement evidence in log (no structured JSON)" ""
     else
       record_result "$id" "$fixture" "FAIL" "valid improve JSON" "no JSON extracted" ""
     fi
     return
   }
-  json=$(echo "$raw_json" | normalize_eval_json) || json="$raw_json"
+  json="$raw_json"
 
   echo "$raw_json" > "$RESULTS_JSON_DIR/${id}_raw.json"
 
@@ -210,12 +210,12 @@ run_t2_3() {
   " 2>/dev/null)
 
   if [ "$(node -e "process.stdout.write(String(Number('$dim_count')>=2))" 2>/dev/null)" = "true" ]; then
-    record_result "$id" "$fixture" "PASS" \
-      "D1+D2 grouping, both improved" \
+      record_result "$id" "$fixture" "PASS" \
+      "structure+trigger grouping, both improved" \
       "$dim_count dimensions improved: $improved_dims" ""
   else
     record_result "$id" "$fixture" "FAIL" \
-      "D1+D2 grouping, both improved" \
+      "structure+trigger grouping, both improved" \
       "Only $dim_count dimensions improved: $improved_dims" ""
   fi
 }
@@ -290,7 +290,7 @@ run_t4_2() {
   fi
 
   local prompt
-  prompt=$(build_audit_prompt "$fixture_path" "Use --security-only flag. Only evaluate D3 (security) for each skill.")
+  prompt=$(build_audit_prompt "$fixture_path" "Use --security-only flag. Only evaluate security for each skill.")
   local log_file
   log_file=$(run_claude_eval "$prompt" "$id") || true
 

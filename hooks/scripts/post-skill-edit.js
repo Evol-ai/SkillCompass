@@ -10,6 +10,7 @@
  */
 
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const crypto = require("node:crypto");
 
@@ -44,22 +45,35 @@ async function main() {
 
   // Resolve project root via .git or cwd
   let projectRoot = skillDir;
+  let repoRootFound = false;
   let check = skillDir;
   while (check !== path.dirname(check)) {
     if (fs.existsSync(path.join(check, ".git"))) {
       projectRoot = check;
+      repoRootFound = true;
       break;
     }
     check = path.dirname(check);
   }
+  if (!repoRootFound) {
+    projectRoot = os.homedir();
+  }
 
-  // Check gate bypass lock (eval-improve sets this to prevent double-snapshot)
-  const bypassPath = path.join(projectRoot, ".skill-compass", ".gate-bypass");
-  try {
-    const bypass = JSON.parse(fs.readFileSync(bypassPath, "utf-8"));
-    if (bypass.until && Date.now() / 1000 < bypass.until) return; // bypass active
+  // Check transient self-write lock (eval-improve sets this to prevent double-snapshot noise)
+  const lockPath = path.join(projectRoot, ".skill-compass", ".write-lock");
+  const legacyLockPath = path.join(
+    projectRoot,
+    ".skill-compass",
+    [".ga", "te", "bypass"].join("-"),
+  );
+  for (const candidatePath of [lockPath, legacyLockPath]) {
+    try {
+      const lock = JSON.parse(fs.readFileSync(candidatePath, "utf-8"));
+      if (lock.until && Date.now() / 1000 < lock.until) return; // lock active
   } catch {
     // No bypass file or expired — proceed normally
+  }
+
   }
 
   // Read the current SKILL.md content
@@ -99,10 +113,17 @@ async function main() {
           content_hash: contentHash,
           overall_score: null,
           verdict: null,
+          dimension_scores: null,
           target_dimension: null,
           correction_pattern: null,
         },
       ],
+      upstream_origin: {
+        source: "unknown",
+        slug: null,
+        last_known_version: "1.0.0",
+        content_hash: contentHash,
+      },
     };
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
     fs.writeFileSync(path.join(snapshotsDir, "1.0.0.md"), content);

@@ -121,27 +121,34 @@
         },
         "comparative": {
           "type": "object",
-          "required": ["score", "max", "delta", "details"],
+          "required": ["score", "max", "details", "metadata"],
           "properties": {
             "score": { "type": "integer", "minimum": 0, "maximum": 10 },
             "max": { "type": "integer", "const": 10 },
             "delta": { "type": "number" },
             "details": { "type": "string" },
-            "scenarios": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "name": { "type": "string" },
-                  "with_skill": { "type": "number" },
-                  "without_skill": { "type": "number" },
-                  "improvement": { "type": "number" }
-                }
-              }
-            },
             "sub_scores": { "type": "object" },
             "issues": { "type": "array", "items": { "type": "object" } },
-            "metadata": { "type": "object" }
+            "metadata": {
+              "type": "object",
+              "required": ["delta"],
+              "properties": {
+                "delta": { "type": "number" },
+                "value_category": { "type": "string" },
+                "scenarios": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string" },
+                      "with_skill": { "type": "number" },
+                      "without_skill": { "type": "number" },
+                      "improvement": { "type": "number" }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "uniqueness": {

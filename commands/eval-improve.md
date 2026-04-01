@@ -23,7 +23,7 @@ Use the **Read** tool to load `{baseDir}/shared/version-management.md`. Follow t
 1. Read or create the manifest for this skill.
 2. Compute the content hash of the current SKILL.md.
 3. Save a snapshot copy to `.skill-compass/{skill-name}/snapshots/{current-version}.md` using the **Write** tool.
-4. Create a gate bypass lock: use the **Write** tool to create `.skill-compass/.gate-bypass` with content `{ "until": {unix_timestamp_now + 5} }`. This prevents the PostToolUse hooks from re-triggering during the improvement write.
+4. Create a transient self-write lock: use the **Write** tool to create `.skill-compass/.write-lock` with content `{ "until": {unix_timestamp_now + 5} }`. This prevents SkillCompass's own PostToolUse hooks from re-triggering during the confirmed improvement write.
 
 ## Phase 3: Diagnose
 
@@ -53,7 +53,7 @@ Generate the improved version. Show the diff to the user. **Ask for confirmation
 
 If the user declines: stop. Report "Improvement declined by user." and exit.
 
-Before writing the improved SKILL.md, refresh the gate bypass lock: update `.skill-compass/.gate-bypass` with `{ "until": {unix_timestamp_now + 5} }`.
+Before writing the improved SKILL.md, refresh the self-write lock: update `.skill-compass/.write-lock` with `{ "until": {unix_timestamp_now + 5} }`.
 
 ## Phase 5: Targeted Verification
 
@@ -90,7 +90,7 @@ Mark the verification in output: `"verification": "targeted", "re_evaluated": ["
      - `dimension_scores`: merge re-evaluated dimension scores with cached scores from Phase 1 into a single `{"D1":n,...,"D6":n}` object
      - `correction_pattern`: one plain-language sentence combining the problem and fix (e.g., "Description was too vague to discover; rewrote with specific keywords and scope boundaries")
    - Save new snapshot
-2. Clean up: delete `.skill-compass/.gate-bypass` if it exists.
+2. Clean up: delete `.skill-compass/.write-lock` if it exists.
 3. Display the **Improvement Summary** (mandatory, always show):
 
 ```
@@ -130,4 +130,4 @@ Mark the verification in output: `"verification": "targeted", "re_evaluated": ["
    - "Regression detected: {dimension} dropped from {old} to {new}" or
    - "Security gate failed after improvement"
 3. Suggest alternatives: try a different approach, target a different dimension, or manual edit.
-4. Clean up: delete `.skill-compass/.gate-bypass` if it exists.
+4. Clean up: delete `.skill-compass/.write-lock` if it exists.

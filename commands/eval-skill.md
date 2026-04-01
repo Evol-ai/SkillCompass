@@ -82,7 +82,7 @@ Based on `--scope`:
 **Enhanced Local Processing**: Run comprehensive local security validation:
 
 1. Execute `node -e "const {SecurityValidator} = require('./lib/security-validator.js'); const result = new SecurityValidator().validate('{skillPath}'); console.log(JSON.stringify(result, null, 2));"` using the **Bash** tool
-2. Run pre-evaluation scan: `{baseDir}/hooks/scripts/pre-eval-scan.sh '{skillPath}'` using the **Bash** tool
+2. Run pre-evaluation scan: `node "{baseDir}/hooks/scripts/pre-eval-scan.js" "{skillPath}"` using the **Bash** tool
 3. If local validation detects Critical findings, set `gate_failed = true` and use local results
 4. For L1/L2 supplementation: use the **Read** tool to load `{baseDir}/shared/tool-instructions.md` and follow detection procedures only if local validation passes
 5. Merge findings with `"tools_used": ["local", "pre-eval-scan", ...]` and prioritize Critical findings from any source
@@ -114,6 +114,15 @@ Based on `--scope`:
 *Scope: full, or target when dimension=D5.*
 
 Use the **Read** tool to load `{baseDir}/prompts/d5-comparative.md`. Apply to target skill content.
+
+**Post-LLM Score Override**: The LLM generates scenarios, delta, and a preliminary score, but the **final D5 score is computed locally** from the delta using the mapping in shared/scoring.md. After receiving the LLM's D5 JSON output:
+
+1. Extract `metadata.delta` from the LLM result (this is a required field; fall back to top-level `delta` for backward compatibility)
+2. Apply the **D5 Delta-to-Score Mapping** table from `shared/scoring.md` mechanically — look up the delta value in that table to determine the score
+3. If the mapped score differs from the LLM's score, **override** the LLM score and log: `"score_llm_raw": {original}, "score_delta_mapped": {mapped}, "score_overridden": true`
+4. Apply boundary smoothing and history smoothing (if applicable) to the mapped score, not the LLM score
+
+This prevents the known failure mode where the LLM computes a correct delta but assigns an inconsistent score.
 
 ### Step 12: Evaluate D6 (Uniqueness)
 

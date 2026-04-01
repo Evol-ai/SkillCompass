@@ -93,24 +93,30 @@ Key question: **As LLMs improve, will this skill become unnecessary?**
 
 ## Scoring Rubric
 
-| Score | Description |
-|-------|-------------|
-| 9-10 | Unique capability, fills clear gap, no known overlap, low obsolescence risk |
-| 7-8 | Mostly unique, minor overlap with general capability, moderate value |
-| 5-6 | Some overlap with other skills or general knowledge, still provides niche value |
-| 3-4 | High overlap with existing skills, or content mostly available via direct prompting |
-| 1-2 | Near-duplicate of another skill, or trivially replicated by prompt, high obsolescence risk |
-| 0 | Exact duplicate of an installed skill |
+| Band | Score | Description |
+|------|-------|-------------|
+| A | 9-10 | Unique capability, fills clear gap, no known overlap, low obsolescence risk |
+| B | 7-8 | Mostly unique, minor overlap with general capability, moderate value |
+| C | 5-6 | Some overlap with other skills or general knowledge, still provides niche value |
+| D | 3-4 | High overlap with existing skills, or content mostly available via direct prompting |
+| E | 1-2 | Near-duplicate of another skill, or trivially replicated by prompt, high obsolescence risk |
+| F | 0 | Exact duplicate of an installed skill |
 
-## Score Modifiers
+## Mandatory Scoring Procedure (3 steps, in order)
 
-After initial rubric score, apply modifiers:
+**Step 1 — Rubric Band Selection.** Based on the three analyses above, select EXACTLY ONE rubric band (A-F). State: `"rubric_band": "C"` and `"rubric_base": 5` (use the LOWER score of the band). You MUST justify the band choice in one sentence referencing the similarity %, differentiation, and obsolescence findings.
+
+**Step 2 — Modifiers.** Apply each applicable modifier to the rubric_base:
 - **+1** if tool-integration based (low obsolescence)
 - **-1** if general knowledge only (high obsolescence)
 - **+1** if narrow niche with clear audience
 - **-1** if broad overlapping scope with no specialization
 
-**Clamp final score to [0, 10].**
+List all applied modifiers. If none apply, state `"modifiers_applied": []`.
+
+**Step 3 — Final Score.** `final_score = clamp(rubric_base + sum(modifiers), 0, 10)`. The final score MUST be within the range `[rubric_base - 1, rubric_base + 2]` (i.e., at most 1 below or 2 above the band's lower bound). If modifiers would push beyond this range, clamp to the range boundary. This prevents modifiers from shifting the score outside the selected band's neighborhood.
+
+Report all three values in metadata: `"rubric_band"`, `"rubric_base"`, `"modifiers_applied"`, and the final `"score"`.
 
 ## Output Format
 
@@ -118,7 +124,7 @@ After initial rubric score, apply modifiers:
 {
   "dimension": "D6",
   "dimension_name": "uniqueness",
-  "score": 7,
+  "score": 8,
   "max": 10,
   "details": "Moderate uniqueness. Tool integration provides lasting value. Some overlap with general code review capabilities.",
   "sub_scores": {},
@@ -131,6 +137,8 @@ After initial rubric score, apply modifiers:
       }
     ],
     "supersession_risk": "low",
+    "rubric_band": "B",
+    "rubric_base": 7,
     "modifiers_applied": ["+1 tool-integration"],
     "registry_available": true
   }
@@ -139,7 +147,7 @@ After initial rubric score, apply modifiers:
 
 ## Few-shot Examples
 
-### Example A: Highly Unique (Score 9)
+### Example A: Highly Unique (Score 10)
 
 **Input skill excerpt:**
 ```yaml
@@ -163,7 +171,7 @@ commands:
 {
   "dimension": "D6",
   "dimension_name": "uniqueness",
-  "score": 9,
+  "score": 10,
   "max": 10,
   "details": "Highly unique. Visual regression testing with pixel-diff is a specialized capability that requires tool integration (Playwright + image comparison). No overlap with e2e-tester (functional vs visual) or css-analyzer (static vs runtime). Low obsolescence risk due to tool dependency.",
   "sub_scores": {},
@@ -173,6 +181,8 @@ commands:
       { "name": "e2e-tester", "overlap_percentage": 15 }
     ],
     "supersession_risk": "low",
+    "rubric_band": "A",
+    "rubric_base": 9,
     "modifiers_applied": ["+1 tool-integration", "+1 narrow niche"],
     "registry_available": true
   }
@@ -215,13 +225,15 @@ description: Provides clean code principles and naming conventions for any progr
       { "name": "coding-standards", "overlap_percentage": 60 }
     ],
     "supersession_risk": "high",
+    "rubric_band": "C",
+    "rubric_base": 5,
     "modifiers_applied": ["-1 general knowledge", "-1 broad overlapping scope"],
     "registry_available": true
   }
 }
 ```
 
-### Example C: Name-Similar But Functionally Different (Score 7)
+### Example C: Name-Similar But Functionally Different (Score 8)
 
 **Input skill excerpt:**
 ```yaml
@@ -244,7 +256,7 @@ commands:
 {
   "dimension": "D6",
   "dimension_name": "uniqueness",
-  "score": 7,
+  "score": 8,
   "max": 10,
   "details": "Despite similar naming, functional overlap with 'docker' skill is only 15%. This skill manages multi-service orchestration (compose files, service groups, cross-service health), while 'docker' manages individual containers. Different abstraction level, different use cases. Low obsolescence risk due to tool integration.",
   "sub_scores": {},
@@ -254,6 +266,8 @@ commands:
       { "name": "docker", "overlap_percentage": 15 }
     ],
     "supersession_risk": "low",
+    "rubric_band": "B",
+    "rubric_base": 7,
     "modifiers_applied": ["+1 tool-integration"],
     "registry_available": true
   }

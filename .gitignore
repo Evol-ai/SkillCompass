@@ -31,3 +31,4 @@ docs/
 run-all-batches.sh
 run-batch-eval.sh
 skill-evolution-comparison-zh.md
+.tmp-*

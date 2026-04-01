@@ -5,7 +5,7 @@
 ### Added
 - Six-dimension evaluation framework (D1 Structure, D2 Trigger, D3 Security, D4 Functional, D5 Comparative, D6 Uniqueness)
 - Local JavaScript validators for D1/D2/D3 to reduce token consumption
-- Pre-evaluation security scanner (pre-eval-scan.sh) with inline backtick stripping
+- Pre-evaluation security scanner (`pre-eval-scan.js`, with shell wrapper for compatibility) with inline backtick stripping
 - Output guard validation for eval-improve write-backs
 - Audit chain with hash-chain tamper detection
 - File integrity monitor with checksum snapshots

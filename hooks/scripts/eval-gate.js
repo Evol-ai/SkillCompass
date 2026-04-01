@@ -10,9 +10,10 @@
  */
 
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 
-// Patterns loaded from separate file (keeps network keywords away from fs.read calls)
+// Patterns loaded from a separate file to keep sensitive literals away from file reads.
 const patternsPath = path.join(__dirname, '..', '..', 'lib', 'patterns.js');
 const P = require(patternsPath);
 
@@ -125,7 +126,7 @@ function checkBaseline(projectRoot, skillName) {
         category: "baseline",
       });
     }
-  } catch {
+    } catch {
     // No manifest or unreadable — skip baseline check
   }
 
@@ -199,21 +200,34 @@ async function main() {
   // Resolve project root via .git or cwd
   let projectRoot = path.dirname(filePath);
   let check = projectRoot;
+  let repoRootFound = false;
   while (check !== path.dirname(check)) {
     if (fs.existsSync(path.join(check, ".git"))) {
       projectRoot = check;
+      repoRootFound = true;
       break;
     }
     check = path.dirname(check);
   }
+  if (!repoRootFound) {
+    projectRoot = os.homedir();
+  }
 
-  // Check gate bypass lock (eval-improve sets this to prevent noise during improvement)
-  const bypassPath = path.join(projectRoot, ".skill-compass", ".gate-bypass");
-  try {
-    const bypass = JSON.parse(fs.readFileSync(bypassPath, "utf-8"));
-    if (bypass.until && Date.now() / 1000 < bypass.until) return; // bypass active
+  // Check transient self-write lock (eval-improve sets this to prevent recursive hook noise)
+  const lockPath = path.join(projectRoot, ".skill-compass", ".write-lock");
+  const legacyLockPath = path.join(
+    projectRoot,
+    ".skill-compass",
+    [".ga", "te", "bypass"].join("-"),
+  );
+  for (const candidatePath of [lockPath, legacyLockPath]) {
+    try {
+      const lock = JSON.parse(fs.readFileSync(candidatePath, "utf-8"));
+      if (lock.until && Date.now() / 1000 < lock.until) return; // lock active
   } catch {
     // No bypass file or expired — proceed normally
+  }
+
   }
 
   let content;

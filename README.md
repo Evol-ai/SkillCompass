@@ -22,13 +22,15 @@
 
 |  |  |
 |--|--|
-| **What it is** | An evaluation-driven skill evolution engine for Claude Code / OpenClaw — six-dimension scoring, directed improvement, version management. |
+| **What it is** | A local skill quality and security evaluator for Claude Code / OpenClaw – six-dimension scoring, guided improvement, version management. |
 | **Pain it solves** | Turns "tweak and hope" into diagnose → targeted fix → verified improvement. |
 | **Use in 30 seconds** | `/skill-compass evaluate {skill}` — instant quality report showing exactly what's weakest and what to improve next. |
 
 > **Find the weakest link → fix it → prove it worked → next weakness → repeat.**
 
 ---
+
+> Start read-only with `/eval-skill` or `/eval-security`. Write-capable flows are explicit opt-in.
 
 ## Who This Is For
 
@@ -69,7 +71,7 @@ rsync -a --exclude='.git'  . ~/.claude/skills/skill-compass/
 rsync -a --exclude='.git'  . .claude/skills/skill-compass/
 ```
 
-> **First run:** Claude Code will request permission for `node -e` and `bash` commands. Select **"Allow always"** to avoid repeated prompts. SkillCompass may also offer a ~5 second local inventory on first use, then continue your original command automatically.
+> **First run:** Claude Code will request permission for `node -e` and `node` commands. Select **"Allow always"** to avoid repeated prompts. SkillCompass may also offer a ~5 second local inventory on first use, then continue your original command automatically.
 
 ### OpenClaw
 
@@ -91,6 +93,46 @@ If your OpenClaw skills live outside the default scan roots, add them to `skills
   }
 }
 ```
+
+---
+
+## ClawHub Canary Workflow
+
+Use a dedicated canary slug when you want a real platform-side publish check without touching the live `skill-compass` listing.
+
+### Principles
+
+- Reuse a single shadow slug: `skill-compass-canary`
+- Always pass an explicit canary version such as `1.0.5-canary.1`
+- In PowerShell, use `clawhub.cmd` rather than `clawhub`
+- After validation, hide the canary entry so it does not remain publicly searchable
+
+### Prepare
+
+```powershell
+node scripts/release/prepare-clawhub-canary.js --version 1.0.5-canary.1
+```
+
+This runs the local ClawHub preflight checks, creates a clean upload bundle in `clawhub-canary-upload/`, excludes optional example guides from the publish artifact, and writes the publish checklist to `clawhub-canary-publish.txt`.
+
+### Publish
+
+```powershell
+clawhub.cmd publish ".\clawhub-canary-upload" --slug skill-compass-canary --name "SkillCompass Canary (Internal)" --version 1.0.5-canary.1 --changelog "internal canary validation" --tags canary
+```
+
+### Validate And Hide
+
+```powershell
+clawhub.cmd inspect skill-compass-canary --no-input
+clawhub.cmd search skill compass --no-input
+clawhub.cmd hide skill-compass-canary --yes
+```
+
+Notes:
+
+- ClawHub currently applies tags per slug. A canary publish does not replace the live `skill-compass` entry, but the canary slug can still appear in search results until hidden.
+- Keep canary versions explicit and monotonic. Do not fall back to the repo's local `1.0.0` metadata for repeat publishes.
 
 ---
 
@@ -214,8 +256,8 @@ overall_score = round((D1×0.10 + D2×0.15 + D3×0.20 + D4×0.30 + D5×0.15 + D6
 |---------|-------------|
 | **Version Management** | SHA-256 hashed snapshots. Rollback to any version anytime. |
 | **Three-Way Merge** | Merges upstream updates region-by-region. Local improvements preserved. |
-| **Multi-Round Evolution** | `/eval-evolve` runs up to 6 rounds autonomously. Stops at PASS or plateau. |
-| **Batch Audit + Auto-Fix** | `/eval-audit --fix --budget 3` scans worst-first, auto-fixes within budget. |
+| **Optional Plugin-Assisted Evolution** | `/eval-evolve` runs up to 6 rounds when you explicitly opt in. Stops at PASS or plateau. |
+| **Batch Audit + Optional Write Mode** | `/eval-audit --fix --budget 3` scans worst-first and only writes when you explicitly enable fix mode. |
 | **CI Mode** | `--ci` flag, exit codes: 0=PASS, 1=CAUTION, 2=FAIL. |
 
 ---
