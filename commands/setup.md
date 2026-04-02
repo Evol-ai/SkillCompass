@@ -86,6 +86,32 @@ Group skills by purpose using keyword matching on the `description` field:
 - **Productivity**: `\b(todo|note|doc|translate|search|manage|write|email)\b`
 - **Other**: anything that does not match above
 
+## Step 4.5: Quick Scan New Skills (D1+D2+D3)
+
+For any skill that is **newly discovered** in this run (not present in the previous `setup-state.json`), run a lightweight D1+D2+D3 scan:
+
+1. Use `lib/quick-scan.js` `QuickScanner.scanOne(filePath, skillName)` on the new skill's SKILL.md path
+2. Display the result inline immediately after the skill's inventory entry:
+
+For clean results:
+```text
+[setup] 新 skill: {name}
+[quick scan] D1={d1} D2={d2} D3={d3} ✓ Clean
+```
+
+For issues found:
+```text
+[setup] 新 skill: {name}
+[quick scan] D1={d1} D2={d2} D3={d3} ⚠ {verdict}
+  → {first finding description}
+  → 建议运行 /eval-skill {name} 做完整评测
+```
+
+3. Write scan results to `.skill-compass/cc/quick-scan-cache.json` via `QuickScanner`
+4. Do not block the setup flow — this is informational output only
+
+If `lib/quick-scan.js` cannot be loaded (e.g., missing dependency), skip this step silently and continue setup.
+
 ## Step 5: Quick Health Check
 
 Run local checks only. No LLM calls.
@@ -317,6 +343,11 @@ After setup completes in either mode, write `.skill-compass/setup-state.json` wi
   ]
 }
 ```
+
+For each skill in the inventory:
+- If `first_seen_at` is not already present in the previous saved state for this skill, set it to the current ISO timestamp (`new Date().toISOString()`)
+- If `first_seen_at` already exists in the previous state, preserve the existing value unchanged
+- This field enables the Skill Inbox R1 and R2 rules to calculate how long a skill has been installed
 
 Also write `.skill-compass/.setup-done` as a compatibility marker.
 

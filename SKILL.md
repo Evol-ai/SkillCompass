@@ -16,6 +16,8 @@ commands:
   - eval-merge
   - eval-rollback
   - eval-evolve
+  - skill-inbox
+  - skill-report
 metadata:
   clawdbot:
     emoji: "🧭"
@@ -68,6 +70,13 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 |---------|------|---------|
 | /eval-skill | `commands/eval-skill.md` | Assess quality (scores + verdict). Supports `--scope gate\|target\|full`. |
 | /eval-improve | `commands/eval-improve.md` | Fix the weakest dimension automatically. Groups D1+D2 when both are weak. |
+
+### Inbox & Report
+
+| Command | File | Purpose |
+|---------|------|---------|
+| /skill-inbox | `commands/skill-inbox.md` | Skill 建议收件箱 — 双视图：建议 + 全部 skill 管理 |
+| /skill-report | `commands/skill-report.md` | Skill 生态报告 — Quick Scan (D1+D2+D3) + 上下文预算 + 质量分布 |
 
 ### Advanced Commands
 

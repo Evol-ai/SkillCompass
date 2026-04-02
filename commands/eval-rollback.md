@@ -50,6 +50,27 @@ Update `current_version` in manifest to the restored version. Do NOT delete late
 
 Use the **Write** tool to save the updated manifest.
 
+### Step 5.5: Write Audit Log
+
+Log the rollback event to the audit chain so that the Skill Inbox R6 rule (undo-2x) can detect repeated rollbacks:
+
+Using Node.js (or instruct Claude to execute):
+
+```javascript
+const { AuditChain } = require('./lib/audit-chain');
+const crypto = require('node:crypto');
+const auditChain = new AuditChain(skillName);
+auditChain.log({
+  type: 'rollback',
+  severity: 'WARN',
+  message: `Rolled back from ${currentVersion} to ${targetVersion}`,
+  skillHash: crypto.createHash('sha256').update(restoredContent).digest('hex'),
+  findings: []
+});
+```
+
+If `lib/audit-chain.js` is not accessible from the command context, manually write a JSON line to `.skill-compass/{skill-name}/audit.jsonl` with `type: "rollback"` and the current timestamp.
+
 ### Step 6: Confirm
 
 Output: `"Rolled back {skill-name} to version {version}. Previous version preserved in history."`
