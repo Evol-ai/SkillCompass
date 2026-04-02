@@ -22,13 +22,17 @@ Unified entry point for managing skill suggestions and browsing all installed sk
    node -e "
    const { InboxStore } = require('./lib/inbox-store');
    const store = new InboxStore('cc');
+   store.reactivateSnoozed();
+   const allCache = store.getAllSkillCache();
+   const cacheMap = {};
+   allCache.forEach(c => { cacheMap[c.skill_name] = c; });
    console.log(JSON.stringify({
      pending: store.getPending(),
-     skillCache: store.getSkillCache()
+     skillCache: cacheMap
    }, null, 2));
    "
    ```
-   Parse the output as `inboxData`. If the script fails, treat `pending` as `[]` and `skillCache` as `{}`.
+   Parse the output as `inboxData`. `skillCache` is a map keyed by skill name. If the script fails, treat `pending` as `[]` and `skillCache` as `{}`.
 
 4. Check if a weekly digest is due and run it if so. Execute with the **Bash** tool:
    ```javascript

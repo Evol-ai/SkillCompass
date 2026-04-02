@@ -344,10 +344,15 @@ After setup completes in either mode, write `.skill-compass/setup-state.json` wi
 }
 ```
 
-For each skill in the inventory:
-- If `first_seen_at` is not already present in the previous saved state for this skill, set it to the current ISO timestamp (`new Date().toISOString()`)
-- If `first_seen_at` already exists in the previous state, preserve the existing value unchanged
-- This field enables the Skill Inbox R1 and R2 rules to calculate how long a skill has been installed
+For each skill in the inventory, apply the `first_seen_at` preservation algorithm:
+
+1. Load the **previous** `setup-state.json` (before overwriting) and build a lookup map: `prevMap[skill.name] = skill`
+2. For each skill in the **current** inventory:
+   - If `prevMap[skill.name]` exists and has a `first_seen_at` value → **preserve it**: `skill.first_seen_at = prevMap[skill.name].first_seen_at`
+   - Otherwise → **set it now**: `skill.first_seen_at = new Date().toISOString()`
+3. Write the updated inventory to `setup-state.json`
+
+This field enables the Skill Inbox R1 and R2 rules to calculate how long a skill has been installed. Without it, all skills appear as "just installed" on every setup run.
 
 Also write `.skill-compass/.setup-done` as a compatibility marker.
 

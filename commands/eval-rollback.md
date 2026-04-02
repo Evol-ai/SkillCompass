@@ -59,7 +59,7 @@ Using Node.js (or instruct Claude to execute):
 ```javascript
 const { AuditChain } = require('./lib/audit-chain');
 const crypto = require('node:crypto');
-const auditChain = new AuditChain(skillName);
+const auditChain = new AuditChain(skillName, 'cc');
 auditChain.log({
   type: 'rollback',
   severity: 'WARN',
@@ -69,7 +69,7 @@ auditChain.log({
 });
 ```
 
-If `lib/audit-chain.js` is not accessible from the command context, manually write a JSON line to `.skill-compass/{skill-name}/audit.jsonl` with `type: "rollback"` and the current timestamp.
+The second argument `'cc'` routes the audit log to `.skill-compass/cc/{skill-name}/audit.jsonl` (platform-specific path). If `lib/audit-chain.js` is not accessible from the command context, manually write a JSON line to `.skill-compass/cc/{skill-name}/audit.jsonl` with `type: "rollback"` and the current timestamp.
 
 ### Step 6: Confirm
 

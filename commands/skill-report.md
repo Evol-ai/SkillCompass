@@ -95,12 +95,15 @@ console.log(JSON.stringify(sizes));
 Compute:
 - `total_kb`: sum of all sizes, rounded to one decimal
 - `pct`: `(total_kb / 80) * 100`, capped at 100 for the bar, rounded to integer
-- For each skill, determine `status` based on `last_activity_at` from `.skill-compass/{name}/manifest.json` if available:
-  - `活跃`: `last_activity_at` within the last 7 days
-  - `闲置`: `last_activity_at` 7–14 days ago
-  - `已停用`: skill has `disabled: true` in manifest
-  - `从未使用`: no `last_activity_at` recorded
-  - Default: `闲置`
+- For each skill, determine `status`:
+  - First check `.skill-compass/cc/inbox.json` → `skill_cache` for `disabled` and `pinned` flags (load via `InboxStore.getAllSkillCache()` or read the JSON directly)
+  - If `disabled === true` → `已停用`
+  - If `pinned === true` → `已 pin`
+  - Otherwise determine from `last_activity_at` (from manifest.json, check `.skill-compass/cc/{name}/manifest.json` first, then `.skill-compass/{name}/manifest.json`):
+    - `活跃`: within the last 7 days
+    - `闲置`: 7–14 days ago
+    - `沉睡`: more than 14 days ago
+    - `从未使用`: no `last_activity_at` recorded
 
 Sort all skills by size descending. Show top 5.
 
@@ -128,7 +131,7 @@ Context Budget
 
 ### Step 4: Portfolio Overview
 
-Read version count from `.skill-compass/{name}/manifest.json` for each skill (field `version_count` or count of entries in `history` array). If manifest is missing, treat version count as 1.
+Read version count from `.skill-compass/{name}/manifest.json` for each skill (count entries in `versions` array, or use field `version_count` if present). Also check `.skill-compass/cc/{name}/manifest.json` first (new path takes priority). If manifest is missing, treat version count as 1.
 
 Read `last_activity_at` from each manifest to determine activity tier:
 - `活跃`: within last 7 days
@@ -171,7 +174,7 @@ For the `高频迭代` row, list skill names only if count <= 5; otherwise show 
 
 ### Step 5: Quality Summary
 
-For each skill, check whether `.skill-compass/{name}/manifest.json` exists and contains a `scores` object with `overall` defined (full evaluation record).
+For each skill, check whether `.skill-compass/cc/{name}/manifest.json` or `.skill-compass/{name}/manifest.json` exists and contains a `scores` object with `overall` defined (full evaluation record). Check the `cc/` path first.
 
 If zero skills have eval records:
 
