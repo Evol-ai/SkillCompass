@@ -43,11 +43,32 @@ Build the scan root list in this priority order:
 
 Resolve only directories that actually exist.
 
-Scan each root for `*/SKILL.md` and `*/skill.md`.
+Scan each root **recursively** for `**/SKILL.md` and `**/skill.md` (all depths, not just immediate children).
 
 Exclude:
 - paths containing `node_modules/`, `.git/`, `test-fixtures/`, `.skill-compass/`
 - SkillCompass's own SKILL.md at `{baseDir}`
+
+### Collection Identification
+
+During scanning, identify collection (multi-skill package) structures. A directory is a **collection** if it contains sub-skills matching any of these patterns:
+- `{dir}/skills/{child}/SKILL.md`
+- `{dir}/.claude/skills/{child}/SKILL.md`
+- `{dir}/.agents/skills/{child}/SKILL.md`
+
+For collections:
+- The parent directory is the collection entry in inventory (`type: "collection"`)
+- Each child SKILL.md is recorded in the `children` array
+- `total_size` = sum of all SKILL.md file sizes in the collection
+- Individual child skills are NOT separate inventory entries
+
+For standalone skills (not inside a collection structure):
+- `type: "standalone"` in inventory
+- `file_size` = size of the single SKILL.md
+
+Example: `~/.claude/skills/superpowers/skills/writing-plans/SKILL.md` becomes:
+- Parent: `superpowers` (type: collection)
+- Child: `{ name: "writing-plans", qualified: "superpowers:writing-plans", path: "..." }`
 
 Deduplicate by canonical skill identity:
 - prefer earlier roots in the priority order above
@@ -203,9 +224,34 @@ After setup completes in either mode, write `.skill-compass/setup-state.json` wi
       "version": "1.2.0",
       "path": "~/.claude/skills/deploy-helper/SKILL.md",
       "source_root": "~/.claude/skills",
+      "type": "standalone",
+      "file_size": 4096,
       "purpose": "Deploy/Ops",
       "modified_at": "{ISO}",
       "description_hash": "{sha256}"
+    },
+    {
+      "name": "superpowers",
+      "version": "2.0.0",
+      "path": "~/.claude/skills/superpowers",
+      "source_root": "~/.claude/skills",
+      "type": "collection",
+      "total_size": 18432,
+      "purpose": "Productivity",
+      "modified_at": "{ISO}",
+      "description_hash": "{sha256}",
+      "children": [
+        {
+          "name": "writing-plans",
+          "qualified": "superpowers:writing-plans",
+          "path": "~/.claude/skills/superpowers/skills/writing-plans/SKILL.md"
+        },
+        {
+          "name": "code-review",
+          "qualified": "superpowers:code-review",
+          "path": "~/.claude/skills/superpowers/skills/code-review/SKILL.md"
+        }
+      ]
     }
   ]
 }

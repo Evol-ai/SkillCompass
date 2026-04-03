@@ -223,6 +223,59 @@ Quality Summary — {n} skills have eval records
 
 Mark the weakest dimension row with `← 最弱` at the end of its bar line.
 
+### Step 5.5: Usage Profile
+
+Read usage data using `lib/usage-reader.js`:
+
+```javascript
+const { UsageReader } = require('./lib/usage-reader');
+const reader = new UsageReader('cc');
+const allSignals = reader.getAllSignals();
+```
+
+Execute with `node -e` via the **Bash** tool. `allSignals` is a map keyed by skill name containing fields: `use_count_7d`, `use_count_14d`, `total_use_count`, `ever_used`, `last_used`, `total_size`.
+
+If no usage data exists at all (usage.jsonl empty or missing, or `allSignals` is `{}`):
+
+```
+Skill 使用画像
+
+  暂无使用数据。使用 skill 后 SkillCompass 会自动追踪。
+```
+
+Skip the rest of this step.
+
+Otherwise, categorize skills by usage pattern and display:
+
+**Most used** — top 5 by `use_count_14d`, only those with `use_count_14d > 0`. ASCII bar is 12 chars wide, proportional to the max `use_count_14d` in this group (`█` filled, `░` empty). For collection (composite) skills, show the most-used child in parentheses if available.
+
+**Never used** — skills where `ever_used = false`, sorted by `total_size` descending.
+
+**One-and-done** — skills where `total_use_count = 1` and `last_used` is more than 14 days ago.
+
+**Declining** — skills where `use_count_7d = 0` but `use_count_14d >= 3`.
+
+Display:
+
+```
+Skill 使用画像
+
+  最常使用（最近 14 天）
+    {name}       {bar 12 chars}  {count} 次
+    {name}       {bar 12 chars}  {count} 次（集合内 {top_child} {child_count} 次）
+
+  从未使用
+    {name}       安装 {days} 天  0 次调用  占 {size}KB
+
+  一次性使用
+    {name}       仅 {date} 使用 1 次
+
+  使用量下降
+    {name}       前两周 {count} 次 → 本周 0 次
+```
+
+Omit any sub-section that has no entries.
+
 ### Step 6: Action Guide
 
 Always display this section at the end, regardless of arguments:

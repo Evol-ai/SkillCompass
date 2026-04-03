@@ -147,11 +147,26 @@ After printing the confirmation, re-display the next pending suggestions (Step 4
 
 Read the `inventory` array from setup-state.json. For each skill entry, determine its status:
 
-**Activity** — based on the skill's `modified_at` field relative to today:
-- `活跃`: modified within the last 7 days
-- `闲置`: modified 7–14 days ago
-- `沉睡`: modified more than 14 days ago
-- `从未使用`: no `modified_at` recorded
+**Activity** — based on usage data from `lib/usage-reader.js`:
+- `活跃(N次/周)`: `use_count_7d > 0` — show the 7-day count
+- `活跃(N次/2周)`: `use_count_7d = 0` but `use_count_14d > 0` — show the 14-day count
+- `闲置`: `ever_used` is true but `use_count_14d = 0`
+- `从未使用`: `ever_used` is false
+
+Load usage data by running via the **Bash** tool:
+
+```javascript
+node -e "
+const { UsageReader } = require('./lib/usage-reader');
+const reader = new UsageReader('cc');
+const allSignals = reader.getAllSignals();
+console.log(JSON.stringify(allSignals));
+"
+```
+
+`allSignals` is a map keyed by skill name. If the script fails or returns `{}`, treat all skills as `从未使用`.
+
+Activity and usage data from `lib/usage-reader.js`. Run via Bash `node -e` with UsageReader.getAllSignals().
 
 **Special status** — check `inboxData.skillCache` for the skill name:
 - If `skillCache[name].pinned === true` → label `已 pin`
@@ -160,15 +175,32 @@ Read the `inventory` array from setup-state.json. For each skill entry, determin
 
 **Group skills by category** using the `purpose` field from the inventory entry (Code/Dev, Deploy/Ops, Data/API, Productivity, Other). Assign the same way as `/setup`: keyword-match on `description` if `purpose` is absent.
 
+**Quality badge** — for each skill, determine `badge` and `eval_info`:
+
+Badge logic:
+1. Check `.skill-compass/cc/{name}/manifest.json` or `.skill-compass/{name}/manifest.json` for full eval scores
+   - Has `scores.overall` → use total score + verdict symbol + "eval {date}"
+   - verdict symbol: `✓` if PASS (overall >= 70), `⚠` if CAUTION (50–69), `✗` if FAIL (< 50)
+2. If no manifest with `scores.overall`, check `.skill-compass/cc/quick-scan-cache.json` for quick scan results
+   - Has result for the skill → show lowest dimension score + scan symbol + "scan {date}"
+3. If neither → show `—`
+
 Display grouped output (number skills sequentially across all groups):
 
 ```
 {Category} ({count})
-  {n}. {name}      {version}  {status}    最后活动 {modified_at|从未}
+  {n}. {name}    {badge}  {version}  {status}    {eval_info}
 
 {Category} ({count})
-  {n}. {name}      {version}  {status}    最后活动 {modified_at|从未}
+  {n}. {name}    {badge}  {version}  {status}    {eval_info}
 ```
+
+Where:
+- `badge`: `✓` (clean/PASS), `⚠` (medium/CAUTION), `✗` (high_risk/FAIL), `—` (no eval data)
+- `eval_info`:
+  - If manifest has full eval: `{score}分 · eval {date}`
+  - If only quick-scan-cache: `D1={d1} · scan {date}`
+  - If neither: empty
 
 Then prompt:
 
