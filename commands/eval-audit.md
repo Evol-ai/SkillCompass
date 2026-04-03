@@ -1,6 +1,7 @@
 # /eval-audit — Batch Skill Evaluation
 
-> **Locale note:** All user-facing text (prompts, confirmations, error messages, progress, summaries) MUST match the locale detected from the user's first message in the session. Technical terms (PASS, CAUTION, FAIL, SKILL.md, skill names, file paths) are never translated. Dimension codes translate: D1→结构/Structure, D2→触发/Trigger, D3→安全/Security, D4→功能/Functional, D5→比较/Comparative, D6→独特/Uniqueness.
+> **Locale**: 所有用户可见文本跟随会话语言。中文为默认示例，英文等效表述标注为 `EN:`。维度标签见 SKILL.md。
+> EN: `> **Locale**: All user-facing text follows session language. Chinese is the default example; English equivalents are marked with `EN:`. Dimension labels: see SKILL.md.`
 
 ## Arguments
 

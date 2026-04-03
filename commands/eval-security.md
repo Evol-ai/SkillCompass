@@ -1,6 +1,7 @@
 # /eval-security — Standalone Security Scan
 
-> **Locale note:** all user-facing output (labels, messages, choice prompts) follows the locale detected from the user's shell environment or system settings. English is the fallback when no locale is detected.
+> **Locale**: 所有用户可见文本跟随会话语言。中文为默认示例，英文等效表述标注为 `EN:`。维度标签见 SKILL.md。
+> EN: `> **Locale**: All user-facing text follows session language. Chinese is the default example; English equivalents are marked with `EN:`. Dimension labels: see SKILL.md.`
 
 ## Arguments
 

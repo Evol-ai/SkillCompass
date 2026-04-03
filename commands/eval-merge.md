@@ -1,6 +1,7 @@
 # /eval-merge — Three-Way Version Merge
 
-> **Locale note**: All user-facing messages, prompts, and choices in this command follow the session locale. If the session is in Chinese, display messages in Chinese; if in English, display in English. The structured choice lists below are shown in Chinese as the canonical form — translate them to match the active locale before presenting to the user.
+> **Locale**: 所有用户可见文本跟随会话语言。中文为默认示例，英文等效表述标注为 `EN:`。维度标签见 SKILL.md。
+> EN: `> **Locale**: All user-facing text follows session language. Chinese is the default example; English equivalents are marked with `EN:`. Dimension labels: see SKILL.md.`
 
 ## Arguments
 

@@ -1,9 +1,7 @@
 # /eval-evolve — Optional Plugin-Assisted Multi-Round Evolution via Ralph Loop
 
-<!-- LOCALE NOTE: All user-facing messages in this command follow the session locale.
-     If the user is writing in Chinese, display prompts, choices, progress messages,
-     and the Evolution Report in Chinese. If in English, use English. Code paths,
-     JSON keys, file names, and dimension codes (D1–D6) are always kept in English. -->
+> **Locale**: 所有用户可见文本跟随会话语言。中文为默认示例，英文等效表述标注为 `EN:`。维度标签见 SKILL.md。
+> EN: `> **Locale**: All user-facing text follows session language. Chinese is the default example; English equivalents are marked with `EN:`. Dimension labels: see SKILL.md.`
 
 ## Arguments
 
@@ -114,19 +112,9 @@ Then execute:
 
 ## Dimension Label Reference
 
-When displaying dimension names in user-facing text (progress messages, Evolution Report,
-choices), always use the human-readable label instead of the bare code:
+见 SKILL.md 的 **Dimension label mapping** 表（canonical，所有命令均以该表为准）。
 
-| Code | Chinese Label | English Label |
-|------|--------------|---------------|
-| D1 | 功能清晰度 | Functional Clarity |
-| D2 | 触发精准度 | Trigger Precision |
-| D3 | 安全性 | Security |
-| D4 | 对比辨识度 | Comparative Distinctiveness |
-| D5 | 认知独特性 | Cognitive Uniqueness |
-| D6 | 结构规范性 | Structure Quality |
-
-Example: instead of "D2 ({score}/10)", write "触发精准度 D2 ({score}/10)" (or "Trigger Precision D2 ({score}/10)" in English).
+Example: instead of "D2 ({score}/10)", write "触发 D2 ({score}/10)" (or "Trigger D2 ({score}/10)" in English).
 
 ## Step 5: Evolution Report (Mandatory)
 
@@ -210,7 +198,7 @@ After the report block, present the user with a choice (do **not** print raw com
 ### 5.3: Report Rules
 
 - **Score Curve**: Use block characters (█ and ░) to create a simple bar, 20 chars wide, proportional to score/100. This gives an instant visual of progress.
-- **Problem/Fix/Impact**: Write in user language, not dimension codes. Translate D3 findings into "hardcoded password removed", D2 issues into "description was too vague to be discovered", etc. Always use the human-readable dimension label from the table above.
+- **Problem/Fix/Impact**: Write in user language, not dimension codes. Translate D3 findings into "hardcoded password removed", D2 issues into "description was too vague to be discovered", etc. Always use the human-readable dimension label from the Dimension label mapping in SKILL.md.
 - **Impact line**: Focus on what the user gains — "users can now find this skill by searching for X", "no more security warnings when editing", "clear step-by-step instructions instead of vague hints".
 - **Remaining Opportunities**: Always show next steps followed by the choice block — whether PASS or not.
 - If a round resulted in rollback (regression detected), note it: "第 N 轮 — 尝试改进 {dim_label}，已回滚（检测到回退）。无净变化。" (EN: "Round N — Attempted {dim_label}, rolled back (regression detected). No net change.")

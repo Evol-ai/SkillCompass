@@ -1,6 +1,7 @@
 # /eval-rollback — Version Rollback
 
-> **Locale**: All user-facing messages follow the session locale. English examples are shown below; replace with Chinese equivalents when the session is Chinese (e.g. `"没有找到 '{skill-name}' 的版本历史。"` / `"快照缺失，无法回滚。"` etc.).
+> **Locale**: 所有用户可见文本跟随会话语言。中文为默认示例，英文等效表述标注为 `EN:`。维度标签见 SKILL.md。
+> EN: `> **Locale**: All user-facing text follows session language. Chinese is the default example; English equivalents are marked with `EN:`. Dimension labels: see SKILL.md.`
 
 ## Arguments
 

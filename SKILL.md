@@ -131,7 +131,20 @@ From frontmatter, detect in priority order:
 Detect the user's language from their first message in the session. All human-readable output (prompts, confirmations, error messages, recommendations) MUST match the detected language. Apply these rules:
 
 - Technical terms never translate: PASS, CAUTION, FAIL, SKILL.md, skill names, file paths
-- Dimension labels translate: D1→结构/Structure, D2→触发/Trigger, D3→安全/Security, D4→功能/Functional, D5→比较/Comparative, D6→独特/Uniqueness
+- **Dimension label mapping** (canonical, all commands MUST reference this table):
+
+  | Code | 中文 | English |
+  |------|------|---------|
+  | D1 | 结构 | Structure |
+  | D2 | 触发 | Trigger |
+  | D3 | 安全 | Security |
+  | D4 | 功能 | Functional |
+  | D5 | 比较 | Comparative |
+  | D6 | 独特 | Uniqueness |
+
+  In user-facing text: use `{中文名}` for Chinese locale, `{English名}` for English locale.
+  In JSON output fields: always use `D1`-`D6` codes.
+  Do NOT invent alternative labels (e.g. "功能清晰度", "触发精准度" are wrong — use the table above).
 - JSON output fields (`schemas/eval-result.json`) stay in English always — only translate `details`, `summary`, `reason` text values
 - Category labels translate: Code/Dev→代码/开发, Deploy/Ops→部署/运维, Data/API→数据/接口, Productivity→效率工具, Other→其他
 

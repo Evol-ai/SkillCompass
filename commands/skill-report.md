@@ -94,7 +94,6 @@ console.log(JSON.stringify(sizes));
 
 Compute:
 - `total_kb`: sum of all sizes, rounded to one decimal
-- `pct`: `(total_kb / 80) * 100`, capped at 100 for the bar, rounded to integer
 - For each skill, determine `status`:
   - First check `.skill-compass/cc/inbox.json` → `skill_cache` for `disabled` and `pinned` flags (load via `InboxStore.getAllSkillCache()` or read the JSON directly)
   - If `disabled === true` → `已停用`
@@ -105,9 +104,15 @@ Compute:
     - `沉睡`: more than 14 days ago
     - `从未使用`: no `last_activity_at` recorded
 
+The recommended context budget for skills is approximately 2% of the model's context window (per SKILL.md source). For common configurations:
+- 200K context → ~4KB budget
+- 1M context → ~20KB budget
+
+Do NOT hardcode a fixed limit. Instead, if the total skill size exceeds a reasonable threshold (e.g., > 50KB or > 30 skills), note that context pressure may affect performance. Reference `/skill-inbox all` for cleanup options.
+
 Sort all skills by size descending. Show top 5.
 
-ASCII bar (20 chars wide): filled portion = `round(pct / 100 * 20)` chars of `█`, remainder `░`.
+ASCII bar (20 chars wide): Show the bar relative to the largest single skill's size, not relative to an arbitrary cap. Filled portion = `round((skill_kb / max_skill_kb) * 20)` chars of `█`, remainder `░`.
 Per-skill bar (10 chars wide): filled = `round((skill_kb / total_kb) * 10)` chars of `█`, remainder `░`.
 
 Calculate `idle_kb`: sum of sizes for skills with status `闲置`, `已停用`, or `从未使用`.
@@ -118,15 +123,21 @@ Display:
 ```
 Context Budget
 
-  总计 {total_kb} KB / 推荐上限 80 KB（{pct}% 使用）
+  总计 {total_kb} KB
 
-  {ASCII bar 20 chars}  {pct}%
+  EN: Total {total_kb} KB
 
   Top 5 by size:
-    {name:<20}  {size} KB  {bar 10 chars}  {status}
+    {name:<20}  {size} KB  {bar 20 chars}  {status}
     ...
 
   闲置 + 从未使用的 skill 占 {idle_kb} KB（{idle_pct}%）
+```
+
+If `total_kb > 50` or skill count > 30, append a note:
+
+```
+  ⚠ Context pressure detected — consider archiving unused skills. Run /skill-inbox all for cleanup options.
 ```
 
 ### Step 4: Portfolio Overview
@@ -278,18 +289,25 @@ Omit any sub-section that has no entries.
 
 ### Step 6: Action Guide
 
-Always display this section at the end, regardless of arguments:
+Always display this section at the end, regardless of arguments.
+
+Display a conversational prompt with choices:
 
 ```
 ──────────────────────────────────
-下一步
+如果你想对某个 skill 做进一步操作，直接告诉我，比如：
+  "帮我评测 code-review"
+  "优化一下 k8s-deploy"
+  "看看有什么建议"
 
-  完整评测单个 skill：  /eval-skill <skill-name>
-  自动优化单个 skill：  /eval-improve <skill-name>
-  查看建议和管理：      /skill-inbox
-  查看全部 skill：      /skill-inbox all
+或选择：
+  [评测某个 skill]
+  [查看建议]
+  [结束]
 ──────────────────────────────────
 ```
+
+EN: "If you'd like to take action on any skill, just tell me, or choose an option below."
 
 ## Error Handling
 

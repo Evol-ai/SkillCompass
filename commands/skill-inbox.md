@@ -75,20 +75,45 @@ Get pending suggestions from `inboxData.pending` (already sorted by priority).
 
 ### If suggestions exist
 
-Show up to 3 suggestions at a time. For each suggestion (numbered from 1):
+Show up to 3 suggestions at a time. Present each conversationally — explain what was detected and why it matters. Do NOT show rule_id, priority, category, or evidence directly. These are internal metadata; the reason text already summarizes the situation.
+
+Example output:
 
 ```
-{n}. {skill_name} — {reason}
-   规则: {rule_id} · 优先级: {priority} · 类别: {category}
-   证据: {evidence[0].field}={evidence[0].value}
-   可做：保留 / 评估 / 删除 / 稍后提醒 / 忽略
+Skill Inbox — 建议 (3)  |  全部 skill (12)
+
+1. old-formatter — 安装 30 天，从未被调用过
+   占 7.1KB 上下文但没有产出价值，清理后可释放空间。
+
+2. k8s-deploy — 前两周使用 8 次，最近 7 天突然停用
+   可能找到了替代方案，或遇到了问题。
+
+3. translate — 仅使用过 1 次（3月15日），之后再未调用
+   可能是一次性需求。
 ```
 
-Then prompt:
+For state-changing actions, present keyboard-selectable choices per suggestion. The user can also respond with natural language for non-state-changing queries (e.g. "看看全部 skill"、"哪些没用过"), but state changes (pin/delete/mute/snooze) should go through explicit choice confirmation.
+
+After the list, prompt:
 
 ```
-输入编号 + 操作（例如："1 保留" 或 "2 评估"）：
+选择一个建议查看操作选项，或直接告诉我你想怎么处理。
 ```
+
+When user selects a suggestion (by number or by name), show the action choices as keyboard-selectable options:
+
+```
+old-formatter — 安装 30 天，从未被调用过
+
+  [保留（不再提醒清理）]
+  [评估质量]
+  [删除]
+  [稍后提醒（14 天后）]
+  [查看详情]
+
+```
+
+"查看详情" expands to show rule_id, evidence, cooldown info — only when user explicitly asks.
 
 ### If no suggestions
 
@@ -116,20 +141,12 @@ For each action, execute the corresponding store methods via the **Bash** tool, 
 | improve / 优化 | 优化 | `store.accept(sugId)` | `✓ 已加入优化队列。运行 /eval-improve {name}` |
 | delete / 删除 | 删除 | `store.accept(sugId)` | `✓ 已标记待删除。确认删除请手动移除 SKILL.md 文件` |
 | snooze / 稍后提醒 | 稍后提醒 | `store.snooze(sugId, 14)` | `✓ 已延后 14 天提醒` |
-| dismiss / 忽略 | 忽略 | `store.dismiss(sugId, cooldownDays)` | `✓ 已忽略，{cooldownDays} 天内不再提醒` |
+| dismiss / 忽略 | 忽略 | `store.dismiss(sugId, cooldownDays)` | `✓ 已忽略，一段时间内不再提醒此建议` |
 | mute / 不再关注 | 不再关注 | `store.disableSkill(skillName)`, `store.accept(sugId)`, `store.resolve(sugId)` | `✓ 已标记为不再关注。SkillCompass 不再为此 skill 生成建议，但不影响 skill 本身的运行。` |
 
-Cooldown days for `dismiss` (use doubled cooldown after user dismisses):
-
-| Rule ID | Cooldown days (doubled) |
-|---------|------------------------|
-| R1 | 14 |
-| R2 | 21 |
-| R6 | 14 |
-| R8 | 28 |
-| R9 | 14 |
-
-Look up `cooldownDays` from the suggestion's `rule_id` using the table above.
+<!-- Internal: cooldown days by rule (doubled after dismiss):
+R1=14, R2=21, R4=28, R5=14, R6=14, R7=28, R8=28, R9=14, R10=28, R11=14
+Look up from the suggestion's rule_id. User never sees these values. -->
 
 Execute the required store methods using the **Bash** tool:
 
@@ -205,7 +222,8 @@ Where:
 Then prompt:
 
 ```
-输入编号选择 skill，可执行：pin / 不再关注 / 评估 / 优化 / 删除。输入 inbox 返回建议视图
+选择一个 skill 查看详情，或告诉我你想做什么（比如"把没用过的列出来"、"superpowers 评估一下"）。
+输入 inbox 返回建议视图。
 ```
 
 ### Handle Skill Selection
@@ -220,7 +238,12 @@ When the user enters a number, look up the corresponding skill from the numbered
 安装于：{first_seen_at}
 版本数：{version_count|1}
 
-可做：pin（保留）/ 不再关注 / 评估 / 优化 / 删除 / 返回
+  [保留（pin）]
+  [不再关注]
+  [评估质量]
+  [优化]
+  [删除]
+  [返回列表]
 ```
 
 Wait for the user's action input. Handle each action (no suggestion ID here — update skill cache directly):

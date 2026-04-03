@@ -2,7 +2,8 @@
 
 This command accepts free-form natural language and routes to the appropriate SkillCompass command.
 
-> **Locale note**: all user-facing text (prompts, confirmations, error messages) follows the detected locale of the user's message. Respond in the same language the user writes in.
+> **Locale**: 所有用户可见文本跟随会话语言。中文为默认示例，英文等效表述标注为 `EN:`。维度标签见 SKILL.md。
+> EN: `> **Locale**: All user-facing text follows session language. Chinese is the default example; English equivalents are marked with `EN:`. Dimension labels: see SKILL.md.`
 
 ## Arguments
 
