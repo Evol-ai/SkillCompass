@@ -143,13 +143,24 @@ All commands follow these interaction rules:
    - YES: `[立即修复 / 跳过]` or `[Fix now / Skip]`
    - NO: ~~`Recommended: /eval-improve`~~
 
-2. **`--internal` flag.** When a command is called by another command (e.g. eval-improve calls eval-skill internally), pass `--internal`. Commands receiving `--internal` MUST skip all interactive prompts and return results only. This prevents nested prompt loops.
+2. **Dual-channel interaction.** Support both structured choices AND natural language simultaneously:
+   - Provide `[选项A / 选项B / 选项C]` format for keyboard navigation (up/down keys to select)
+   - Also accept free-form text expressing the same intent (e.g. user types "帮我修一下" instead of selecting "立即修复")
+   - Never force either mode — both are always valid
 
-3. **`--ci` guard.** All interactive choices are skipped when `--ci` is present. Output is pure JSON to stdout.
+3. **Context in choices.** Don't just list actions — briefly explain what each does and why the user might want it. Example:
+   - YES: "最薄弱的是触发机制（5.5/10），优化后 skill 被正确调用的概率会提高。" then `[立即修复 / 跳过]`
+   - NO: `[立即修复 / 跳过]`（无上下文）
 
-4. **Flow continuity.** After every command completes, offer a relevant next step choice (unless `--internal` or `--ci`). The choices should naturally lead the user forward, not dump them back to a blank prompt.
+4. **`--internal` flag.** When a command is called by another command (e.g. eval-improve calls eval-skill internally), pass `--internal`. Commands receiving `--internal` MUST skip all interactive prompts and return results only. This prevents nested prompt loops.
 
-5. **Max 3 choices.** Never show more than 3 options at once. If more exist, show the top 3 by relevance.
+5. **`--ci` guard.** All interactive choices are skipped when `--ci` is present. Output is pure JSON to stdout.
+
+6. **Flow continuity.** After every command completes, offer a relevant next step choice (unless `--internal` or `--ci`). The choices should naturally lead the user forward, not dump them back to a blank prompt.
+
+7. **Max 3 choices.** Never show more than 3 options at once. If more exist, show the top 3 by relevance.
+
+8. **Hooks are lightweight.** Hook scripts (PostToolUse, SessionStart, PreCompact, etc.) primarily do data collection and write to files (usage.jsonl, inbox.json). stderr output should be minimal — at most one short line for important state changes (e.g. "3 条新建议已生成"). Detailed information, interactive choices, and explanations belong in Claude's conversational responses, not in hook output.
 
 ### First-Run Guidance
 
