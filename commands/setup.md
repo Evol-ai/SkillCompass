@@ -20,7 +20,7 @@ In auto-trigger mode, setup must never replace or derail the user's original req
 
 When auto-triggered, ask the user first:
 
-> Welcome to SkillCompass. I can do a quick local inventory of your installed skills (~5 seconds) before continuing `{resume_command}`. [OK / Skip]
+> Quick skill inventory (~5 sec) before continuing `{resume_command}`? [OK / Skip]
 
 - If the user says `Skip`:
   - Write `.skill-compass/setup-state.json` with `{"version": 1, "skipped": true, "timestamp": "{ISO}"}`
@@ -128,197 +128,65 @@ Threshold rule: only surface findings users are likely to act on immediately. If
 
 ## Step 6: Display Results and Changes Since Last Check
 
-Output the inventory:
+**First run (no previous snapshot):**
+
+Output a one-line inventory summary, quick scan results, context budget, and smart guidance:
 
 ```text
---------------------------------------------
-  {N} skills installed
---------------------------------------------
+{N} 个 skill（Code/Dev: {n}, Deploy/Ops: {n}, Data/API: {n}, Productivity: {n}, Other: {n}）
 
-  Code/Dev
-    1. sql-formatter      Format SQL queries with multi-dialect support
-    2. git-commit-helper  Generate conventional commit messages
+Quick Scan:
+  ✓ Clean: {n}  ⚠ Medium: {n}  ✗ High risk: {n}
 
-  Deploy/Ops
-    3. deploy-helper      SSH deploy to staging/production
-    4. k8s-manager        Kubernetes pod management and logs
+上下文占用 {X} KB / 80 KB（{pct}%）
 
-  Productivity
-    5. api-tester         Test REST API endpoints
-    6. data-cleaner       CSV/JSON data cleaning
+{smart guidance — one choice based on first matching condition below}
 ```
 
-If findings exist, append:
+Smart guidance conditions (first match wins):
+
+1. Any skill has a High-risk quick scan result → offer to run a full evaluation on the flagged skill
+2. Context budget exceeds 60% → suggest removing or consolidating lower-value skills
+3. Skill count exceeds 8 → suggest reviewing skills for overlap
+4. All healthy → congratulate and suggest exploring what the skills can do
+5. Fewer than 3 skills → suggest where to find more skills
+
+Do **not** print raw command strings. Describe the action in plain language as a choice (e.g., "Evaluate the flagged skill now? [Yes / Later]").
+
+**Subsequent runs (previous snapshot exists):**
+
+Compute changes since the last snapshot:
+- `新增`: skills not present last time
+- `移除`: skills no longer present
+- `更新`: same skill, version/path/description hash changed
+
+Output:
 
 ```text
-  Quick check found:
-
-  Security: #3 deploy-helper contains a plaintext API key
-    -> anyone who can read this file can use that key
-
-  Duplicate: #5 api-tester and #6 data-cleaner have substantial feature overlap
-    -> you may only need one of these
-
-  Structure: #7 old-formatter is fundamentally broken
-    -> Claude may not load it correctly
+{N} 个 skill · 新增 {a} · 移除 {r} · 更新 {u}
 ```
 
-If no findings:
+If new skills were found, show the quick scan results for those new skills only (from Step 4.5).
+
+If no changes are detected, output:
 
 ```text
-  Quick check: healthy. No critical security issues, hard duplicates, or broken structures found.
-```
-
-If a previous snapshot exists, compute and display changes since the last check:
-- `Added`: skills not present last time
-- `Removed`: skills no longer present
-- `Updated`: same skill, but version, path, or description hash changed
-
-If there is no previous snapshot, say:
-
-```text
-  Baseline saved. Future /setup runs will show changes since this snapshot.
-```
-
-If no changes are detected on a later run, say:
-
-```text
-  No inventory changes since the last check.
-```
-
-If the display was truncated because there are more than 20 skills, append:
-
-```text
-  {M} older skills not shown here. The saved snapshot still includes all {N} discovered skills.
+skill 清单无变化 ✓
 ```
 
 ## Step 7: Auto-Trigger Exit Path
 
 If setup is running in auto-trigger mode:
 - save state immediately after Step 6
-- do **not** ask the user to pick skills to evaluate
 - return control to the dispatcher so it can continue `{resume_command}` exactly once
 
-Optionally add a short note:
+Print a single short note:
 
 ```text
 Quick inventory saved. Continuing with {resume_command}.
-Run /setup anytime for the interactive inventory and evaluation flow.
 ```
 
-## Step 8: Prompt for Action (manual mode only)
-
-In manual mode, prompt the user:
-
-```text
-Enter the skill number(s) you'd like to evaluate and improve (for example: 3 or 3,5,7).
-Enter "all" to evaluate the full deduplicated inventory.
-Press Enter or type "done" to stop.
-```
-
-Wait for the response.
-
-## Step 9: Route to Evaluation (manual mode only)
-
-Based on the user's response:
-
-**Single or multiple numbers (for example `3` or `3,5,7`):**
-
-For each selected skill:
-1. Run `/eval-skill {skill_path} --scope full`
-2. Translate the result into scenario-based language (Step 10)
-3. Ask: `Fix this? ~2 minutes. [Fix / Skip]`
-4. If the user says `Fix`, run `/eval-improve {skill_path}` and show before/after using Step 10
-5. If the user says `Skip`, move to the next selected skill
-
-**`all` / `全部`:**
-
-Use the already-discovered deduplicated inventory from Step 3. Do **not** re-scan roots and do **not** call `/eval-audit` on raw directories from setup mode.
-
-Inform the user of the estimate:
-
-```text
-Batch evaluation of {N} discovered skills, ~2 minutes each, estimated total ~{N*2} minutes. Start?
-```
-
-If confirmed:
-- evaluate the full deduplicated inventory list sequentially with `/eval-skill {skill_path} --scope full`
-- keep SkillCompass itself excluded
-- preserve the inventory order already chosen for setup
-
-**Anything else (`skip`, `done`, empty, or unrecognized):**
-
-```text
-OK. Run /setup anytime to check again, or /skill-compass evaluate {skill} for a single skill.
-```
-
-Stop.
-
-## Step 10: Scenario-Based Output
-
-When presenting evaluation results in setup context, do **not** use dimension codes (`D1-D6`) or raw numeric dimension scores. Translate findings into plain language that non-experts can understand.
-
-Read the `issues` arrays from the evaluation result. Pick the top 3 most impactful issues and translate them:
-
-**Security**
-- hardcoded secret -> `Contains a plaintext key or password - anyone with access to this file can see it`
-- pipe-to-shell -> `Downloads and runs remote code with no safety checks`
-- prompt injection -> `Contains content that could be used to alter Claude's behavior`
-
-**Discoverability**
-- vague description -> `Description is too generic - Claude may not know when to use this skill`
-- no trigger mechanism -> `No clear activation method - Claude may not find it when you need it`
-
-**Stability**
-- no edge handling -> `May fail or produce bad results on unexpected input`
-- no error handling -> `Fails without clearly telling you what went wrong`
-
-**Value**
-- negative comparative delta -> `Asking Claude directly is likely to work better than using this skill`
-
-**Uniqueness**
-- high overlap -> `You already have a similar skill: {similar_skill_name}`
-
-Display only categories that actually have issues:
-
-```text
-  {skill_name} evaluation:
-
-  Security
-    {translated issue}
-
-  Discoverability
-    {translated issue}
-
-  Stability
-    {translated issue}
-
-  Value
-    {translated issue}
-
-  Uniqueness
-    {translated issue}
-
-  Fix this? ~2 minutes. [Fix / Skip]
-```
-
-If all good:
-
-```text
-  {skill_name} looks good - no issues to fix.
-```
-
-After a fix, only show categories where something materially changed, maximum 3 categories:
-
-```text
-  {skill_name} fixed
-
-  Security
-    Before: {plain-language before}
-    After:  {plain-language after}
-```
-
-## Step 11: Save State and Follow-Up
+## Step 8: Save State
 
 After setup completes in either mode, write `.skill-compass/setup-state.json` with a real snapshot, for example:
 
@@ -329,7 +197,6 @@ After setup completes in either mode, write `.skill-compass/setup-state.json` wi
   "timestamp": "{ISO}",
   "roots_scanned": [".claude/skills", "~/.claude/skills", "~/.openclaw/skills"],
   "skills_found": 12,
-  "skills_evaluated": ["deploy-helper", "api-tester"],
   "inventory": [
     {
       "name": "deploy-helper",
@@ -357,16 +224,3 @@ This field enables the Skill Inbox R1 and R2 rules to calculate how long a skill
 Also write `.skill-compass/.setup-done` as a compatibility marker.
 
 Future `/setup` runs must read this snapshot first and show changes relative to it.
-
-If manual mode ends with unevaluated skills still available, say:
-
-```text
-{remaining} more skills are available to evaluate.
-Enter another number to continue, or stop here and come back with /setup later.
-```
-
-If the user stops, end with:
-
-```text
-Inventory complete. Run /setup anytime to check again.
-```

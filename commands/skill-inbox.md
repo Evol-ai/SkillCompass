@@ -117,7 +117,7 @@ For each action, execute the corresponding store methods via the **Bash** tool, 
 | delete / 删除 | 删除 | `store.accept(sugId)` | `✓ 已标记待删除。确认删除请手动移除 SKILL.md 文件` |
 | snooze / 稍后提醒 | 稍后提醒 | `store.snooze(sugId, 14)` | `✓ 已延后 14 天提醒` |
 | dismiss / 忽略 | 忽略 | `store.dismiss(sugId, cooldownDays)` | `✓ 已忽略，{cooldownDays} 天内不再提醒` |
-| disable / 停用 | 停用 | `store.disableSkill(skillName)`, `store.accept(sugId)`, `store.resolve(sugId)` | `✓ 已停用 {name}` |
+| mute / 不再关注 | 不再关注 | `store.disableSkill(skillName)`, `store.accept(sugId)`, `store.resolve(sugId)` | `✓ 已标记为不再关注。SkillCompass 不再为此 skill 生成建议，但不影响 skill 本身的运行。` |
 
 Cooldown days for `dismiss` (use doubled cooldown after user dismisses):
 
@@ -155,7 +155,7 @@ Read the `inventory` array from setup-state.json. For each skill entry, determin
 
 **Special status** — check `inboxData.skillCache` for the skill name:
 - If `skillCache[name].pinned === true` → label `已 pin`
-- If `skillCache[name].disabled === true` → label `已停用`
+- If `skillCache[name].disabled === true` → label `已忽略`
   Special status overrides activity label.
 
 **Group skills by category** using the `purpose` field from the inventory entry (Code/Dev, Deploy/Ops, Data/API, Productivity, Other). Assign the same way as `/setup`: keyword-match on `description` if `purpose` is absent.
@@ -173,7 +173,7 @@ Display grouped output (number skills sequentially across all groups):
 Then prompt:
 
 ```
-输入编号选择 skill，可执行：pin / 停用 / 评估 / 优化 / 删除。输入 inbox 返回建议视图
+输入编号选择 skill，可执行：pin / 不再关注 / 评估 / 优化 / 删除。输入 inbox 返回建议视图
 ```
 
 ### Handle Skill Selection
@@ -188,7 +188,7 @@ When the user enters a number, look up the corresponding skill from the numbered
 安装于：{first_seen_at}
 版本数：{version_count|1}
 
-可做：pin（保留）/ 停用 / 评估 / 优化 / 删除 / 返回
+可做：pin（保留）/ 不再关注 / 评估 / 优化 / 删除 / 返回
 ```
 
 Wait for the user's action input. Handle each action (no suggestion ID here — update skill cache directly):
@@ -196,7 +196,7 @@ Wait for the user's action input. Handle each action (no suggestion ID here — 
 | Action | What to execute | Confirmation output |
 |--------|-----------------|---------------------|
 | pin / 保留 | `store.pinSkill(name)` | `✓ 已保留` |
-| 停用 / disable | `store.disableSkill(name)` | `✓ 已停用` |
+| 不再关注 / mute | `store.disableSkill(name)` | `✓ 已标记为不再关注。SkillCompass 不再为此 skill 生成建议，但不影响 skill 本身的运行。` |
 | 评估 / eval | (no store call) | `运行 /eval-skill {name}` |
 | 优化 / improve | (no store call) | `运行 /eval-improve {name}` |
 | 删除 / delete | (no store call) | `确认删除请手动移除 SKILL.md 文件` |

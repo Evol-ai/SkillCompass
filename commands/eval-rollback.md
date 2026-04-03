@@ -1,5 +1,7 @@
 # /eval-rollback — Version Rollback
 
+> **Locale**: All user-facing messages follow the session locale. English examples are shown below; replace with Chinese equivalents when the session is Chinese (e.g. `"没有找到 '{skill-name}' 的版本历史。"` / `"快照缺失，无法回滚。"` etc.).
+
 ## Arguments
 
 - `<skill-name>` (required): Name of the skill to rollback.
@@ -11,7 +13,17 @@
 
 Use the **Read** tool to load `.skill-compass/{skill-name}/manifest.json`.
 
-If not found: output `"No version history for '{skill-name}'. Run /eval-skill first to begin tracking."` and stop.
+If not found: output a locale-appropriate message, e.g.:
+- **English**: `"No version history for '{skill-name}'. Run /eval-skill first to begin tracking."`
+- **Chinese**: `"没有找到 '{skill-name}' 的版本历史。请先运行 /eval-skill 开始追踪。"`
+
+Then present a choice (skip if `--internal` or `--ci`):
+
+```
+[现在评测此 skill / 取消]
+```
+
+If the user chooses **现在评测此 skill**, invoke `/eval-skill <skill-name>` and stop. If **取消**, stop.
 
 ### Step 2: Display Version Timeline
 
@@ -28,7 +40,14 @@ Version History: sql-optimizer
 ```
 
 If `--to` was specified: proceed to Step 3 with that version.
-If not: ask user to choose a version number from the list.
+If not: prompt the user to enter the row number (`#`) from the table above — do **not** ask them to type the version string. Example prompt:
+
+```
+请输入要回滚到的版本编号（如 2）：
+Enter the row number to rollback to (e.g. 2):
+```
+
+Map the entered number to the corresponding version via the table. Re-prompt on invalid input.
 
 ### Step 3: Safety Snapshot
 
@@ -73,10 +92,24 @@ The second argument `'cc'` routes the audit log to `.skill-compass/cc/{skill-nam
 
 ### Step 6: Confirm
 
-Output: `"Rolled back {skill-name} to version {version}. Previous version preserved in history."`
+Output a locale-appropriate confirmation, e.g.:
+- **English**: `"Rolled back {skill-name} to version {version}. Previous version preserved in history."`
+- **Chinese**: `"已将 {skill-name} 回滚到版本 {version}。原版本已保留在历史记录中。"`
+
+Then, unless `--internal` or `--ci` is set, present a flow-continuity choice:
+
+```
+[重新评测此版本 / 对比两个版本 / 完成]
+```
+
+- **重新评测此版本**: invoke `/eval-skill <skill-name>` on the restored version and stop.
+- **对比两个版本**: invoke `/eval-skill <skill-name> --compare <previous-version>` (or the equivalent diff command) and stop.
+- **完成**: exit with no further action.
 
 ## Edge Cases
 
-- **Single version**: "Only one version exists. Nothing to rollback to."
-- **Missing snapshot**: "Snapshot missing. The version record exists but the file was not preserved."
-- **Untracked modifications**: If current SKILL.md content hash doesn't match any known version, warn: "Current file has untracked modifications. Snapshot saved before rollback."
+All messages below follow the session locale; Chinese equivalents are shown in parentheses.
+
+- **Single version**: `"Only one version exists. Nothing to rollback to."` （`"只有一个版本，没有可回滚的目标。"`）
+- **Missing snapshot**: `"Snapshot missing. The version record exists but the file was not preserved."` （`"快照文件缺失。版本记录存在，但文件未被保存。"`）
+- **Untracked modifications**: If current SKILL.md content hash doesn't match any known version, warn: `"Current file has untracked modifications. Snapshot saved before rollback."` （`"当前文件存在未追踪的修改，已在回滚前保存快照。"`）

@@ -1,9 +1,13 @@
 # /eval-merge — Three-Way Version Merge
 
+> **Locale note**: All user-facing messages, prompts, and choices in this command follow the session locale. If the session is in Chinese, display messages in Chinese; if in English, display in English. The structured choice lists below are shown in Chinese as the canonical form — translate them to match the active locale before presenting to the user.
+
 ## Arguments
 
 - `<path>` (required): Path to the SKILL.md file (local evo version).
 - `--upstream <path-or-url>` (optional): Path to upstream version. If omitted, detect from manifest.
+- `--internal` (optional): Skip interactive prompts; use defaults for automated pipelines.
+- `--ci` (optional): Alias for `--internal`.
 
 ## Pre-conditions
 
@@ -13,7 +17,7 @@ Use the **Read** tool to load `.skill-compass/{skill-name}/manifest.json`. Verif
 2. At least 1 evo version exists (something to preserve)
 3. Upstream version differs from last known upstream (there IS an update)
 
-If any pre-condition fails: explain why the merge cannot proceed and stop.
+If any pre-condition fails: display the failure reason in the session locale and stop. Do not show raw error codes or internal field names — describe the problem and, where possible, suggest what the user can do next.
 
 ## Steps
 
@@ -36,7 +40,7 @@ Follow the merge prompt's region-by-region strategy. Present conflicts to the us
 
 ### Step 3: Write Merged Version
 
-After all conflicts resolved, display the complete merged SKILL.md. Ask user for confirmation.
+After all conflicts resolved, display the complete merged SKILL.md. Ask user for confirmation before writing.
 
 If confirmed: use the **Write** tool to save the merged version.
 
@@ -53,6 +57,33 @@ Use the **Read** tool to load `{baseDir}/shared/version-management.md`. Follow m
 Run eval-skill flow on the merged version. Compare against pre-merge local scores.
 
 If regression detected (any dimension dropped > 2 points):
-- Warn: "Regression detected in {dimensions} after merge."
-- Offer: "Rollback to pre-merge version? [y/n]"
-- If yes: restore from snapshot, revert manifest update.
+- Warn the user in the session locale: describe which dimensions regressed and by how much.
+- Unless `--internal` or `--ci` is active, present this choice:
+
+  ```
+  检测到合并后评分下降，请选择：
+  › 回滚到合并前
+    保留合并结果
+    对比两个版本
+  ```
+
+  - **回滚到合并前**: restore SKILL.md from pre-merge snapshot and revert the manifest update. Confirm rollback completed.
+  - **保留合并结果**: keep the merged version as-is and continue. Note the regression in the audit log.
+  - **对比两个版本**: display a side-by-side diff of the pre-merge and merged versions for each regressed dimension, then re-present the choice above.
+
+  If `--internal` or `--ci` is active: keep the merged result, log the regression, and continue without prompting.
+
+### Step 6: Flow Continuity
+
+After the merge (and any regression handling) completes successfully, present the following choice unless `--internal` or `--ci` is active:
+
+```
+合并完成。接下来？
+› 重新评测
+  完成
+```
+
+- **重新评测**: immediately run `/eval-skill <path> --scope full` on the merged version.
+- **完成**: exit the command and return control to the user.
+
+If `--internal` or `--ci` is active: exit silently after writing results.

@@ -1,5 +1,7 @@
 # /eval-security — Standalone Security Scan
 
+> **Locale note:** all user-facing output (labels, messages, choice prompts) follows the locale detected from the user's shell environment or system settings. English is the fallback when no locale is detected.
+
 ## Arguments
 
 - `<path>` (required): Path to the SKILL.md file to scan.
@@ -42,6 +44,22 @@ Output the D3 section of the evaluation result (conforming to the security porti
 
 If `--verbose` is not set: omit findings with severity `"low"` from display (still count them in score).
 
+After printing the result:
+
+- **Findings exist AND neither `--internal` nor `--ci` is set:** present the user with the following choices (rendered in the detected locale):
+
+  ```
+  [修复安全问题 / 查看详情 / 完成]
+  ```
+
+  - **修复安全问题** — invoke the fix workflow to address reported findings.
+  - **查看详情** — re-display all findings including those hidden by verbosity rules.
+  - **完成** — exit with no further action.
+
+- **No findings:** print a single locale-appropriate "clean" message (e.g. "No security issues found." in English, or the equivalent in the detected locale). Do not show the choice prompt.
+
+- **`--internal` or `--ci` flag is set:** skip the choice prompt entirely regardless of findings; exit silently after printing the JSON result.
+
 ## Note
 
-This is a standalone command. It does NOT affect version management or create manifest entries.
+This is a standalone command. It does NOT affect version management or create manifest entries. Do not reference raw shell commands in user-facing output; surface all actions through the choices listed above.

@@ -124,6 +124,55 @@ From frontmatter, detect in priority order:
 3. `globs:` field present -> **glob** trigger
 4. Only `description:` -> **description** trigger
 
+## Global UX Rules
+
+### Locale
+
+Detect the user's language from their first message in the session. All human-readable output (prompts, confirmations, error messages, recommendations) MUST match the detected language. Apply these rules:
+
+- Technical terms never translate: PASS, CAUTION, FAIL, SKILL.md, skill names, file paths
+- Dimension labels translate: D1→结构/Structure, D2→触发/Trigger, D3→安全/Security, D4→功能/Functional, D5→比较/Comparative, D6→独特/Uniqueness
+- JSON output fields (`schemas/eval-result.json`) stay in English always — only translate `details`, `summary`, `reason` text values
+- Category labels translate: Code/Dev→代码/开发, Deploy/Ops→部署/运维, Data/API→数据/接口, Productivity→效率工具, Other→其他
+
+### Interaction Conventions
+
+All commands follow these interaction rules:
+
+1. **Choices, not commands.** Never show raw command strings as recommendations. Instead offer action choices the user can select:
+   - YES: `[立即修复 / 跳过]` or `[Fix now / Skip]`
+   - NO: ~~`Recommended: /eval-improve`~~
+
+2. **`--internal` flag.** When a command is called by another command (e.g. eval-improve calls eval-skill internally), pass `--internal`. Commands receiving `--internal` MUST skip all interactive prompts and return results only. This prevents nested prompt loops.
+
+3. **`--ci` guard.** All interactive choices are skipped when `--ci` is present. Output is pure JSON to stdout.
+
+4. **Flow continuity.** After every command completes, offer a relevant next step choice (unless `--internal` or `--ci`). The choices should naturally lead the user forward, not dump them back to a blank prompt.
+
+5. **Max 3 choices.** Never show more than 3 options at once. If more exist, show the top 3 by relevance.
+
+### First-Run Guidance
+
+When setup completes for the first time (no previous `setup-state.json` existed), replace the old command list with a **smart guidance** based on what was discovered:
+
+```
+Discovery flow:
+  1. Show one-line summary: "{N} 个 skill（Code/Dev: {n}, Productivity: {n}, ...）"
+  2. Run Quick Scan D1+D2+D3 on all skills
+  3. Show context budget one-liner: "上下文占用 {X} KB / 80 KB（{pct}%）"
+  4. Smart guidance — show ONLY the first matching condition:
+
+     Condition                          Guidance
+     ─────────────────────────────────  ────────────────────────────
+     Has high-risk skill (any D ≤ 4)    Surface risky skills + offer [评测修复 / 稍后处理]
+     Context > 60%                      "上下文使用较高" + offer [查看哪些可清理 → /skill-inbox all]
+     Skill count > 8                    "skill 较多" + offer [浏览整理 → /skill-inbox all]
+     Skill count 3-8, all healthy       "一切就绪 ✓ 有建议时通过 /skill-inbox 通知"
+     Skill count 1-2                    "可直接使用" + offer [了解质量 → /eval-skill {name}]
+```
+
+Do NOT show a list of all commands. Do NOT show the full skill inventory (that's `/skill-inbox all`'s job).
+
 ## Behavioral Constraints
 
 1. **Never modify target SKILL.md frontmatter** for version tracking. All version metadata lives in the sidecar `.skill-compass/` directory.

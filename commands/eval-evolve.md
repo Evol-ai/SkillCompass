@@ -1,20 +1,37 @@
 # /eval-evolve — Optional Plugin-Assisted Multi-Round Evolution via Ralph Loop
 
+<!-- LOCALE NOTE: All user-facing messages in this command follow the session locale.
+     If the user is writing in Chinese, display prompts, choices, progress messages,
+     and the Evolution Report in Chinese. If in English, use English. Code paths,
+     JSON keys, file names, and dimension codes (D1–D6) are always kept in English. -->
+
 ## Arguments
 
 - `<path>` (required): Path to the SKILL.md file to evolve.
 - `--max-iterations <n>` (optional): Max improvement rounds. Default: 6.
 - `--target-score <n>` (optional): Stop when overall_score >= n. Default: 70.
+- `--internal` (optional): Skip all interactive prompts. Used when this command is
+  called programmatically by another command or script.
 
 ## Prerequisites
 
 - **Recommended model: Claude Opus 4.6** (`claude-opus-4-6`). Multi-round evolution requires consistent scoring across iterations to detect genuine improvements vs noise. Weaker models may cause the evolution loop to oscillate rather than converge.
 
-- This command requires the **ralph-wiggum** plugin. If not installed:
+- This command requires the **ralph-wiggum** plugin. If not installed, present the
+  user with a choice **before** attempting any plugin call:
 
-```
-claude plugin install ralph-wiggum@claude-code-plugins
-```
+  ```
+  ┌─ 需要插件 ralph-wiggum ──────────────────────────────┐
+  │  此命令依赖 ralph-wiggum 插件才能运行多轮进化循环。  │
+  │                                                        │
+  │  [安装 ralph-wiggum 插件]  [取消]                      │
+  └────────────────────────────────────────────────────────┘
+  ```
+
+  - If the user chooses **安装 ralph-wiggum 插件**: run
+    `claude plugin install ralph-wiggum@claude-code-plugins` and continue.
+  - If the user chooses **取消**: stop immediately with no further action.
+  - If `--internal` is passed, skip the prompt and run the install command directly.
 
 ## What This Command Does
 
@@ -33,7 +50,7 @@ Load `.skill-compass/{skill-name}/manifest.json` if it exists. Extract:
 - `current_version`
 - Last `overall_score` and `verdict`
 
-If no manifest exists, note: "First evaluation — starting from scratch."
+If no manifest exists, note: "首次评估 — 从零开始。" (EN: "First evaluation — starting from scratch.")
 
 ## Step 3: Build the Ralph Prompt
 
@@ -67,23 +84,49 @@ Goal: overall_score >= {TARGET_SCORE} with verdict PASS
 
 ## Step 4: Show Preview and Execute
 
-Display to the user:
+Display to the user (follow session locale):
 
 ```
-Evolution plan:
+进化计划：                          (EN: Evolution plan:)
   Skill:      {skill-name}
-  Target:     score >= {TARGET_SCORE}, verdict = PASS
-  Max rounds: {MAX_ITERATIONS}
-  Estimated tokens: ~{MAX_ITERATIONS × 60}K (worst case)
+  目标：      分数 >= {TARGET_SCORE}，评级 = PASS
+  最大轮数：  {MAX_ITERATIONS}
+  预计 token：~{MAX_ITERATIONS × 60}K（最坏情况）
 
-Starting Ralph loop...
+正在启动 Ralph 循环…               (EN: Starting Ralph loop...)
 ```
+
+Progress messages during the loop also follow the session locale. Examples:
+
+| Event | Chinese | English |
+|-------|---------|---------|
+| Iteration start | `[第 N 轮] 正在评估…` | `[Round N] Evaluating…` |
+| Improvement applied | `[第 N 轮] 已改进维度：{dim_label}` | `[Round N] Improved: {dim_label}` |
+| Rollback | `[第 N 轮] 检测到回退，已撤销更改` | `[Round N] Regression detected, rolled back` |
+| PASS reached | `✓ 已达到 PASS 评级（第 N 轮）` | `✓ PASS reached (Round N)` |
+| Max iterations | `⚠ 已达最大轮数，未能达到 PASS` | `⚠ Max iterations reached without PASS` |
 
 Then execute:
 
 ```
 /ralph-loop "{prompt_text}" --max-iterations {MAX_ITERATIONS} --completion-promise "PASS"
 ```
+
+## Dimension Label Reference
+
+When displaying dimension names in user-facing text (progress messages, Evolution Report,
+choices), always use the human-readable label instead of the bare code:
+
+| Code | Chinese Label | English Label |
+|------|--------------|---------------|
+| D1 | 功能清晰度 | Functional Clarity |
+| D2 | 触发精准度 | Trigger Precision |
+| D3 | 安全性 | Security |
+| D4 | 对比辨识度 | Comparative Distinctiveness |
+| D5 | 认知独特性 | Cognitive Uniqueness |
+| D6 | 结构规范性 | Structure Quality |
+
+Example: instead of "D2 ({score}/10)", write "触发精准度 D2 ({score}/10)" (or "Trigger Precision D2 ({score}/10)" in English).
 
 ## Step 5: Evolution Report (Mandatory)
 
@@ -98,58 +141,77 @@ Also read `.skill-compass/{skill-name}/corrections.json` if it exists, for chang
 
 ### 5.2: Generate Report
 
-Display the following report to the user:
+Display the following report to the user (follow session locale):
 
 ```
 ═══════════════════════════════════════════════════════
-  Evolution Report: {skill-name}
-  {start_version} → {final_version}  |  {total_rounds} rounds
+  进化报告：{skill-name}           (EN: Evolution Report)
+  {start_version} → {final_version}  |  {total_rounds} 轮
 ═══════════════════════════════════════════════════════
 
-  Score: {start_score} → {final_score}  ({+delta})
-  Verdict: {start_verdict} → {final_verdict}
+  分数：{start_score} → {final_score}  ({+delta})
+  评级：{start_verdict} → {final_verdict}
 
-  ── Score Curve ──────────────────────────────────────
+  ── 分数曲线 ──────────────────────────────────────────
+  (EN: Score Curve)
 
-  Round 0 (baseline):  {score}  {verdict}  ████████░░░░░░░░░░░░
-  Round 1 ({dim}):     {score}  {verdict}  ██████████░░░░░░░░░░
-  Round 2 ({dim}):     {score}  {verdict}  █████████████░░░░░░░
-  Round 3 ({dim}):     {score}  {verdict}  ██████████████████░░
+  第 0 轮（基线）：    {score}  {verdict}  ████████░░░░░░░░░░░░
+  第 1 轮（{dim_label}）：{score}  {verdict}  ██████████░░░░░░░░░░
+  第 2 轮（{dim_label}）：{score}  {verdict}  █████████████░░░░░░░
+  第 3 轮（{dim_label}）：{score}  {verdict}  ██████████████████░░
   ...
 
-  ── What Changed ────────────────────────────────────
+  ── 具体改动 ──────────────────────────────────────────
+  (EN: What Changed)
 
-  Round 1 — {target_dimension_name} ({dim_score_before} → {dim_score_after})
-    Problem:  {one-sentence plain-language description of what was wrong}
-    Fix:      {one-sentence plain-language description of what was changed}
-    Impact:   {what the user gains from this fix}
+  第 1 轮 — {dim_label} ({dim_score_before} → {dim_score_after})
+    问题：  {one-sentence plain-language description of what was wrong}
+    修复：  {one-sentence plain-language description of what was changed}
+    效果：  {what the user gains from this fix}
 
-  Round 2 — {target_dimension_name} ({dim_score_before} → {dim_score_after})
-    Problem:  {description}
-    Fix:      {description}
-    Impact:   {description}
+  第 2 轮 — {dim_label} ({dim_score_before} → {dim_score_after})
+    问题：  {description}
+    修复：  {description}
+    效果：  {description}
 
   ...
 
-  ── Remaining Opportunities ─────────────────────────
+  ── 剩余优化空间 ──────────────────────────────────────
+  (EN: Remaining Opportunities)
 
   {if verdict is PASS:}
-    ✓ Skill meets quality standards. Weakest area is {dim} ({score}/10).
-    Optional: run /eval-improve --dimension {dim} for further polish.
+    ✓ Skill 已达到质量标准。当前最弱项：{dim_label} ({score}/10)。
 
   {if verdict is not PASS (hit max-iterations):}
-    ✗ Did not reach PASS after {max_iterations} rounds.
-    Current weakest: {dim} ({score}/10)
-    Suggested: review {dim} manually — automated improvement may have plateaued.
-    Run /eval-skill to see full current assessment.
+    ✗ 经过 {max_iterations} 轮后仍未达到 PASS。
+    当前最弱项：{dim_label} ({score}/10)
+    建议：手动检查 {dim_label} — 自动化改进可能已到瓶颈。
 
 ═══════════════════════════════════════════════════════
 ```
+
+After the report block, present the user with a choice (do **not** print raw commands):
+
+```
+┌─ 下一步 ──────────────────────────────────────────────┐
+│                                                         │
+│  [继续打磨]   [查看完整评估]   [完成]                   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+- **继续打磨** (EN: Keep Polishing): run `/eval-improve {SKILL_PATH}` targeting the
+  weakest dimension. If `--internal` is passed, skip the prompt and do nothing (caller
+  decides next step).
+- **查看完整评估** (EN: View Full Assessment): run `/eval-skill {SKILL_PATH} --scope full`
+  and display the result.
+- **完成** (EN: Done): exit with no further action.
 
 ### 5.3: Report Rules
 
 - **Score Curve**: Use block characters (█ and ░) to create a simple bar, 20 chars wide, proportional to score/100. This gives an instant visual of progress.
-- **Problem/Fix/Impact**: Write in user language, not dimension codes. Translate D3 findings into "hardcoded password removed", D2 issues into "description was too vague to be discovered", etc.
+- **Problem/Fix/Impact**: Write in user language, not dimension codes. Translate D3 findings into "hardcoded password removed", D2 issues into "description was too vague to be discovered", etc. Always use the human-readable dimension label from the table above.
 - **Impact line**: Focus on what the user gains — "users can now find this skill by searching for X", "no more security warnings when editing", "clear step-by-step instructions instead of vague hints".
-- **Remaining Opportunities**: Always show next steps, whether PASS or not.
-- If a round resulted in rollback (regression detected), note it: "Round N — Attempted {dim}, rolled back (regression detected). No net change."
+- **Remaining Opportunities**: Always show next steps followed by the choice block — whether PASS or not.
+- If a round resulted in rollback (regression detected), note it: "第 N 轮 — 尝试改进 {dim_label}，已回滚（检测到回退）。无净变化。" (EN: "Round N — Attempted {dim_label}, rolled back (regression detected). No net change.")
+- If `--internal` is passed, omit the choice block entirely and just print the report.
