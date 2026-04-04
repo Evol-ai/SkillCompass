@@ -7,6 +7,7 @@ description: >
   Use when: first session after install, or user asks about skill quality,
   evaluation, inbox, suggestions, or improvement.
 commands:
+  - skillcompass
   - skill-compass
   - setup
   - eval-skill
@@ -17,6 +18,8 @@ commands:
   - eval-merge
   - eval-rollback
   - eval-evolve
+  - allskills
+  - skillreport
   - skill-inbox
   - inbox
   - skill-report
@@ -80,7 +83,7 @@ Check if `~/.claude/settings.json` already has a `statusLine` configured.
 If NO existing statusLine:
 ```
 SkillCompass 会自动追踪 skill 使用情况。
-有建议时，底部会显示 🧭 N pending，输入 /inbox 查看。
+有建议时，底部会显示 🧭 N pending，输入 /skillcompass 查看。
 
 [启用底部提示 🧭 / 跳过]
 ```
@@ -104,7 +107,7 @@ If YES existing statusLine: skip silently.
   · 发现闲置或有问题的 skill
   · 有建议时底部 🧭 提示
 
-随时输入 /inbox 查看和管理。
+随时输入 /skillcompass 查看和管理。
 ```
 
 **After onboarding, do NOT show the inbox view. The user was not asking for inbox — they were just starting a session. Return control to whatever the user intended to do.**
@@ -136,27 +139,29 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 
 ## Command Dispatch
 
-### Natural Language Entry Point
+### Main Entry Point
 
 | Command | File | Purpose |
 |---------|------|---------|
-| /skill-compass | `commands/skill-compass.md` | Accept plain language, route to the right command automatically. |
-| /setup | `commands/setup.md` | Manual inventory + health check. First-run helper is optional and resumes the original command. |
+| **/skillcompass** | `commands/skill-compass.md` | **唯一主入口** — 智能响应：有建议时展示建议，无建议时展示摘要，支持自然语言 |
 
-### Essential Commands
+### Shortcut Aliases（不主动推广，知道的人可用）
+
+| Command | Routes to | Purpose |
+|---------|-----------|---------|
+| /allskills | `commands/skill-inbox.md` (arg: all) | 全部 skill 列表 |
+| /skillreport | `commands/skill-report.md` | Skill 生态报告 |
+| /inbox | `commands/skill-inbox.md` | 建议视图（历史别名） |
+| /skill-compass | `commands/skill-compass.md` | /skillcompass 的连字符版本 |
+| /skill-inbox | `commands/skill-inbox.md` | /inbox 的完整名称 |
+| /skill-report | `commands/skill-report.md` | /skillreport 的连字符版本 |
+
+### Evaluation Commands
 
 | Command | File | Purpose |
 |---------|------|---------|
 | /eval-skill | `commands/eval-skill.md` | Assess quality (scores + verdict). Supports `--scope gate\|target\|full`. |
 | /eval-improve | `commands/eval-improve.md` | Fix the weakest dimension automatically. Groups D1+D2 when both are weak. |
-
-### Inbox & Report
-
-| Command | File | Purpose |
-|---------|------|---------|
-| /inbox | `commands/skill-inbox.md` | Skill 建议收件箱（推荐入口，等同 /skill-inbox） |
-| /skill-inbox | `commands/skill-inbox.md` | 同上（完整名称） |
-| /skill-report | `commands/skill-report.md` | Skill 生态报告 — Quick Scan (D1+D2+D3) + 上下文预算 + 质量分布 |
 
 ### Advanced Commands
 
@@ -174,12 +179,32 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 `{baseDir}` refers to the directory containing this SKILL.md file (the skill package root). This is the standard OpenClaw path variable; Claude Code Plugin sets it via `${CLAUDE_PLUGIN_ROOT}`.
 
 1. Parse the command name and arguments from the user's input.
-2. **Alias resolution**: `/inbox` → `skill-inbox`. Map alias to canonical name before dispatch.
-3. If the matched command is `setup`, load `{baseDir}/commands/setup.md` directly. Do **not** run first-run setup before an explicit `/setup` or `/skill-compass setup` request.
-4. For any other command, check for setup state in `.skill-compass/setup-state.json`. If it does not exist, fall back to the legacy marker `.skill-compass/.setup-done`.
-5. If no setup state exists, offer a quick first-run inventory. If the user accepts, load `{baseDir}/commands/setup.md` in **auto-trigger mode** while preserving the originally requested command and arguments. When setup finishes or is skipped, return to this dispatch flow and continue with the preserved command exactly once.
-6. Use the **Read** tool to load `{baseDir}/commands/{command-name}.md`.
-7. Follow the loaded command instructions exactly.
+
+2. **Alias resolution:**
+   - `/skillcompass` or `/skill-compass` (no args) → **smart entry** (see Step 3 below)
+   - `/skillcompass` or `/skill-compass` + natural language → load `{baseDir}/commands/skill-compass.md` (dispatcher)
+   - `/allskills` → load `{baseDir}/commands/skill-inbox.md` with arg `all`
+   - `/skillreport` or `/skill-report` → load `{baseDir}/commands/skill-report.md`
+   - `/inbox` or `/skill-inbox` → load `{baseDir}/commands/skill-inbox.md`
+   - `/setup` → load `{baseDir}/commands/setup.md`
+   - All other commands → load `{baseDir}/commands/{command-name}.md`
+
+3. **Smart entry (`/skillcompass` without arguments):**
+   - Check `.skill-compass/setup-state.json`. If not exist → run Post-Install Onboarding (above).
+   - Read inbox pending count from `.skill-compass/cc/inbox.json`.
+   - If pending > 0 → load `{baseDir}/commands/skill-inbox.md` (show suggestions).
+   - If pending = 0 → show one-line summary + choices:
+     ```
+     🧭 {N} 个 skill · 最常用 {top_skill}({count}次/周) · {status}
+     [查看全部 skill / 查看报告 / 评测某个 skill]
+     ```
+     Where `{status}` is "全部健康 ✓" or "{K} 个有风险" based on latest scan.
+
+4. For any command requiring setup state, check `.skill-compass/setup-state.json`. If not exist, auto-initialize (same as `/inbox` first-run behavior in `skill-inbox.md`).
+
+5. Use the **Read** tool to load the resolved command file.
+
+6. Follow the loaded command instructions exactly.
 
 ## Output Format
 

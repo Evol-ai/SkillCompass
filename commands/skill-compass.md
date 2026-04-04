@@ -1,6 +1,6 @@
-# /skill-compass — Natural Language Dispatcher
+# /skillcompass — Natural Language Dispatcher
 
-This command accepts free-form natural language and routes to the appropriate SkillCompass command.
+This command accepts free-form natural language and routes to the appropriate SkillCompass command. Also accessible as `/skill-compass`.
 
 > **Locale**: 所有用户可见文本跟随会话语言。中文为默认示例，英文等效表述标注为 `EN:`。维度标签见 SKILL.md。
 > EN: All user-facing text follows session language. Chinese is the default example; English equivalents are marked with `EN:`. Dimension labels: see SKILL.md.
