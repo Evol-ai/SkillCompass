@@ -176,15 +176,48 @@ Do **not** print raw command strings. Describe the action in plain language as a
 
 **StatusLine integration (first run only):**
 
-After smart guidance, check if `claude-hud` is installed (look for `~/.claude/plugins/claude-hud/` or check if `claude-hud` command exists). If installed AND no `--extra-cmd` is configured for SkillCompass yet:
+After smart guidance, check if `~/.claude/settings.json` already has a `statusLine` configured.
+
+If NO existing statusLine:
 
 ```
-状态栏已就绪。当有 skill 建议时，底部会显示 🧭 N pending。
-输入 /inbox 查看，或直接问我"下面提示是什么"。
+建议在底部状态栏启用提示，有 skill 建议时会显示 🧭 N pending。
+EN: Recommend enabling status bar notifications. When there are skill suggestions, 🧭 N pending will appear at the bottom.
 ```
-EN: `Status bar ready. When there are skill suggestions, 🧭 N pending will appear at the bottom. Type /inbox to view, or ask me "what's the indicator below?"`
 
-If `claude-hud` is NOT installed, skip this message silently. Do not suggest installing it.
+Then offer two choices:
+
+```
+请选择状态栏样式：
+
+1. 极简模式 — 仅显示 SkillCompass 提示
+   🧭 3 pending
+
+2. 完整 HUD — 包含模型、上下文、Git 等信息（需要安装 claude-hud）
+   [Opus] │ my-project git:(main*) │ 🧭 3 pending
+   Context █████░░░░░ 45% │ Usage ██░░░░░░░░ 25%
+
+[极简模式 / 完整 HUD / 跳过]
+```
+
+- **极简模式**: Use the **Bash** tool to write to `~/.claude/settings.json`, adding the `statusLine` field:
+  ```json
+  {
+    "statusLine": {
+      "type": "command",
+      "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hud-extra.js\""
+    }
+  }
+  ```
+  If the file already exists, merge the `statusLine` field without overwriting other settings.
+  After writing, confirm: "状态栏已启用 ✓ 输入 /inbox 查看建议，或直接问我"下面提示是什么"。"
+
+- **完整 HUD**: Check if `claude-hud` is installed (`~/.claude/plugins/claude-hud/` exists). If yes, configure its `--extra-cmd` to point to `scripts/hud-extra.js`. If not installed, inform the user: "需要先安装 claude-hud：`/plugin install claude-hud`，安装后重新运行 /setup。" and fall back to 极简模式.
+
+- **跳过**: Do nothing, no statusLine configuration.
+
+If YES existing statusLine (user already has one configured):
+Skip silently. Do not overwrite the user's existing configuration.
 
 **Subsequent runs (previous snapshot exists):**
 
