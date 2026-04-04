@@ -17,6 +17,7 @@ commands:
   - eval-rollback
   - eval-evolve
   - skill-inbox
+  - inbox
   - skill-report
 metadata:
   clawdbot:
@@ -75,7 +76,8 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 
 | Command | File | Purpose |
 |---------|------|---------|
-| /skill-inbox | `commands/skill-inbox.md` | Skill 建议收件箱 — 双视图：建议 + 全部 skill 管理 |
+| /inbox | `commands/skill-inbox.md` | Skill 建议收件箱（推荐入口，等同 /skill-inbox） |
+| /skill-inbox | `commands/skill-inbox.md` | 同上（完整名称） |
 | /skill-report | `commands/skill-report.md` | Skill 生态报告 — Quick Scan (D1+D2+D3) + 上下文预算 + 质量分布 |
 
 ### Advanced Commands
@@ -94,11 +96,12 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 `{baseDir}` refers to the directory containing this SKILL.md file (the skill package root). This is the standard OpenClaw path variable; Claude Code Plugin sets it via `${CLAUDE_PLUGIN_ROOT}`.
 
 1. Parse the command name and arguments from the user's input.
-2. If the matched command is `setup`, load `{baseDir}/commands/setup.md` directly. Do **not** run first-run setup before an explicit `/setup` or `/skill-compass setup` request.
-3. For any other command, check for setup state in `.skill-compass/setup-state.json`. If it does not exist, fall back to the legacy marker `.skill-compass/.setup-done`.
-4. If no setup state exists, offer a quick first-run inventory. If the user accepts, load `{baseDir}/commands/setup.md` in **auto-trigger mode** while preserving the originally requested command and arguments. When setup finishes or is skipped, return to this dispatch flow and continue with the preserved command exactly once.
-5. Use the **Read** tool to load `{baseDir}/commands/{command-name}.md`.
-6. Follow the loaded command instructions exactly.
+2. **Alias resolution**: `/inbox` → `skill-inbox`. Map alias to canonical name before dispatch.
+3. If the matched command is `setup`, load `{baseDir}/commands/setup.md` directly. Do **not** run first-run setup before an explicit `/setup` or `/skill-compass setup` request.
+4. For any other command, check for setup state in `.skill-compass/setup-state.json`. If it does not exist, fall back to the legacy marker `.skill-compass/.setup-done`.
+5. If no setup state exists, offer a quick first-run inventory. If the user accepts, load `{baseDir}/commands/setup.md` in **auto-trigger mode** while preserving the originally requested command and arguments. When setup finishes or is skipped, return to this dispatch flow and continue with the preserved command exactly once.
+6. Use the **Read** tool to load `{baseDir}/commands/{command-name}.md`.
+7. Follow the loaded command instructions exactly.
 
 ## Output Format
 

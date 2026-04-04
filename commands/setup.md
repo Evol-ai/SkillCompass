@@ -174,6 +174,18 @@ Smart guidance conditions (first match wins):
 
 Do **not** print raw command strings. Describe the action in plain language as a choice (e.g., "Evaluate the flagged skill now? [Yes / Later]").
 
+**StatusLine integration (first run only):**
+
+After smart guidance, check if `claude-hud` is installed (look for `~/.claude/plugins/claude-hud/` or check if `claude-hud` command exists). If installed AND no `--extra-cmd` is configured for SkillCompass yet:
+
+```
+状态栏已就绪。当有 skill 建议时，底部会显示 🧭 N pending。
+输入 /inbox 查看，或直接问我"下面提示是什么"。
+```
+EN: `Status bar ready. When there are skill suggestions, 🧭 N pending will appear at the bottom. Type /inbox to view, or ask me "what's the indicator below?"`
+
+If `claude-hud` is NOT installed, skip this message silently. Do not suggest installing it.
+
 **Subsequent runs (previous snapshot exists):**
 
 Compute changes since the last snapshot:

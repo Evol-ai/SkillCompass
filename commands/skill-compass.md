@@ -34,8 +34,9 @@ Analyze the user's message and match to one of these intents:
 | merge, upstream, update from, sync with | eval-merge | `commands/eval-merge.md` |
 | rollback, revert, restore, undo, go back | eval-rollback | `commands/eval-rollback.md` |
 | evolve, auto-improve, loop, keep improving, until pass | eval-evolve | `commands/eval-evolve.md` |
-| inbox, suggestions, manage skills, 建议, 管理 | skill-inbox | `commands/skill-inbox.md` |
-| report, portfolio, health, 报告, 体检 | skill-report | `commands/skill-report.md` |
+| inbox, suggestions, manage skills, 建议, 管理, 待处理 | skill-inbox | `commands/skill-inbox.md` |
+| 右下角, 下面的数字, 下面提示, pending, 🧭, 状态栏, statusline | skill-inbox | `commands/skill-inbox.md` |
+| report, portfolio, health, 报告, 体检, 使用情况 | skill-report | `commands/skill-report.md` |
 
 If no intent matches, show the top 3 most common operations in natural language and ask the user to clarify. Follow the detected locale:
 
