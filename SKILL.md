@@ -18,8 +18,8 @@ commands:
   - eval-merge
   - eval-rollback
   - eval-evolve
-  - allskills
-  - skillreport
+  - all-skills
+  - skill-report
   - skill-inbox
   - inbox
   - skill-report
@@ -149,8 +149,8 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 
 | Command | Routes to | Purpose |
 |---------|-----------|---------|
-| /allskills | `commands/skill-inbox.md` (arg: all) | 全部 skill 列表 |
-| /skillreport | `commands/skill-report.md` | Skill 生态报告 |
+| /all-skills | `commands/skill-inbox.md` (arg: all) | 全部 skill 列表 |
+| /skill-report | `commands/skill-report.md` | Skill 生态报告 |
 | /inbox | `commands/skill-inbox.md` | 建议视图（历史别名） |
 | /skill-compass | `commands/skill-compass.md` | /skillcompass 的连字符版本 |
 | /skill-inbox | `commands/skill-inbox.md` | /inbox 的完整名称 |
@@ -183,8 +183,8 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 2. **Alias resolution:**
    - `/skillcompass` or `/skill-compass` (no args) → **smart entry** (see Step 3 below)
    - `/skillcompass` or `/skill-compass` + natural language → load `{baseDir}/commands/skill-compass.md` (dispatcher)
-   - `/allskills` → load `{baseDir}/commands/skill-inbox.md` with arg `all`
-   - `/skillreport` or `/skill-report` → load `{baseDir}/commands/skill-report.md`
+   - `/all-skills` → load `{baseDir}/commands/skill-inbox.md` with arg `all`
+   - `/skill-report` → load `{baseDir}/commands/skill-report.md`
    - `/inbox` or `/skill-inbox` → load `{baseDir}/commands/skill-inbox.md`
    - `/setup` → load `{baseDir}/commands/setup.md`
    - All other commands → load `{baseDir}/commands/{command-name}.md`
