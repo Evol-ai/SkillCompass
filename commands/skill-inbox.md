@@ -9,11 +9,21 @@ Unified entry point for managing skill suggestions and browsing all installed sk
 
 ## Step 1: Load Data
 
-1. Use the **Read** tool to load `.skill-compass/setup-state.json`. If the file does not exist, output:
-   ```
-   未找到 setup-state.json。请先运行 /setup 建立 skill 清单。
-   ```
-   Then stop.
+1. Use the **Read** tool to load `.skill-compass/setup-state.json`. If the file does not exist, this is a first-time use. Auto-initialize:
+
+   1. Run skill discovery silently (same as setup Step 3: recursive scan of skill directories).
+   2. Run quick scan D1+D2+D3 on all discovered skills.
+   3. Save `setup-state.json`.
+   4. Show a brief summary:
+
+      ```
+      发现 {N} 个 skill{, M 个有安全风险 if any high risk}。
+      使用数据会自动积累，有建议时通知你。
+      ```
+
+   Then check for statusLine configuration (see `setup.md` StatusLine integration section). If no statusLine is configured, offer the choice.
+
+   After initialization, continue to Step 2 (show header) and proceed normally. The inbox will be empty (no suggestions yet since no usage data), but the all-skills view will be populated.
 
 2. Extract the `inventory` array from setup-state.json. This is the full skill list.
 
@@ -120,10 +130,9 @@ old-formatter — 安装 30 天，从未被调用过
 Output:
 
 ```
-暂无建议。
+全部处理完毕 ✓ skill 使用数据在自动积累中。
 
-输入 all 查看和管理全部已安装 skill。
-或运行 /skill-report 查看 skill 生态报告。
+[查看全部 skill / 查看 skill 报告 / 结束]
 ```
 
 Stop.
@@ -158,7 +167,18 @@ const store = new InboxStore('cc');
 "
 ```
 
-After printing the confirmation, re-display the next pending suggestions (Step 4 again, paginating forward). If all suggestions for the current batch of 3 have been acted on and more remain, show the next batch. If none remain, show the empty state message.
+After printing the action confirmation, check remaining pending suggestions:
+- If there are remaining pending suggestions, show:
+  ```
+  还有 {N} 条建议。[继续处理 / 结束]
+  ```
+- If no remaining suggestions, show:
+  ```
+  全部处理完毕 ✓
+  [查看全部 skill / 查看 skill 报告 / 结束]
+  ```
+
+Then re-display the next pending suggestions (Step 4 again, paginating forward). If all suggestions for the current batch of 3 have been acted on and more remain, show the next batch. If none remain, show the empty state message.
 
 ## Step 5: All Skills View
 

@@ -59,9 +59,10 @@ Run eval-skill flow on the merged version. Compare against pre-merge local score
 
 If regression detected (any dimension dropped > 2 points):
 - Warn the user in the session locale: describe which dimensions regressed and by how much.
-- Unless `--internal` or `--ci` is active, present this choice:
+- Unless `--internal` or `--ci` is active, print a status line then present this choice:
 
   ```
+  ⚠ 合并后检测到回归。
   检测到合并后评分下降，请选择：
   › 回滚到合并前
     保留合并结果
@@ -79,12 +80,13 @@ If regression detected (any dimension dropped > 2 points):
 After the merge (and any regression handling) completes successfully, present the following choice unless `--internal` or `--ci` is active:
 
 ```
-合并完成。接下来？
-› 重新评测
+✓ 合并完成。建议重新评测确认质量。
+接下来？
+› 重新评测（推荐）
   完成
 ```
 
-- **重新评测**: immediately run `/eval-skill <path> --scope full` on the merged version.
+- **重新评测（推荐）**: immediately run `/eval-skill <path> --scope full` on the merged version.
 - **完成**: exit the command and return control to the user.
 
 If `--internal` or `--ci` is active: exit silently after writing results.

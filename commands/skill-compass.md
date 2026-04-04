@@ -36,7 +36,13 @@ Analyze the user's message and match to one of these intents:
 | evolve, auto-improve, loop, keep improving, until pass | eval-evolve | `commands/eval-evolve.md` |
 | inbox, suggestions, manage skills, 建议, 管理, 待处理 | skill-inbox | `commands/skill-inbox.md` |
 | 右下角, 下面的数字, 下面提示, pending, 🧭, 状态栏, statusline | skill-inbox | `commands/skill-inbox.md` |
-| report, portfolio, health, 报告, 体检, 使用情况 | skill-report | `commands/skill-report.md` |
+| 我有哪些 skill, 全部 skill, 看看所有, show all skills | skill-inbox | `commands/skill-inbox.md` (pass arg: all) |
+| 没用过的, 清理, 闲置的, unused, idle, cleanup | skill-inbox | `commands/skill-inbox.md` (pass arg: all, filter unused) |
+| 不想用了, 删掉, 移除, remove, delete skill | skill-inbox | `commands/skill-inbox.md` (locate mentioned skill) |
+| report, portfolio, health, 报告, 体检 | skill-report | `commands/skill-report.md` |
+| 上下文不够, skill 太多, 占空间, context pressure | skill-report | `commands/skill-report.md` |
+| 使用情况, 最近用了哪些, 使用频率, usage, how often | skill-report | `commands/skill-report.md` |
+| 重新扫描, 刷新 skill, 安装了新 skill, rescan, refresh | setup | `commands/setup.md` |
 
 If no intent matches, show the top 3 most common operations in natural language and ask the user to clarify. Follow the detected locale:
 

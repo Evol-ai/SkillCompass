@@ -138,31 +138,33 @@ After displaying the Improvement Summary, check the new verdict and present a fo
 
 **If verdict is still CAUTION or FAIL:**
 ```
-[继续优化此 skill / 评测其他 skill → /skill-inbox / 停止]
+{维度名称} 从 {old} 提升到 {new}，但仍未达到 PASS。继续优化可进一步提升。
+[继续优化此 skill（推荐）/ 查看其他建议 / 停止]
 ```
 or (English locale):
 ```
-[Keep improving this skill / Evaluate other skills → /skill-inbox / Stop]
+{Dimension name} improved from {old} to {new}, but verdict is still not PASS. Further improvement is possible.
+[Keep improving this skill (recommended) / View other suggestions / Stop]
 ```
 
 **If verdict improved to PASS:**
 ```
-✓ 已改进到 PASS
-[继续打磨 / 停止]
+✓ 已达到 PASS ✓ 还有可优化空间（{维度名称} {score}/10）。
+[继续打磨 / 停止（推荐）]
 ```
 or (English locale):
 ```
-✓ Improved to PASS
-[Keep polishing / Stop]
+✓ Improved to PASS ✓ There is still room to polish ({Dimension name} {score}/10).
+[Keep polishing / Stop (recommended)]
 ```
 
 **If target dimension did not improve** (score did not increase by ≥ 1):
 ```
-[尝试其他维度 / 停止]
+此维度可能已接近上限。[尝试其他维度 / 停止]
 ```
 or (English locale):
 ```
-[Try another dimension / Stop]
+This dimension may be near its ceiling. [Try another dimension / Stop]
 ```
 
 ### If verification fails:

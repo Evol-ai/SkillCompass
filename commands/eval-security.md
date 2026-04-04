@@ -47,17 +47,26 @@ If `--verbose` is not set: omit findings with severity `"low"` from display (sti
 
 After printing the result:
 
-- **Findings exist AND neither `--internal` nor `--ci` is set:** present the user with the following choices (rendered in the detected locale):
+- **Findings exist AND neither `--internal` nor `--ci` is set:** print a status line then present choices (rendered in the detected locale):
 
   ```
+  ⚠ 发现 {N} 个安全问题。
   [修复安全问题 / 查看详情 / 完成]
   ```
+
+  (EN: `⚠ {N} security issue(s) found.`)
 
   - **修复安全问题** — invoke the fix workflow to address reported findings.
   - **查看详情** — re-display all findings including those hidden by verbosity rules.
   - **完成** — exit with no further action.
 
-- **No findings:** print a single locale-appropriate "clean" message (e.g. "No security issues found." in English, or the equivalent in the detected locale). Do not show the choice prompt.
+- **No findings:** print a single locale-appropriate "clean" message and do not show the choice prompt:
+
+  ```
+  ✓ 安全扫描完成，未发现问题。
+  ```
+
+  (EN: `✓ Security scan complete, no issues found.`)
 
 - **`--internal` or `--ci` flag is set:** skip the choice prompt entirely regardless of findings; exit silently after printing the JSON result.
 

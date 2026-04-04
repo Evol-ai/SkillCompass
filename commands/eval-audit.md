@@ -84,11 +84,24 @@ Total: 3 skills | 1 PASS | 1 CAUTION | 1 FAIL
 
 Output full JSON array for programmatic use. If `--format md`: write summary report.
 
-After the summary — unless `--internal` or `--ci` is set — offer:
+After the summary — unless `--internal` or `--ci` is set — display a status line followed by choices:
 
+If all skills passed:
 ```
-[locale: zh] [查看详细报告] [完成]
-[locale: en] [View detailed report] [Done]
+[locale: zh] ✓ 批量评测完成：{N} 个 skill，{PASS} 个通过
+  [查看详细报告] [完成]
+
+[locale: en] ✓ Batch evaluation complete: {N} skills, {PASS} passed
+  [View detailed report] [Done]
+```
+
+If any skills failed:
+```
+[locale: zh] ⚠ 批量评测完成：{N} 个 skill，{FAIL} 个未通过
+  [查看未通过的 skill / 结束]
+
+[locale: en] ⚠ Batch evaluation complete: {N} skills, {FAIL} failed
+  [View failed skills / Done]
 ```
 
 ### Security-Only Mode Output

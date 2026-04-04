@@ -168,10 +168,11 @@ Display the following report to the user (follow session locale):
   (EN: Remaining Opportunities)
 
   {if verdict is PASS:}
-    ✓ Skill 已达到质量标准。当前最弱项：{dim_label} ({score}/10)。
+    ✓ 进化完成：已达到 PASS（{score}/100）
+    当前最弱项：{dim_label} ({score}/10)。
 
   {if verdict is not PASS (hit max-iterations):}
-    ✗ 经过 {max_iterations} 轮后仍未达到 PASS。
+    ⚠ 已达到最大迭代次数，当前 {verdict}（{score}/100）
     当前最弱项：{dim_label} ({score}/10)
     建议：手动检查 {dim_label} — 自动化改进可能已到瓶颈。
 

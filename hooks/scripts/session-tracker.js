@@ -48,12 +48,27 @@ if (mode === 'start') {
     const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
     const isDue = !lastDigest || (Date.now() - new Date(lastDigest).getTime() > sevenDaysMs);
 
+    // First-install detection
+    const setupStatePaths = [
+      path.join(baseDir, '.skill-compass', 'setup-state.json'),
+      path.join(platformDir, 'setup-state.json')
+    ];
+    let hasSetupState = false;
+    for (const sp of setupStatePaths) {
+      if (fs.existsSync(sp)) { hasSetupState = true; break; }
+    }
+
+    const firstInstallFlag = path.join(platformDir, '.first-install-shown');
+    if (!hasSetupState && !fs.existsSync(firstInstallFlag)) {
+      process.stderr.write(
+        '\n👋 SkillCompass 已就绪。输入 /inbox 开始管理你的 skill。\n\n'
+      );
+      // Write flag so we only show this once
+      fs.writeFileSync(firstInstallFlag, new Date().toISOString());
+    }
+
     if (isDue) {
-      // Check if setup-state exists
-      const setupStatePaths = [
-        path.join(baseDir, '.skill-compass', 'setup-state.json'),
-        path.join(platformDir, 'setup-state.json')
-      ];
+      // Check if setup-state exists (reuse setupStatePaths from above)
       let setupState = null;
       for (const sp of setupStatePaths) {
         if (fs.existsSync(sp)) {

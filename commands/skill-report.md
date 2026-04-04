@@ -77,6 +77,13 @@ Verdict symbol mapping:
 
 For `⚠` and `✗` rows, append `← {first finding message}` where the message is the `message` field of the first entry in `findings`, trimmed to 60 characters.
 
+If any skill has `high_risk` verdict in the scan results, add a guidance line after the scan summary for the **first** such skill only (max 1 guidance):
+
+```
+{name} 有安全或结构风险，建议做完整 6 维度评测。
+[评测 {name}（推荐）/ 跳过]
+```
+
 If `--scan-only` was passed, stop here after displaying this table.
 
 ### Step 3: Context Budget

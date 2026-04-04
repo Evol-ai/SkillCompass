@@ -94,16 +94,16 @@ The second argument `'cc'` routes the audit log to `.skill-compass/cc/{skill-nam
 ### Step 6: Confirm
 
 Output a locale-appropriate confirmation, e.g.:
-- **English**: `"Rolled back {skill-name} to version {version}. Previous version preserved in history."`
-- **Chinese**: `"已将 {skill-name} 回滚到版本 {version}。原版本已保留在历史记录中。"`
+- **English**: `"✓ Rolled back {skill-name} to version {version}. Previous version preserved in history."`
+- **Chinese**: `"✓ 已将 {skill-name} 回滚到版本 {version}。原版本已保留在历史记录中。"`
 
 Then, unless `--internal` or `--ci` is set, present a flow-continuity choice:
 
 ```
-[重新评测此版本 / 对比两个版本 / 完成]
+[重新评测确认质量（推荐）/ 对比两个版本 / 完成]
 ```
 
-- **重新评测此版本**: invoke `/eval-skill <skill-name>` on the restored version and stop.
+- **重新评测确认质量（推荐）**: invoke `/eval-skill <skill-name>` on the restored version and stop.
 - **对比两个版本**: invoke `/eval-skill <skill-name> --compare <previous-version>` (or the equivalent diff command) and stop.
 - **完成**: exit with no further action.
 

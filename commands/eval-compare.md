@@ -67,13 +67,14 @@ Output assessment as part of the report.
 
 Skip this step if `--internal` or `--ci` is set.
 
-After the report is printed, present the following choice in the session locale (English defaults shown; Chinese equivalents in parentheses):
+After the report is printed, output a status line then present the following choice in the session locale (English defaults shown; Chinese equivalents in parentheses):
 
 ```
+✓ 对比完成。
 下一步 / Next step:
-[改进较弱版本 / Improve weaker version]  [回滚 / Roll back]  [完成 / Done]
+[改进较弱版本（推荐）/ Improve weaker version (recommended)]  [回滚 / Roll back]  [完成 / Done]
 ```
 
-- **改进较弱版本 / Improve weaker version**: Identify the lower-scoring version, then run the eval-skill improvement flow targeting its weakest dimension.
+- **改进较弱版本（推荐）/ Improve weaker version (recommended)**: Identify the lower-scoring version, then run the eval-skill improvement flow targeting its weakest dimension.
 - **回滚 / Roll back**: Restore the previously active snapshot for the skill (confirms before acting).
 - **完成 / Done**: Exit with no further action.

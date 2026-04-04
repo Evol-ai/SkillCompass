@@ -223,9 +223,9 @@ English: `✓ PASS (score: {score}/100) — Weakest area: {Dimension name} ({Dx_
 
 Present the user with a choice:
 ```
-  [ 继续优化 / 满意，停止 ]
+  优化后每次使用都能受益。[ 继续优化（推荐）/ 满意，停止 ]
 ```
-English: `[ Continue improving / Done, stop here ]`
+English: `Improving this will benefit every future use. [ Continue improving (recommended) / Done, stop here ]`
 
 The **Impact** line must be derived from the `issues` array of the lowest-scoring dimension. Translate technical findings into user-facing consequences:
 - D1 issues → "技能可能无法被正确发现或激活" / "skill may not be discovered or activated correctly"
@@ -267,9 +267,9 @@ English: `⚠ CAUTION (score: {score}/100) — Only {Dimension name} is below th
 
 Present the user with a choice:
 ```
-  [ 立即修复 / 跳过 ]
+  {维度名称} 是唯一的短板，修复后大概率升到 PASS。[ 立即修复（推荐）/ 跳过 ]
 ```
-English: `[ Fix now / Skip ]`
+English: `{Dimension name} is the only weak point — fixing it will very likely bring the verdict to PASS. [ Fix now (recommended) / Skip ]`
 
 Otherwise (multiple dimensions in the 4-5 range):
 ```
@@ -280,9 +280,9 @@ English: `⚠ CAUTION (score: {score}/100) — Multiple dimensions need improvem
 
 Present the user with a choice:
 ```
-  [ 开始改进 / 查看详情 / 跳过 ]
+  多个维度需要改进，从最弱的 {维度名称} 开始。[ 开始改进（推荐）/ 查看详情 / 跳过 ]
 ```
-English: `[ Start improving / View details / Skip ]`
+English: `Multiple dimensions need work — start with the weakest, {Dimension name}. [ Start improving (recommended) / View details / Skip ]`
 
 If D5 delta < 0.1 (marginal value), add a note:
 ```
@@ -304,9 +304,9 @@ English: `✗ FAIL (score: {score}/100) — Regression detected (was PASS at v{X
 
 Present the user with a choice:
 ```
-  [ 回滚到上一个通过版本 / 修复当前版本 ]
+  有历史通过版本可回滚。[ 回滚到上一个通过版本（推荐）/ 修复当前版本 ]
 ```
-English: `[ Roll back to last passing version / Fix current version ]`
+English: `A previously passing version is available for rollback. [ Roll back to last passing version (recommended) / Fix current version ]`
 
 2. **Check D5 value** (D5 delta < 0):
 ```
@@ -388,9 +388,9 @@ English: `✗ FAIL (score: {score}/100) — Weakest dimension: {Dimension name} 
 
 Present the user with a choice:
 ```
-  [ 开始改进（约 {N} 轮）/ 跳过 ]
+  预计 {N} 轮可达到 PASS。[ 开始改进（推荐）/ 跳过 ]
 ```
-English: `[ Start improving (approx. {N} rounds) / Skip ]`
+English: `Estimated {N} rounds to reach PASS. [ Start improving (recommended) / Skip ]`
 
 Estimate rounds as: count of dimensions scoring below 5, minimum 1, maximum 5.
 
