@@ -20,6 +20,7 @@ commands:
   - eval-evolve
   - all-skills
   - skill-report
+  - skill-update
   - skill-inbox
   - inbox
   - skill-report
@@ -151,10 +152,10 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 |---------|-----------|---------|
 | /all-skills | `commands/skill-inbox.md` (arg: all) | 全部 skill 列表 |
 | /skill-report | `commands/skill-report.md` | Skill 生态报告 |
+| /skill-update | `commands/skill-update.md` | 检查和更新 skill |
 | /inbox | `commands/skill-inbox.md` | 建议视图（历史别名） |
 | /skill-compass | `commands/skill-compass.md` | /skillcompass 的连字符版本 |
 | /skill-inbox | `commands/skill-inbox.md` | /inbox 的完整名称 |
-| /skill-report | `commands/skill-report.md` | /skillreport 的连字符版本 |
 
 ### Evaluation Commands
 

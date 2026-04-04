@@ -35,12 +35,14 @@ Scan the user's message for any exact match against this list. If a known skill 
 | 回滚, 恢复, rollback, revert | eval-rollback `target_skill` | 回滚版本 |
 | 安全, security, 扫描安全 | eval-security `target_skill` | 安全扫描 |
 | 对比, 比较, compare, diff | eval-compare `target_skill` | 版本对比 |
+| 更新, update, 检查更新, 有没有新版本 | skill-update `target_skill` | 检查该 skill 更新 |
 | （无动作词，只提了名字） | skill-inbox（展示 `target_skill` 详情） | 展示详情 + 操作选项 |
 
 示例：
 - "评测一下 superpowers" → eval-skill superpowers
 - "old-formatter 删掉" → skill-inbox locate old-formatter
 - "code-review" → skill-inbox 展示 code-review 详情
+- "更新 superpowers" → skill-update superpowers
 - "superpowers:writing-plans 怎么样" → eval-skill superpowers（归到父级）
 
 **集合子 skill 处理：** 如果匹配到 qualified name（如 `superpowers:writing-plans`），提取父级名称（`superpowers`）作为 `target_skill`。评测和操作针对父级集合进行。
@@ -70,6 +72,7 @@ Scan the user's message for any exact match against this list. If a known skill 
 | skill report, skill 报告, skill portfolio, skill 体检 | skill-report | `commands/skill-report.md` |
 | 上下文不够, skill 太多, skill 占空间, context pressure | skill-report | `commands/skill-report.md` |
 | skill 使用情况, skill usage, 哪些 skill 用得多 | skill-report | `commands/skill-report.md` |
+| 检查更新, 更新 skill, check update, update skill, 有没有新版本 | skill-update | `commands/skill-update.md` |
 | 重新扫描 skill, 刷新 skill 清单, 安装了新 skill, rescan skills | setup | `commands/setup.md` |
 
 **匹配优先级：** Step 1（skill 名称 + 动作词） > Step 2（关键词匹配）
