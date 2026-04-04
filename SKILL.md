@@ -2,10 +2,10 @@
 name: skill-compass
 version: 1.0.0
 description: >
-  Skill quality and management tool — find security risks in installed skills,
-  identify idle skills wasting context, track usage frequency, and improve
-  skill quality. Use when: first session after install, or user asks about
-  skill health, inbox, suggestions, or quality.
+  Evaluate skill quality, find the weakest dimension, and apply directed
+  improvements. Also tracks usage to spot idle or risky skills.
+  Use when: first session after install, or user asks about skill quality,
+  evaluation, inbox, suggestions, or improvement.
 commands:
   - skill-compass
   - setup
@@ -45,12 +45,10 @@ Run this onboarding exactly once (check for setup-state.json to determine first-
 ```
 🧭 SkillCompass
 
-帮你管理已安装的 skill——发现安全风险、识别闲置 skill、追踪使用频率、释放上下文空间。
-
-装了 skill 不知道好不好用？用得多但没评测过？装了一堆占上下文但根本没用？
-SkillCompass 帮你搞清楚。
+评测 skill 质量，找到最薄弱的环节，定向改进。
+同时追踪使用情况，帮你发现闲置或有风险的 skill。
 ```
-EN: "SkillCompass helps you manage installed skills — find security risks, identify idle skills, track usage frequency, free up context space."
+EN: "Evaluate skill quality, find the weakest area, and improve it. Also tracks usage to help you spot idle or risky skills."
 
 ### Step 2: Quick Scan (automatic, no permission needed)
 
