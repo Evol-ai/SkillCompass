@@ -112,8 +112,8 @@ function checkMilestone(skillName, usageFile, platformDir, baseDir) {
 
   // Output milestone reminder to stderr
   process.stderr.write(
-    `\n[SkillCompass] ${skillName} 已使用 ${milestone} 次，是您的高频 skill。\n` +
-    `  建议评测质量，如有优化空间，后续每次使用都能受益。\n\n`
+    `\n[SkillCompass] ${skillName} has been used ${milestone} times.\n` +
+    `  Consider evaluating its quality — improvements will benefit every future use.\n\n`
   );
 
   // Record milestone as shown

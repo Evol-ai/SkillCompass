@@ -110,10 +110,10 @@ if (idlePct <= 30) process.exit(0);
 
 // All conditions met — output suggestion
 process.stderr.write(
-  `\n[SkillCompass] 本次会话上下文已压缩 ${state.session_compact_count} 次。\n` +
-  `  ${inventory.length} 个 skill 占用 ${totalSkillKB.toFixed(1)}KB（${Math.round(skillPct)}%），` +
-  `其中 ${idleCount} 个近期未使用（${idleSkillKB.toFixed(1)}KB）。\n` +
-  `  清理闲置 skill 可释放上下文空间 → /skill-inbox all\n\n`
+  `\n[SkillCompass] Context compacted ${state.session_compact_count} times this session.\n` +
+  `  ${inventory.length} skills use ${totalSkillKB.toFixed(1)}KB (${Math.round(skillPct)}%), ` +
+  `${idleCount} idle (${idleSkillKB.toFixed(1)}KB).\n` +
+  `  Cleanup idle skills to free context → /skillcompass\n\n`
 );
 
 // Mark as shown

@@ -71,7 +71,7 @@ if (mode === 'start') {
           const result = engine.runDigest(setupState.inventory);
           if (result.added > 0) {
             process.stderr.write(
-              `[SkillCompass] ${result.added} 条新建议已生成，运行 /skill-inbox 查看。\n`
+              `[SkillCompass] ${result.added} new suggestion(s) generated. Run /skillcompass to view.\n`
             );
           }
         } catch (e) {
