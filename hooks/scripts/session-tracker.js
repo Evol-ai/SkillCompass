@@ -2,7 +2,7 @@
 /**
  * session-tracker.js — Session lifecycle tracker + context injection
  *
- * SessionStart: write session_start event, run digest if due, inject additionalContext
+ * SessionStart: write session_start event, check version, run digest, inject context
  * SessionEnd: write session_end event
  *
  * Usage: node session-tracker.js start|end
@@ -19,6 +19,7 @@ const baseDir = process.env.CLAUDE_PLUGIN_ROOT || process.cwd();
 const platformDir = path.join(baseDir, '.skill-compass', 'cc');
 const usageFile = path.join(platformDir, 'usage.jsonl');
 const inboxFile = path.join(platformDir, 'inbox.json');
+const versionFile = path.join(platformDir, 'last-version');
 
 // Ensure directory
 if (!fs.existsSync(platformDir)) {
@@ -38,70 +39,64 @@ fs.appendFileSync(usageFile, JSON.stringify(event) + '\n');
 
 if (mode === 'start') {
   let contextMessage = '';
-  let digestAdded = 0;
 
   try {
-    // Check setup state
-    const setupStatePaths = [
-      path.join(baseDir, '.skill-compass', 'setup-state.json'),
-      path.join(platformDir, 'setup-state.json')
-    ];
-    let setupState = null;
-    for (const sp of setupStatePaths) {
-      if (fs.existsSync(sp)) {
-        try { setupState = JSON.parse(fs.readFileSync(sp, 'utf-8')); break; } catch { /* skip */ }
-      }
-    }
+    // --- Version check: detect first install, reinstall, or update ---
+    const currentVersion = getCurrentVersion();
+    const lastVersion = fs.existsSync(versionFile)
+      ? fs.readFileSync(versionFile, 'utf-8').trim()
+      : null;
 
-    if (!setupState) {
-      // Not initialized — tell Claude to run onboarding on first user interaction
-      contextMessage = 'SkillCompass installed but not initialized. On the user\'s first message, run the Post-Install Onboarding from SKILL.md.';
+    const needsOnboarding = !lastVersion || lastVersion !== currentVersion;
+
+    if (needsOnboarding) {
+      // First install, reinstall, or version update — trigger onboarding
+      contextMessage = `SkillCompass ${currentVersion} ${lastVersion ? `(updated from ${lastVersion})` : '(first install)'}. `
+        + 'On the user\'s first message, run the Post-Install Onboarding from SKILL.md.';
     } else {
-      // Initialized — read inbox state
+      // Normal session — check inbox state
       let inbox = { suggestions: [], skill_cache: [], meta: { last_digest_at: null } };
       if (fs.existsSync(inboxFile)) {
         inbox = JSON.parse(fs.readFileSync(inboxFile, 'utf-8'));
       }
 
-      // Run digest if due
+      // Run digest if due (> 7 days)
       const lastDigest = inbox.meta?.last_digest_at;
-      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-      const isDue = !lastDigest || (Date.now() - new Date(lastDigest).getTime() > sevenDaysMs);
+      const isDue = !lastDigest || (Date.now() - new Date(lastDigest).getTime() > 7 * 86400000);
 
-      if (isDue && setupState.inventory && setupState.inventory.length > 0) {
-        try {
-          const { InboxEngine } = require(path.join(baseDir, 'lib', 'inbox-engine'));
-          const engine = new InboxEngine('cc');
-          const result = engine.runDigest(setupState.inventory);
-          digestAdded = result.added;
-          // Re-read inbox after digest
-          if (fs.existsSync(inboxFile)) {
-            inbox = JSON.parse(fs.readFileSync(inboxFile, 'utf-8'));
-          }
-        } catch {
-          // Engine not available, skip
+      if (isDue) {
+        const setupState = loadSetupState();
+        if (setupState && setupState.inventory && setupState.inventory.length > 0) {
+          try {
+            const { InboxEngine } = require(path.join(baseDir, 'lib', 'inbox-engine'));
+            const engine = new InboxEngine('cc');
+            engine.runDigest(setupState.inventory);
+            // Re-read inbox after digest
+            if (fs.existsSync(inboxFile)) {
+              inbox = JSON.parse(fs.readFileSync(inboxFile, 'utf-8'));
+            }
+          } catch { /* engine not available */ }
         }
       }
 
-      // Build context message
-      const skillCount = setupState.skills_found || (setupState.inventory || []).length || 0;
+      // Build status message
+      const setupState = loadSetupState();
+      const skillCount = setupState?.skills_found || setupState?.inventory?.length || 0;
       const pending = (inbox.suggestions || []).filter(s =>
         s.status === 'pending' || s.status === 'viewed'
       ).length;
 
       if (pending > 0) {
-        contextMessage = `SkillCompass active. ${skillCount} skills tracked, ${pending} pending suggestion(s). User: /skillcompass to manage.`;
+        contextMessage = `SkillCompass active. ${skillCount} skills, ${pending} pending. /skillcompass to manage.`;
       } else {
-        contextMessage = `SkillCompass active. ${skillCount} skills tracked, no pending suggestions.`;
+        contextMessage = `SkillCompass active. ${skillCount} skills, no pending.`;
       }
     }
   } catch {
-    // Non-critical, don't block session start
     contextMessage = 'SkillCompass active.';
   }
 
-  // Output context injection as JSON
-  // Claude Code reads hookSpecificOutput.additionalContext
+  // Output context injection
   const payload = {
     hookSpecificOutput: {
       hookEventName: 'SessionStart',
@@ -109,4 +104,41 @@ if (mode === 'start') {
     }
   };
   process.stdout.write(JSON.stringify(payload) + '\n');
+}
+
+// --- Helpers ---
+
+function getCurrentVersion() {
+  // Try package.json first, then SKILL.md frontmatter
+  const pkgPath = path.join(baseDir, 'package.json');
+  if (fs.existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+      if (pkg.version) return pkg.version;
+    } catch { /* fall through */ }
+  }
+
+  const skillPath = path.join(baseDir, 'SKILL.md');
+  if (fs.existsSync(skillPath)) {
+    try {
+      const content = fs.readFileSync(skillPath, 'utf-8');
+      const match = content.match(/version:\s*['"]?([^\s'"]+)/);
+      if (match) return match[1];
+    } catch { /* fall through */ }
+  }
+
+  return 'unknown';
+}
+
+function loadSetupState() {
+  const paths = [
+    path.join(baseDir, '.skill-compass', 'setup-state.json'),
+    path.join(platformDir, 'setup-state.json')
+  ];
+  for (const p of paths) {
+    if (fs.existsSync(p)) {
+      try { return JSON.parse(fs.readFileSync(p, 'utf-8')); } catch { /* skip */ }
+    }
+  }
+  return null;
 }

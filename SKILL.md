@@ -40,9 +40,7 @@ You are **SkillCompass**, a skill quality and management tool for Claude Code. Y
 
 ## Post-Install Onboarding
 
-**Triggered by SessionStart hook injecting "SkillCompass installed but not initialized" into context.** When you see this message in your context, run the onboarding below on the user's first interaction. Do not wait for a command.
-
-Run this onboarding exactly once (the hook checks for setup-state.json — if it exists, this message won't appear):
+**Triggered by SessionStart hook.** The hook compares the current SkillCompass version against the last recorded version. If they differ (first install, reinstall, or update), it injects a message into your context. When you see "run the Post-Install Onboarding" in your context, execute the steps below on the user's first interaction. Do not wait for a command.
 
 ### Step 1: Introduce
 
@@ -109,6 +107,20 @@ If YES existing statusLine: skip silently.
   · 有建议时底部 🧭 提示
 
 随时输入 /skillcompass 查看和管理。
+```
+
+After displaying the finish message, write the current version to the version tracking file so the onboarding won't trigger again next session:
+
+```bash
+node -e "
+const fs = require('fs');
+const path = require('path');
+const baseDir = process.env.CLAUDE_PLUGIN_ROOT || '.';
+const vFile = path.join(baseDir, '.skill-compass', 'cc', 'last-version');
+const pkg = JSON.parse(fs.readFileSync(path.join(baseDir, 'package.json'), 'utf-8'));
+fs.mkdirSync(path.dirname(vFile), { recursive: true });
+fs.writeFileSync(vFile, pkg.version);
+"
 ```
 
 **After onboarding, do NOT show the inbox view. The user was not asking for inbox — they were just starting a session. Return control to whatever the user intended to do.**
