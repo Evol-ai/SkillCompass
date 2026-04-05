@@ -85,7 +85,13 @@ If more than 20 skills are found:
 For each discovered skill, extract basic info by reading the file and parsing YAML frontmatter only:
 - `name`, `description`, `version`
 - whether it has `commands`, `hooks`, or `globs`
+- `paths` field (if present — glob patterns for conditional activation)
+- `user_invocable` field (if `false`, skill is hidden from /skills menu)
 - source root and last modified time
+
+**Conditional activation skills** (`paths` field present): these only trigger when matching files are edited. Record `activation: "conditional"` and `activation_paths: [...]` in the inventory. Rules like R1 (never used) should NOT flag these as unused — they may simply not have been triggered yet.
+
+**Hidden skills** (`user_invocable: false`): these don't appear in the /skills menu and can't be directly invoked by users. Record `hidden: true` in the inventory. Exclude from usage-based rules (R1, R2, R5, R10) — users can't invoke what they can't see.
 
 Group skills by purpose using keyword matching on the `description` field:
 - **Code/Dev**: `\b(format|lint|test|review|generate|scaffold|refactor|code)\b`
