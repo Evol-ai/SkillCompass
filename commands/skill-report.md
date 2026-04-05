@@ -86,65 +86,36 @@ If any skill has `high_risk` verdict in the scan results, add a guidance line af
 
 If `--scan-only` was passed, stop here after displaying this table.
 
-### Step 3: Context Budget
+### Step 3: Installed Packages
 
-Calculate the total file size of all `SKILL.md` files from the inventory by reading each file path using the **Bash** tool:
-
-```bash
-node -e "
-const fs = require('fs');
-const paths = {PATHS_JSON};
-const sizes = paths.map(p => { try { return { p, kb: fs.statSync(p).size / 1024 }; } catch(_) { return { p, kb: 0 }; } });
-console.log(JSON.stringify(sizes));
-"
-```
-
-Compute:
-- `total_kb`: sum of all sizes, rounded to one decimal
-- For each skill, determine `status`:
-  - First check `.skill-compass/cc/inbox.json` → `skill_cache` for `disabled` and `pinned` flags (load via `InboxStore.getAllSkillCache()` or read the JSON directly)
-  - If `disabled === true` → `已停用`
-  - If `pinned === true` → `已 pin`
-  - Otherwise determine from `last_activity_at` (from manifest.json, check `.skill-compass/cc/{name}/manifest.json` first, then `.skill-compass/{name}/manifest.json`):
-    - `活跃`: within the last 7 days
-    - `闲置`: 7–14 days ago
-    - `沉睡`: more than 14 days ago
-    - `从未使用`: no `last_activity_at` recorded
-
-The recommended context budget for skills is approximately 2% of the model's context window (per SKILL.md source). For common configurations:
-- 200K context → ~4KB budget
-- 1M context → ~20KB budget
-
-Do NOT hardcode a fixed limit. Instead, if the total skill size exceeds a reasonable threshold (e.g., > 50KB or > 30 skills), note that context pressure may affect performance. Reference `/skill-inbox all` for cleanup options.
-
-Sort all skills by size descending. Show top 5.
-
-ASCII bar (20 chars wide): Show the bar relative to the largest single skill's size, not relative to an arbitrary cap. Filled portion = `round((skill_kb / max_skill_kb) * 20)` chars of `█`, remainder `░`.
-Per-skill bar (10 chars wide): filled = `round((skill_kb / total_kb) * 10)` chars of `█`, remainder `░`.
-
-Calculate `idle_kb`: sum of sizes for skills with status `闲置`, `已停用`, or `从未使用`.
-`idle_pct`: `(idle_kb / total_kb) * 100`, rounded to integer.
-
-Display:
+List all directories in the skill scan roots, distinguishing top-level skills from packages:
 
 ```
-Context Budget
+已安装
 
-  总计 {total_kb} KB
+  Skills（Claude Code 已加载）：
+    frontend-design     独立 skill · {activity status}
 
-  EN: Total {total_kb} KB
+  Packages（通过 hooks/Skill 工具工作）：
+    superpowers         集合 · SessionStart hook · 14 子 skill
+    everything-claude-code  hooks + agents · 非 skill 集合
 
-  Top 5 by size:
-    {name:<20}  {size} KB  {bar 20 chars}  {status}
-    ...
-
-  闲置 + 从未使用的 skill 占 {idle_kb} KB（{idle_pct}%）
+  SkillCompass（本工具）
 ```
+EN: "Installed — Skills (loaded by Claude Code) / Packages (work via hooks/Skill tool) / SkillCompass (this tool)"
 
-If `total_kb > 50` or skill count > 30, append a note:
+Determine package type by checking the directory:
+- Has top-level SKILL.md → "独立 skill" / "standalone skill"
+- Has `hooks/hooks.json` with SessionStart → "集合 · SessionStart hook" / "collection · SessionStart hook"
+- Has `hooks/hooks.json` without SessionStart → "hooks + agents" / "hooks & agents"
+- Has `.claude-plugin/` but no SKILL.md → "plugin (无 skill)"
 
+For packages with sub-skills (SessionStart hook), count sub-skills by scanning `{dir}/skills/*/SKILL.md`.
+
+Sub-skill usage data comes from `usage.jsonl` (passively tracked via PostToolUse Skill hook). If usage data exists, show top sub-skills:
 ```
-  ⚠ Context pressure detected — consider archiving unused skills. Run /skill-inbox all for cleanup options.
+    superpowers         集合 · 14 子 skill
+      最近使用：writing-plans(12次), subagent-driven(6次), executing-plans(3次)
 ```
 
 ### Step 4: Portfolio Overview

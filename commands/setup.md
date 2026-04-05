@@ -43,32 +43,19 @@ Build the scan root list in this priority order:
 
 Resolve only directories that actually exist.
 
-Scan each root **recursively** for `**/SKILL.md` and `**/skill.md` (all depths, not just immediate children).
+Scan each root for `*/SKILL.md` and `*/skill.md` (immediate children only — this matches Claude Code's own discovery pattern).
+
+**Do NOT scan recursively.** Sub-skills inside packages (e.g., `superpowers/skills/writing-plans/SKILL.md`) are discovered passively via `PostToolUse Skill` hook when users invoke them. Scanning recursively would pick up internal files (agent definitions, translations, other-platform configs) that aren't user-facing skills.
 
 Exclude:
 - paths containing `node_modules/`, `.git/`, `test-fixtures/`, `.skill-compass/`
 - SkillCompass's own SKILL.md at `{baseDir}`
 
-### Collection Identification
+### Package Detection
 
-During scanning, identify collection (multi-skill package) structures. A directory is a **collection** if it contains sub-skills matching any of these patterns:
-- `{dir}/skills/{child}/SKILL.md`
-- `{dir}/.claude/skills/{child}/SKILL.md`
-- `{dir}/.agents/skills/{child}/SKILL.md`
+For each directory in the scan roots that does NOT have a top-level SKILL.md, check if it looks like an installed package (has `.claude-plugin/`, `hooks/`, `package.json`, or `CLAUDE.md`). Record these as **installed packages** (not skills) in setup-state.json for reference — but do not add them to the skill inventory or run rules against them.
 
-For collections:
-- The parent directory is the collection entry in inventory (`type: "collection"`)
-- Each child SKILL.md is recorded in the `children` array
-- `total_size` = sum of all SKILL.md file sizes in the collection
-- Individual child skills are NOT separate inventory entries
-
-For standalone skills (not inside a collection structure):
-- `type: "standalone"` in inventory
-- `file_size` = size of the single SKILL.md
-
-Example: `~/.claude/skills/superpowers/skills/writing-plans/SKILL.md` becomes:
-- Parent: `superpowers` (type: collection)
-- Child: `{ name: "writing-plans", qualified: "superpowers:writing-plans", path: "..." }`
+Sub-skills inside packages (e.g., `superpowers/skills/writing-plans/SKILL.md`) are NOT discovered by setup. They are passively discovered via the `PostToolUse Skill` hook when users invoke them through the Skill tool.
 
 Deduplicate by canonical skill identity:
 - prefer earlier roots in the priority order above

@@ -48,17 +48,6 @@
           }
         ]
       }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT:-${baseDir:-.}}/hooks/scripts/context-pressure.js\"",
-            "timeout": 3000
-          }
-        ]
-      }
     ]
   }
 }
