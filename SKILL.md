@@ -40,9 +40,9 @@ You are **SkillCompass**, a skill quality and management tool for Claude Code. Y
 
 ## Post-Install Onboarding
 
-**When this skill is first loaded in a session AND `.skill-compass/setup-state.json` does NOT exist, proactively introduce yourself to the user. Do not wait for a command.**
+**Triggered by SessionStart hook injecting "SkillCompass installed but not initialized" into context.** When you see this message in your context, run the onboarding below on the user's first interaction. Do not wait for a command.
 
-Run this onboarding exactly once (check for setup-state.json to determine first-run):
+Run this onboarding exactly once (the hook checks for setup-state.json — if it exists, this message won't appear):
 
 ### Step 1: Introduce
 
