@@ -91,6 +91,23 @@ If issues found:
 ```
 EN: Same format, follow locale.
 
+### Package Sub-Skill Map
+
+During the package scan above, build a reverse lookup map: `sub_skill_name → package_name`. For each SKILL.md found inside a package, extract the `name` field from frontmatter (or use the directory name as fallback).
+
+Write the map to `.skill-compass/cc/package-skill-map.json`:
+
+```json
+{
+  "writing-plans": "superpowers",
+  "executing-plans": "superpowers",
+  "brainstorming": "superpowers",
+  "subagent-driven-development": "superpowers"
+}
+```
+
+This map is used by `hooks/scripts/skill-usage-tracker.js` to attribute sub-skill invocations to their parent package when the PostToolUse Skill payload doesn't include the package prefix. This ensures usage records always have the qualified form (`superpowers:writing-plans`) for traceability.
+
 Deduplicate by canonical skill identity:
 - prefer earlier roots in the priority order above
 - if the same skill exists at both project and user level, keep the project-level copy

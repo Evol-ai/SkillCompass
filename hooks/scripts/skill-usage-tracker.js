@@ -33,20 +33,35 @@ async function main() {
     'skill-inbox', 'skill-report'];
   if (scCommands.includes(rawSkill) || rawSkill.startsWith('skill-compass:')) return;
 
+  // Determine base directory
+  const baseDir = process.env.CLAUDE_PLUGIN_ROOT || process.cwd();
+  const platformDir = path.join(baseDir, '.skill-compass', 'cc');
+
   // Parse collection qualified name
   let parent, child;
   if (rawSkill.includes(':')) {
+    // Already qualified: "superpowers:writing-plans"
     const parts = rawSkill.split(':');
     parent = parts[0];
     child = parts.slice(1).join(':');
   } else {
-    parent = rawSkill;
-    child = null;
-  }
+    // No prefix — try to look up which package this sub-skill belongs to
+    const mapFile = path.join(platformDir, 'package-skill-map.json');
+    let packageMap = {};
+    if (fs.existsSync(mapFile)) {
+      try { packageMap = JSON.parse(fs.readFileSync(mapFile, 'utf-8')); } catch { /* ignore */ }
+    }
 
-  // Determine base directory
-  const baseDir = process.env.CLAUDE_PLUGIN_ROOT || process.cwd();
-  const platformDir = path.join(baseDir, '.skill-compass', 'cc');
+    if (packageMap[rawSkill]) {
+      // Found in map: "writing-plans" → parent "superpowers"
+      parent = packageMap[rawSkill];
+      child = rawSkill;
+    } else {
+      // Not in map: treat as standalone skill
+      parent = rawSkill;
+      child = null;
+    }
+  }
   const usageFile = path.join(platformDir, 'usage.jsonl');
 
   // Ensure directory
