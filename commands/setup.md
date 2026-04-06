@@ -53,9 +53,43 @@ Exclude:
 
 ### Package Detection
 
-For each directory in the scan roots that does NOT have a top-level SKILL.md, check if it looks like an installed package (has `.claude-plugin/`, `hooks/`, `package.json`, or `CLAUDE.md`). Record these as **installed packages** (not skills) in setup-state.json for reference — but do not add them to the skill inventory or run rules against them.
+For each directory in the scan roots that does NOT have a top-level SKILL.md, check if it looks like an installed package. A directory is a **package** if it has at least one of:
+- `.claude-plugin/` directory
+- `hooks/hooks.json` file
+- `package.json` file
 
-Sub-skills inside packages (e.g., `superpowers/skills/writing-plans/SKILL.md`) are NOT discovered by setup. They are passively discovered via the `PostToolUse Skill` hook when users invoke them through the Skill tool.
+Add packages to `inventory` with `type: "package"` (not `type: "skill"`). Include:
+- `name`: directory name
+- `type`: `"package"`
+- `path`: directory path
+- `has_hooks`: whether `hooks/hooks.json` exists
+- `has_session_start`: whether hooks.json contains a SessionStart entry
+- `is_git`: whether `.git/` exists
+
+Sub-skills inside packages (e.g., `superpowers/skills/writing-plans/SKILL.md`) are NOT added to inventory individually. They are passively discovered via the `PostToolUse Skill` hook when users invoke them through the Skill tool.
+
+### Package Security Scan
+
+For each detected package, recursively find all SKILL.md files within the package directory (`**/SKILL.md`, excluding `node_modules/` and `.git/`). Run D3 security pattern matching only (from `lib/patterns.js`) on each file:
+- Secret patterns
+- Dangerous command patterns
+- Injection patterns
+- Exfiltration patterns
+- Embedded shell patterns (`!` syntax)
+
+This is pattern matching only — no D1/D2 evaluation, no LLM calls. Results are NOT added to inventory. Display inline:
+
+If all clean:
+```
+{package_name}: {N} sub-skill files scanned, no security issues ✓
+```
+
+If issues found:
+```
+{package_name}: {N} sub-skill files scanned, {M} issue(s) found
+  ⚠ {filename}: {finding description}
+```
+EN: Same format, follow locale.
 
 Deduplicate by canonical skill identity:
 - prefer earlier roots in the priority order above
