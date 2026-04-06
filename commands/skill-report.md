@@ -123,17 +123,15 @@ Sub-skill usage data comes from `usage.jsonl` (passively tracked via PostToolUse
 Count the total number of top-level skills (type = standalone, with SKILL.md loaded by Claude Code). Then:
 
 - **30 or fewer**: No warning. Healthy range.
-- **31–50**: Show note:
+- **31–50**: Show note (follow locale):
   ```
-  ⚠ {N} 个 skill 已安装。非 Opus 模型（200K context）用户可能受 description 截断影响，Claude 选择 skill 时准确率可能下降。
+  ⚠ {N} skills installed. Users on non-Opus models (200K context) may experience description truncation, reducing Claude's accuracy in selecting the right skill.
   ```
-  EN: "⚠ {N} skills installed. Users on non-Opus models (200K context) may experience description truncation, reducing Claude's accuracy in selecting the right skill."
-- **Over 50**: Show warning:
+- **Over 50**: Show warning with choices (follow locale):
   ```
-  ⚠ {N} 个 skill 已安装，建议清理闲置 skill。Claude 匹配 skill 的准确率可能下降。
-  [查看闲置 skill / 查看使用排名]
+  ⚠ {N} skills installed. Consider cleaning up idle skills — Claude's accuracy in matching the right skill may decrease.
+  [View idle skills / View usage ranking]
   ```
-  EN: "⚠ {N} skills installed. Consider cleaning up idle skills — Claude's accuracy in matching the right skill may decrease."
 
 ### Step 4: Portfolio Overview
 
