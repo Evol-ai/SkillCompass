@@ -118,6 +118,23 @@ Sub-skill usage data comes from `usage.jsonl` (passively tracked via PostToolUse
       最近使用：writing-plans(12次), subagent-driven(6次), executing-plans(3次)
 ```
 
+**Skill count health check:**
+
+Count the total number of top-level skills (type = standalone, with SKILL.md loaded by Claude Code). Then:
+
+- **30 or fewer**: No warning. Healthy range.
+- **31–50**: Show note:
+  ```
+  ⚠ {N} 个 skill 已安装。非 Opus 模型（200K context）用户可能受 description 截断影响，Claude 选择 skill 时准确率可能下降。
+  ```
+  EN: "⚠ {N} skills installed. Users on non-Opus models (200K context) may experience description truncation, reducing Claude's accuracy in selecting the right skill."
+- **Over 50**: Show warning:
+  ```
+  ⚠ {N} 个 skill 已安装，建议清理闲置 skill。Claude 匹配 skill 的准确率可能下降。
+  [查看闲置 skill / 查看使用排名]
+  ```
+  EN: "⚠ {N} skills installed. Consider cleaning up idle skills — Claude's accuracy in matching the right skill may decrease."
+
 ### Step 4: Portfolio Overview
 
 Read version count from `.skill-compass/{name}/manifest.json` for each skill (count entries in `versions` array, or use field `version_count` if present). Also check `.skill-compass/cc/{name}/manifest.json` first (new path takes priority). If manifest is missing, treat version count as 1.
