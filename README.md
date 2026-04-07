@@ -1,7 +1,7 @@
 <h1 align="center">SkillCompass</h1>
 
 <p align="center">
-  <strong>Your skill could be much better. But better <em>how</em>? Which part? In what order?</strong>
+  <strong>Evaluate quality. Find the weakest link. Fix it. Prove it worked. Repeat.</strong>
 </p>
 
 <p align="center">
@@ -22,15 +22,14 @@
 
 |  |  |
 |--|--|
-| **What it is** | A local skill quality and security evaluator for Claude Code / OpenClaw – six-dimension scoring, guided improvement, version management. |
-| **Pain it solves** | Turns "tweak and hope" into diagnose → targeted fix → verified improvement. |
-| **Use in 30 seconds** | `/skill-compass evaluate {skill}` — instant quality report showing exactly what's weakest and what to improve next. |
+| **What it is** | A local-first skill quality evaluator and management tool for Claude Code / OpenClaw. Six-dimension scoring, usage-driven suggestions, guided improvement, version tracking. |
+| **Pain it solves** | Turns "tweak and hope" into diagnose → targeted fix → verified improvement. Turns "install and forget" into ongoing visibility over what's working, what's stale, and what's risky. |
+| **Use in 30 seconds** | `/skillcompass` — see your skill health at a glance. `/eval-skill {path}` — instant quality report showing exactly what's weakest and what to improve next. |
 
-> **Find the weakest link → fix it → prove it worked → next weakness → repeat.**
+> **Evaluate → find weakest link → fix it → prove it worked → next weakness → repeat.**
+> **Meanwhile, Skill Inbox watches your usage and tells you what needs attention.**
 
 ---
-
-> Start read-only with `/eval-skill` or `/eval-security`. Write-capable flows are explicit opt-in.
 
 ## Who This Is For
 
@@ -41,6 +40,7 @@
 - Anyone maintaining agent skills and wanting measurable quality
 - Developers who want directed improvement — not guesswork, but knowing exactly which dimension to fix next
 - Teams needing a quality gate — any tool that edits a skill gets auto-evaluated
+- Users who install many skills and need visibility over what's actually used, what's stale, and what's risky
 
 </td><td>
 
@@ -71,7 +71,7 @@ rsync -a --exclude='.git'  . ~/.claude/skills/skill-compass/
 rsync -a --exclude='.git'  . .claude/skills/skill-compass/
 ```
 
-> **First run:** Claude Code will request permission for `node -e` and `node` commands. Select **"Allow always"** to avoid repeated prompts. SkillCompass may also offer a ~5 second local inventory on first use, then continue your original command automatically.
+> **First run:** SkillCompass auto-triggers a brief onboarding — scans your installed skills (~5 seconds), offers statusLine setup, then hands control back. Claude Code will request permission for `node` commands; select **"Allow always"** to avoid repeated prompts.
 
 ### OpenClaw
 
@@ -96,90 +96,17 @@ If your OpenClaw skills live outside the default scan roots, add them to `skills
 
 ---
 
-## ClawHub Canary Workflow
-
-Use a dedicated canary slug when you want a real platform-side publish check without touching the live `skill-compass` listing.
-
-### Principles
-
-- Reuse a single shadow slug: `skill-compass-canary`
-- Always pass an explicit canary version such as `1.0.5-canary.1`
-- In PowerShell, use `clawhub.cmd` rather than `clawhub`
-- After validation, hide the canary entry so it does not remain publicly searchable
-
-### Prepare
-
-```powershell
-node scripts/release/prepare-clawhub-canary.js --version 1.0.5-canary.1
-```
-
-This runs the local ClawHub preflight checks, creates a clean upload bundle in `clawhub-canary-upload/`, excludes optional example guides from the publish artifact, and writes the publish checklist to `clawhub-canary-publish.txt`.
-
-### Publish
-
-```powershell
-clawhub.cmd publish ".\clawhub-canary-upload" --slug skill-compass-canary --name "SkillCompass Canary (Internal)" --version 1.0.5-canary.1 --changelog "internal canary validation" --tags canary
-```
-
-### Validate And Hide
-
-```powershell
-clawhub.cmd inspect skill-compass-canary --no-input
-clawhub.cmd search skill compass --no-input
-clawhub.cmd hide skill-compass-canary --yes
-```
-
-Notes:
-
-- ClawHub currently applies tags per slug. A canary publish does not replace the live `skill-compass` entry, but the canary slug can still appear in search results until hidden.
-- Keep canary versions explicit and monotonic. Do not fall back to the repo's local `1.0.0` metadata for repeat publishes.
-
----
-
 ## Usage
 
-Two ways to invoke SkillCompass:
-
-### `/skill-compass` + natural language
+`/skillcompass` is the single entry point. Use it with a slash command or just talk naturally — both work:
 
 ```
-/skill-compass evaluate ./my-skill/SKILL.md
-/setup
-/skill-compass improve the nano-banana skill
-/skill-compass security scan ./my-skill/SKILL.md
-/skill-compass audit all skills in .claude/skills/
-/skill-compass compare my-skill 1.0.0 vs 1.0.0-evo.2
-/skill-compass roll back my-skill to previous version
+/skillcompass                              → see what needs attention
+/skillcompass evaluate my-skill            → six-dimension quality report
+"improve the nano-banana skill"            → fix weakest dimension, verify, next
+"what skills haven't I used recently?"     → usage-based insights
+"security scan this skill"                 → D3 security deep-dive
 ```
-
-### Or just talk to Claude
-
-No slash command needed — Claude automatically recognizes the intent:
-
-```
-Evaluate the nano-banana skill for me
-Show me my installed skills
-Improve this skill — fix the weakest dimension
-Scan all skills in .claude/skills/ for security issues
-```
-
-<details>
-<summary><strong>Capability reference</strong></summary>
-
-| Intent | Maps to |
-|--------|---------|
-| Show my installed skills / first-run inventory | `setup` |
-| Evaluate / score / review a skill | `eval-skill` |
-| Improve / fix / upgrade a skill | `eval-improve` |
-| Security scan a skill | `eval-security` |
-| Batch audit a directory | `eval-audit` |
-| Compare two versions | `eval-compare` |
-| Merge with upstream | `eval-merge` |
-| Rollback to previous version | `eval-rollback` |
-
-</details>
-
-`/setup` is the interactive inventory flow. On first use, the same inventory can be offered as a brief helper before another command, but it should always return to the original command instead of replacing it.
 
 ---
 
@@ -201,7 +128,7 @@ Each `/eval-improve` round follows a closed loop: **fix the weakest → re-evalu
 |:--:|-----------|:------:|-------------------|
 | **D1** | Structure | 10% | Frontmatter validity, markdown format, declarations |
 | **D2** | Trigger | 15% | Activation quality, rejection accuracy, discoverability |
-| **D3** | Security | 20% | Secrets, injection, permissions, exfiltration |
+| **D3** | Security | 20% | Secrets, injection, permissions, exfiltration, embedded shell |
 | **D4** | Functional | 30% | Core quality, edge cases, output stability, error handling |
 | **D5** | Comparative | 15% | Value over direct prompting (with vs without skill) |
 | **D6** | Uniqueness | 10% | Overlap with similar skills, model supersession risk |
@@ -212,53 +139,45 @@ overall_score = round((D1×0.10 + D2×0.15 + D3×0.20 + D4×0.30 + D5×0.15 + D6
 
 | Verdict | Condition |
 |---------|-----------|
-| **PASS** | score ≥ 70 AND D3 pass |
+| **PASS** | score >= 70 AND D3 pass |
 | **CAUTION** | 50–69, or D3 High findings |
 | **FAIL** | score < 50, or D3 Critical (gate override) |
 
 ---
 
+## Skill Inbox — Usage-Driven Suggestions
+
+SkillCompass passively tracks which skills you actually use and surfaces suggestions when something needs attention — unused skills, stale evaluations, declining usage, available updates, and more. 9 built-in rules, all based on real invocation data.
+
+- Suggestions have a lifecycle: **pending → acted / snoozed / dismissed**, with auto-reactivation when conditions change
+- All data stays local — no network calls unless you explicitly request updates
+- Tracking is automatic via hooks (~one line per skill invocation), zero configuration
+
+---
+
 ## Features
 
-### Core Loop
+### Evaluate → Improve → Verify
 
-| Feature | Description |
-|---------|-------------|
-| **Directed Evolution** | Diagnose → targeted fix → verify → next weakness. Not random patching. |
-| **Closed-Loop Improve** | `/eval-improve` auto re-evaluates after each fix. Only saves if improved and nothing regressed. |
-| **Scope Control** | `--scope gate` = D1+D3 (~8K tokens). `--scope target --dimension D4` = single dim + gate. |
-| **Tiered Verification** | L0 syntax → L1 single dimension → L2 full re-eval → L3 cross-skill. |
-| **D1+D2 Grouping** | Both metadata dimensions weak (≤5)? Improved together — they share the frontmatter layer. |
+`/eval-skill` scores six dimensions and pinpoints the weakest. `/eval-improve` targets that dimension, applies a fix, and re-evaluates — only saves when the target dimension improved and security/functionality didn't regress. Then move to the next weakness.
 
-### Safety
+### Skill Lifecycle
 
-| Feature | Description |
-|---------|-------------|
-| **Pre-Accept Gate** | Hooks auto-scan every SKILL.md write. D1 + D3 checks. Zero config. Warns, never blocks. |
-| **Pre-Eval Scan** | Static analysis blocks malicious code, exfiltration, prompt injection before LLM eval. |
-| **Output Guard** | Validates improvement output for URL injection, dangerous commands, size anomalies. |
-| **Auto-Rollback** | Any dimension drops >2 points after improvement? Changes discarded. |
-| **Local Validators** | JS-based D1/D2/D3 validators run locally. Saves ~60% tokens on clear-cut issues. |
+SkillCompass covers the full lifecycle of your skills — not just one-time evaluation.
 
-### Smart Optimization
+**Install** — auto-scans your inventory, quick-checks security patterns across packages and sub-skills.
 
-| Feature | Description |
-|---------|-------------|
-| **Correction Tracking** | Detects repeated manual fixes, maps to dimensions, prompts update at next invocation. |
-| **Feedback Integration** | Real usage data fuses into scores: 60% static + 40% feedback signals. |
-| **Multi-Language Triggers** | Detects your language, tests trigger accuracy in it, fixes multilingual gaps. |
-| **Obsolescence Detection** | Compares skill vs base model. Tracks supersession risk across model updates. |
-| **Skill Type Detection** | Auto-classifies atom / composite / meta. Evaluation adapts accordingly. |
+**Ongoing** — usage hooks passively track every invocation. Skill Inbox turns this into actionable insights: which skills are never used, which are declining, which are heavily used but never evaluated, which have updates available.
 
-### Version & Scale
+**On edit** — hooks auto-check structure + security on every SKILL.md write through Claude. Catches injection, exfiltration, embedded shell. Warns, never blocks.
 
-| Feature | Description |
-|---------|-------------|
-| **Version Management** | SHA-256 hashed snapshots. Rollback to any version anytime. |
-| **Three-Way Merge** | Merges upstream updates region-by-region. Local improvements preserved. |
-| **Optional Plugin-Assisted Evolution** | `/eval-evolve` runs up to 6 rounds when you explicitly opt in. Stops at PASS or plateau. |
-| **Batch Audit + Optional Write Mode** | `/eval-audit --fix --budget 3` scans worst-first and only writes when you explicitly enable fix mode. |
-| **CI Mode** | `--ci` flag, exit codes: 0=PASS, 1=CAUTION, 2=FAIL. |
+**On change** — SHA-256 snapshots ensure any version is recoverable. D3 or D4 regresses after improvement? Snapshot restored automatically.
+
+**On update** — update checker reads local git state passively; network only when you ask. Three-way merge preserves your local improvements region-by-region.
+
+### Scale
+
+One skill or fifty — same workflow. `/eval-audit` scans a whole directory and ranks results worst-first so you fix what matters most. `/eval-evolve` chains multiple improve rounds automatically (default 6, stops at PASS or plateau). `--ci` flag outputs machine-readable JSON with exit codes for pipeline integration.
 
 ---
 
@@ -268,9 +187,17 @@ No point-to-point integration needed. The Pre-Accept Gate intercepts all SKILL.m
 
 | Tool | How it works together | Guide |
 |------|----------------------|-------|
-| **Auto-Updater** | Pulls new version → Gate auto-checks for security regressions → keep or rollback | [guide](examples/guide-auto-updater.md) |
 | **Claudeception** | Extracts skill → auto-evaluation catches security holes + redundancy → directed fix | [guide](examples/guide-claudeception.md) |
 | **Self-Improving Agent** | Logs errors → feed as signals → SkillCompass maps to dimensions and fixes | [guide](examples/guide-self-improving-agent.md) |
+
+---
+
+## Design Principles
+
+- **Local-first**: All data stays on your machine. No network calls except when you explicitly request updates.
+- **Read-only by default**: Evaluation and reporting are read-only. Write operations (improve, merge, rollback) require explicit opt-in.
+- **Passive tracking, active decisions**: Hooks collect usage data silently. Suggestions are surfaced, never auto-acted on.
+- **Dual-channel UX**: Keyboard-selectable choices for actions, natural language for queries. Both always available.
 
 ---
 
