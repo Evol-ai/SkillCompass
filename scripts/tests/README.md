@@ -88,3 +88,19 @@ All fixtures must be at `$SC_DIR/test-fixtures/`:
 - `atom-formatter/`, `composite-workflow/` (type/trigger)
 - `edge-empty/`, `edge-no-yaml/`, `edge-yaml-only/`, `edge-huge/`, `edge-non-english/`
 - `rollback-history/`, `merge-scenario/`, `weak-skill/`, `audit-batch/`
+
+## OpenClaw Event Flow Checks
+
+For CI-friendly OpenClaw end-to-end simulation without a real host runtime:
+
+```bash
+npm run build:oc
+npm run verify:oc:event
+```
+
+What this validates:
+- Medium-only D3 does not push a security alert.
+- D3 critical/high findings do push a security alert.
+- Directory `skillPath` resolves `SKILL.md` correctly.
+- Directory without `SKILL.md` does not push.
+- `/sc eval` keeps non-security high-risk messaging as quality-only.

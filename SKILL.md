@@ -23,7 +23,6 @@ commands:
   - skill-update
   - skill-inbox
   - inbox
-  - skill-report
 metadata:
   clawdbot:
     emoji: "🧭"
@@ -54,7 +53,7 @@ EN: "Evaluate skill quality, find the weakest area, and improve it. Also tracks 
 
 ### Step 2: Quick Scan (automatic, no permission needed)
 
-Silently run skill discovery (recursive `**/SKILL.md` scan, same as `/setup` Step 3) and D1+D2+D3 quick scan on all discovered skills. Save `setup-state.json`. Then show results:
+Silently run skill discovery (scan immediate children `*/SKILL.md` in each skill root — same as `/setup` Step 3, do NOT recurse) and D1+D2+D3 quick scan on all discovered skills. Save `setup-state.json`. Then show results:
 
 If issues found:
 ```

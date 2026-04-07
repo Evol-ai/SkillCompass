@@ -324,7 +324,7 @@ After setup completes in either mode, write `.skill-compass/setup-state.json` wi
       "version": "2.0.0",
       "path": "~/.claude/skills/superpowers",
       "source_root": "~/.claude/skills",
-      "type": "collection",
+      "type": "package",
       "total_size": 18432,
       "purpose": "Productivity",
       "modified_at": "{ISO}",

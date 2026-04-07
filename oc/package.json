@@ -1,0 +1,23 @@
+{
+  "name": "skillcompass-oc",
+  "version": "1.1.0",
+  "description": "SkillCompass plugin for OpenClaw — skill quality evaluation, usage tracking, and inbox suggestions",
+  "main": "dist/plugin.js",
+  "types": "dist/plugin.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "openclaw",
+    "skill-compass",
+    "evaluation",
+    "quality",
+    "security"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "typescript": "^5.4.0"
+  }
+}

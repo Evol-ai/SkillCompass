@@ -26,8 +26,21 @@ if (!fs.existsSync(platformDir)) {
   fs.mkdirSync(platformDir, { recursive: true });
 }
 
-// Generate a session ID
-const sessionId = crypto.randomBytes(4).toString('hex');
+// Session ID: start generates and persists; end reads the persisted one
+const sessionFile = path.join(platformDir, 'current-session');
+let sessionId;
+
+if (mode === 'start') {
+  sessionId = crypto.randomBytes(4).toString('hex');
+  fs.writeFileSync(sessionFile, sessionId, 'utf-8');
+} else {
+  // end: read the session ID that start wrote
+  try {
+    sessionId = fs.readFileSync(sessionFile, 'utf-8').trim();
+  } catch {
+    sessionId = crypto.randomBytes(4).toString('hex');
+  }
+}
 
 // Write event
 const event = {
@@ -69,7 +82,7 @@ if (mode === 'start') {
         if (setupState && setupState.inventory && setupState.inventory.length > 0) {
           try {
             const { InboxEngine } = require(path.join(baseDir, 'lib', 'inbox-engine'));
-            const engine = new InboxEngine('cc');
+            const engine = new InboxEngine('cc', baseDir);
             engine.runDigest(setupState.inventory);
             // Re-read inbox after digest
             if (fs.existsSync(inboxFile)) {

@@ -11,7 +11,7 @@ Unified entry point for managing skill suggestions and browsing all installed sk
 
 1. Use the **Read** tool to load `.skill-compass/setup-state.json`. If the file does not exist, this is a first-time use. Auto-initialize:
 
-   1. Run skill discovery silently (same as setup Step 3: recursive scan of skill directories).
+   1. Run skill discovery silently (same as setup Step 3: scan immediate children of skill directories for `*/SKILL.md` — do NOT recurse).
    2. Run quick scan D1+D2+D3 on all discovered skills.
    3. Save `setup-state.json`.
    4. Show a brief summary:
@@ -31,7 +31,8 @@ Unified entry point for managing skill suggestions and browsing all installed sk
    ```javascript
    node -e "
    const { InboxStore } = require('./lib/inbox-store');
-   const store = new InboxStore('cc');
+   const baseDir = process.env.CLAUDE_PLUGIN_ROOT || process.cwd();
+   const store = new InboxStore('cc', baseDir);
    store.reactivateSnoozed();
    const allCache = store.getAllSkillCache();
    const cacheMap = {};
@@ -49,9 +50,18 @@ Unified entry point for managing skill suggestions and browsing all installed sk
    node -e "
    const { InboxEngine } = require('./lib/inbox-engine');
    const fs = require('fs');
-   const state = JSON.parse(fs.readFileSync('.skill-compass/setup-state.json', 'utf8'));
+   const path = require('path');
+   const baseDir = process.env.CLAUDE_PLUGIN_ROOT || process.cwd();
+   const setupPaths = [
+     path.join(baseDir, '.skill-compass', 'cc', 'setup-state.json'),
+     path.join(baseDir, '.skill-compass', 'setup-state.json')
+   ];
+   let state = { inventory: [] };
+   for (const sp of setupPaths) {
+     if (fs.existsSync(sp)) { state = JSON.parse(fs.readFileSync(sp, 'utf8')); break; }
+   }
    const skillEntries = state.inventory || [];
-   const engine = new InboxEngine('cc');
+   const engine = new InboxEngine('cc', baseDir);
    if (engine.isDigestDue(7)) {
      const result = engine.runDigest(skillEntries);
      console.log(JSON.stringify({ ran: true, added: result.added }));
@@ -162,7 +172,8 @@ Execute the required store methods using the **Bash** tool:
 ```javascript
 node -e "
 const { InboxStore } = require('./lib/inbox-store');
-const store = new InboxStore('cc');
+const baseDir = process.env.CLAUDE_PLUGIN_ROOT || process.cwd();
+const store = new InboxStore('cc', baseDir);
 // call the appropriate methods here based on action
 "
 ```
@@ -195,7 +206,8 @@ Load usage data by running via the **Bash** tool:
 ```javascript
 node -e "
 const { UsageReader } = require('./lib/usage-reader');
-const reader = new UsageReader('cc');
+const baseDir = process.env.CLAUDE_PLUGIN_ROOT || process.cwd();
+const reader = new UsageReader('cc', baseDir);
 const allSignals = reader.getAllSignals();
 console.log(JSON.stringify(allSignals));
 "
@@ -215,10 +227,10 @@ Activity and usage data from `lib/usage-reader.js`. Run via Bash `node -e` with 
 **Quality badge** — for each skill, determine `badge` and `eval_info`:
 
 Badge logic:
-1. Check `.skill-compass/cc/{name}/manifest.json` or `.skill-compass/{name}/manifest.json` for full eval scores
-   - Has `scores.overall` → use total score + verdict symbol + "eval {date}"
-   - verdict symbol: `✓` if PASS (overall >= 70), `⚠` if CAUTION (50–69), `✗` if FAIL (< 50)
-2. If no manifest with `scores.overall`, check `.skill-compass/cc/quick-scan-cache.json` for quick scan results
+1. Check `.skill-compass/cc/{name}/manifest.json` or `.skill-compass/{name}/manifest.json` for a real eval record. Find the most recent entry in `versions[]` where `trigger === 'eval'` and `overall_score != null`.
+   - Found → use `overall_score` + verdict symbol + "eval {date}" (from that entry's `timestamp`)
+   - verdict symbol: use the entry's `verdict` field if present (`PASS`→`✓`, `CAUTION`→`⚠`, `FAIL`→`✗`). If `verdict` is absent, derive from `overall_score`: `✓` (≥70), `⚠` (50–69), `✗` (<50)
+2. If no eval record found, check `.skill-compass/cc/quick-scan-cache.json` for quick scan results
    - Has result for the skill → show lowest dimension score + scan symbol + "scan {date}"
 3. If neither → show `—`
 
@@ -282,7 +294,8 @@ Execute pin/disable actions via the **Bash** tool:
 ```javascript
 node -e "
 const { InboxStore } = require('./lib/inbox-store');
-const store = new InboxStore('cc');
+const baseDir = process.env.CLAUDE_PLUGIN_ROOT || process.cwd();
+const store = new InboxStore('cc', baseDir);
 // call store.pinSkill(name) or store.disableSkill(name)
 "
 ```

@@ -12,8 +12,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-// Try multiple possible inbox.json locations
+// Try multiple possible inbox.json locations (plugin root first)
+const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
 const candidates = [
+  ...(pluginRoot ? [path.join(pluginRoot, '.skill-compass', 'cc', 'inbox.json')] : []),
   path.join(process.cwd(), '.skill-compass', 'cc', 'inbox.json'),
   path.join(process.env.HOME || process.env.USERPROFILE || '', '.skill-compass', 'cc', 'inbox.json')
 ];

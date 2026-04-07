@@ -54,7 +54,7 @@ Replace `{ENTRIES_JSON}` with the actual JSON array. Run this from the SkillComp
 
 Sort results: `high_risk` first, then `medium`, then `clean`. Within each group, sort alphabetically by `skill_name`.
 
-For skills that are disabled or have no `last_activity_at` in their manifest (never used), mark them with verdict `never_used` for display purposes (use the `○` symbol).
+For skills that are disabled (check `InboxStore.getSkillCache(name)?.disabled`) or have `ever_used === false` from `UsageReader.getSignals(name)`, mark them with verdict `never_used` for display purposes (use the `○` symbol).
 
 Display the scan table:
 
@@ -137,11 +137,11 @@ Count the total number of top-level skills (type = standalone, with SKILL.md loa
 
 Read version count from `.skill-compass/{name}/manifest.json` for each skill (count entries in `versions` array, or use field `version_count` if present). Also check `.skill-compass/cc/{name}/manifest.json` first (new path takes priority). If manifest is missing, treat version count as 1.
 
-Read `last_activity_at` from each manifest to determine activity tier:
-- `活跃`: within last 7 days
-- `闲置`: 7–14 days ago
-- `沉睡`: more than 14 days ago
-- `从未使用`: no `last_activity_at`
+Determine activity tier from usage signals only (`last_used_at` from `UsageReader.getSignals()`). Do NOT fall back to manifest `versions[].timestamp` — those reflect eval/edit history, not actual invocation, and would inflate active counts for never-invoked skills.
+- `活跃`: `last_used_at` within last 7 days
+- `闲置`: `last_used_at` 7–14 days ago
+- `沉睡`: `last_used_at` more than 14 days ago
+- `从未使用`: `ever_used === false` (no usage events)
 
 Group skills by `purpose` field (from setup-state.json inventory). Use existing category labels: `Code/Dev`, `Deploy/Ops`, `Data/API`, `Productivity`, `Other`.
 
@@ -178,7 +178,7 @@ For the `高频迭代` row, list skill names only if count <= 5; otherwise show 
 
 ### Step 5: Quality Summary
 
-For each skill, check whether `.skill-compass/cc/{name}/manifest.json` or `.skill-compass/{name}/manifest.json` exists and contains a `scores` object with `overall` defined (full evaluation record). Check the `cc/` path first.
+For each skill, check whether `.skill-compass/cc/{name}/manifest.json` or `.skill-compass/{name}/manifest.json` exists. Check the `cc/` path first. A skill has an eval record if any entry in `versions[]` has `trigger === 'eval'` and `overall_score != null`.
 
 If zero skills have eval records:
 
@@ -190,10 +190,10 @@ Quality Summary
 
 Skip the rest of this step.
 
-If at least one skill has eval records, read the scores from each manifest. Compute:
-- `mean`: average `overall` score across skills with records, rounded to one decimal
-- Count of `PASS` (overall >= 70), `CAUTION` (50–69), `FAIL` (< 50) verdicts
-- Dimension means for D1–D6: average each dimension score across all skills that have it, rounded to one decimal
+If at least one skill has eval records, read from each manifest's most recent eval version entry (the last `versions[]` entry where `trigger === 'eval'` and `overall_score != null`). Compute:
+- `mean`: average `overall_score` across skills with records, rounded to one decimal
+- Count of verdicts using the `verdict` field from each version entry (values: `PASS`, `CAUTION`, `FAIL`). If `verdict` is absent, derive from `overall_score`: PASS (≥70), CAUTION (50–69), FAIL (<50)
+- Dimension means for D1–D6: read `dimension_scores` object (keys `D1`–`D6`) from each version entry; average each dimension across all skills that have it, rounded to one decimal
 - Weakest dimension: the dimension with the lowest mean score. On ties, use priority: D3 > D4 > D2 > D1 > D6 > D5
 - For the weakest dimension, count how many skills scored <= 6 on it
 
@@ -233,11 +233,12 @@ Read usage data using `lib/usage-reader.js`:
 
 ```javascript
 const { UsageReader } = require('./lib/usage-reader');
-const reader = new UsageReader('cc');
+const baseDir = process.env.CLAUDE_PLUGIN_ROOT || process.cwd();
+const reader = new UsageReader('cc', baseDir);
 const allSignals = reader.getAllSignals();
 ```
 
-Execute with `node -e` via the **Bash** tool. `allSignals` is a map keyed by skill name containing fields: `use_count_7d`, `use_count_14d`, `total_use_count`, `ever_used`, `last_used`, `total_size`.
+Execute with `node -e` via the **Bash** tool. `allSignals` is a map keyed by skill name containing fields: `use_count_7d`, `use_count_14d`, `total_use_count`, `ever_used`, `last_used_at`, `sessions_used_7d`, `children_usage`. Note: `total_size` is NOT in usage signals — read it from the `inventory` array in `setup-state.json` instead.
 
 If no usage data exists at all (usage.jsonl empty or missing, or `allSignals` is `{}`):
 
@@ -253,9 +254,9 @@ Otherwise, categorize skills by usage pattern and display:
 
 **Most used** — top 5 by `use_count_14d`, only those with `use_count_14d > 0`. ASCII bar is 12 chars wide, proportional to the max `use_count_14d` in this group (`█` filled, `░` empty). For collection (composite) skills, show the most-used child in parentheses if available.
 
-**Never used** — skills where `ever_used = false`, sorted by `total_size` descending.
+**Never used** — skills where `ever_used = false`, sorted by `total_size` descending (read `total_size` from the inventory entry in `setup-state.json`, not from usage signals).
 
-**One-and-done** — skills where `total_use_count = 1` and `last_used` is more than 14 days ago.
+**One-and-done** — skills where `total_use_count = 1` and `last_used_at` is more than 14 days ago.
 
 **Declining** — skills where `use_count_7d = 0` but `use_count_14d >= 3`.
 
@@ -306,5 +307,5 @@ EN: "If you'd like to take action on any skill, just tell me, or choose an optio
 
 - **setup-state.json missing**: run `/setup` automatically and continue, or stop with a message if the user declines.
 - **SKILL.md file missing for a skill in inventory**: show `(file missing)` in the scan table and skip it in size calculations.
-- **manifest.json missing**: treat version_count as 1, last_activity_at as absent, scores as absent.
+- **manifest.json missing**: treat version_count as 1, last_used_at as absent, scores as absent.
 - **QuickScanner node error**: output the stderr and continue with remaining steps using `D1=? D2=? D3=?` placeholders for affected skills.

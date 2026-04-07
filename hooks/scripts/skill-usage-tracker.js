@@ -28,9 +28,9 @@ async function main() {
   if (!rawSkill) return;
 
   // Skip SkillCompass's own commands (don't track self-usage)
-  const scCommands = ['skill-compass', 'setup', 'eval-skill', 'eval-improve', 'eval-security',
-    'eval-audit', 'eval-compare', 'eval-merge', 'eval-rollback', 'eval-evolve',
-    'skill-inbox', 'skill-report'];
+  const scCommands = ['skill-compass', 'skillcompass', 'setup', 'eval-skill', 'eval-improve',
+    'eval-security', 'eval-audit', 'eval-compare', 'eval-merge', 'eval-rollback', 'eval-evolve',
+    'skill-inbox', 'inbox', 'skill-report', 'skill-update', 'all-skills'];
   if (scCommands.includes(rawSkill) || rawSkill.startsWith('skill-compass:')) return;
 
   // Determine base directory
@@ -54,8 +54,32 @@ async function main() {
 
     if (packageMap[rawSkill]) {
       // Found in map: "writing-plans" → parent "superpowers"
-      parent = packageMap[rawSkill];
-      child = rawSkill;
+      // But only use the map if this name is NOT also a standalone skill
+      // (avoids misattributing a standalone skill's usage to a package)
+      const setupFiles = [
+        path.join(baseDir, '.skill-compass', 'setup-state.json'),
+        path.join(platformDir, 'setup-state.json')
+      ];
+      let isStandalone = false;
+      for (const setupFile of setupFiles) {
+        try {
+          if (fs.existsSync(setupFile)) {
+            const state = JSON.parse(fs.readFileSync(setupFile, 'utf-8'));
+            isStandalone = (state.inventory || []).some(
+              s => s.name === rawSkill && s.type !== 'package'
+            );
+            break;
+          }
+        } catch { /* ignore */ }
+      }
+
+      if (isStandalone) {
+        parent = rawSkill;
+        child = null;
+      } else {
+        parent = packageMap[rawSkill];
+        child = rawSkill;
+      }
     } else {
       // Not in map: treat as standalone skill
       parent = rawSkill;
@@ -69,12 +93,22 @@ async function main() {
     fs.mkdirSync(platformDir, { recursive: true });
   }
 
+  // Read current session ID (written by session-tracker start)
+  let sessionId = null;
+  const sessionFile = path.join(platformDir, 'current-session');
+  try {
+    if (fs.existsSync(sessionFile)) {
+      sessionId = fs.readFileSync(sessionFile, 'utf-8').trim() || null;
+    }
+  } catch { /* non-critical */ }
+
   // Append usage event
   const event = {
     type: 'skill_used',
     skill: parent,
     child: child,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    session_id: sessionId
   };
   fs.appendFileSync(usageFile, JSON.stringify(event) + '\n');
 
@@ -111,7 +145,7 @@ function checkMilestone(skillName, usageFile, platformDir, baseDir) {
   const shownMilestones = cache?.milestones_shown || [];
   if (shownMilestones.includes(milestone)) return;
 
-  // Check if skill has been evaluated (manifest exists with eval)
+  // Check if skill has a real evaluation (not just a snapshot with null scores)
   const manifestPaths = [
     path.join(baseDir, '.skill-compass', 'cc', skillName, 'manifest.json'),
     path.join(baseDir, '.skill-compass', skillName, 'manifest.json')
@@ -120,7 +154,10 @@ function checkMilestone(skillName, usageFile, platformDir, baseDir) {
     if (fs.existsSync(mp)) {
       try {
         const m = JSON.parse(fs.readFileSync(mp, 'utf-8'));
-        if (m.versions && m.versions.length > 0) return; // already evaluated, skip milestone
+        const hasRealEval = (m.versions || []).some(v =>
+          (v.trigger === 'eval' || v.trigger === 'initial') && v.overall_score != null
+        );
+        if (hasRealEval) return; // genuinely evaluated, skip milestone
       } catch { /* continue */ }
     }
   }

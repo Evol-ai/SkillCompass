@@ -32,3 +32,18 @@ run-all-batches.sh
 run-batch-eval.sh
 skill-evolution-comparison-zh.md
 .tmp-*
+
+# ClawHub packaging artifacts (generated, not source)
+clawhub-upload/
+clawhub-canary-upload/
+clawhub-oc-canary-upload/
+clawhub-canary-publish.txt
+
+# OC compiled output (regenerated via npm run build:oc)
+oc/dist/
+
+# Runtime state (user-specific)
+.skill-compass/
+
+# Backup files
+.backup-pre-clawhub/

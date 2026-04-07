@@ -31,5 +31,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build OpenClaw plugin
+        run: npm run build:oc
+
       - name: Run local verification
         run: npm run verify:local
+
+  verify-clawhub:
+    name: verify-clawhub
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ClawHub verification
+        run: npm run verify:clawhub

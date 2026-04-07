@@ -92,14 +92,39 @@ If user chooses "查看变更", run `git log HEAD..FETCH_HEAD --oneline` and sho
 
 When user chooses "更新并评测":
 
-1. Run `checker.pullUpdate(skillPath)` via **Bash** `node -e`
-2. If pull fails (conflict):
+1. **Snapshot before pull**: Ensure the current version has a snapshot file in the version management system, so `/eval-rollback` can restore it if the update causes regressions.
+
+   a. Use the **Read** tool to load `.skill-compass/{skill-name}/manifest.json`.
+
+   b. **If manifest doesn't exist**: create one per `shared/version-management.md` § Creating manifest (version = current upstream version extracted from SKILL.md frontmatter, or `1.0.0`; trigger = `"initial"`). Save the current SKILL.md to `.skill-compass/{skill-name}/snapshots/{version}.md`.
+
+   c. **If manifest exists**: read `current_version` from it. Check whether `.skill-compass/{skill-name}/snapshots/{current_version}.md` exists. If not, save the current SKILL.md there. No new manifest entry needed — the version is already tracked; we're just ensuring its snapshot file is present.
+
+   d. Pull:
+
+   ```javascript
+   const { UpdateChecker } = require('./lib/update-checker');
+   const checker = new UpdateChecker();
+   const result = checker.pullUpdate(skillPath);
    ```
-   ⚠ 更新冲突——你可能对此 skill 有本地修改。
-   [查看冲突 / 放弃更新并恢复 / 手动处理]
+
+2. If pull fails — dirty tree:
    ```
-3. If pull succeeds:
-   - PostToolUse Write hook 自动触发快检（eval-gate.js）
+   ⚠ Working tree has uncommitted changes. Commit or stash local edits before updating.
+   [查看改动 / 手动处理]
+   ```
+   EN: "Working tree has uncommitted changes. Commit or stash before updating."
+
+3. If pull fails — not fast-forwardable (diverged history):
+   ```
+   ⚠ 更新冲突——本地有独立提交，无法自动合并。
+   [查看差异 / 放弃更新 / 手动处理]
+   ```
+   EN: "Cannot fast-forward — local commits diverge from remote."
+
+4. If pull succeeds:
+   - Run a manual D1+D2+D3 quick scan on the updated SKILL.md using `lib/quick-scan.js` via **Bash** `node -e`.
+     (Note: `git pull` is a shell operation, not a Write/Edit tool call, so `eval-gate.js` does NOT auto-trigger.)
    - Show result:
    ```
    ✓ code-review 已更新到 v1.3.0
@@ -108,7 +133,9 @@ When user chooses "更新并评测":
    上次完整评测 82分（v1.2.0），版本已变更，建议重新评测确认质量。
    [完整评测（推荐）/ 跳过]
    ```
-4. If user chooses "完整评测":
+   EN: `"✓ code-review updated to v1.3.0 / D1=9 D2=8 D3=9 ✓ Quick scan passed / Last full eval: 82 (v1.2.0). Version changed — recommend re-evaluation. [Full eval (recommended) / Skip]"`
+
+5. If user chooses "完整评测":
    - Load and execute `commands/eval-skill.md` with `--internal` on the skill
    - Show result + follow-up choices
 

@@ -22,8 +22,12 @@
   ],
   "scripts": {
     "verify:local": "node scripts/tests/verify-local.js",
+    "verify:oc:event": "node scripts/tests/verify-oc-event-flow.js",
     "verify:clawhub": "node scripts/tests/verify-clawhub.js",
-    "prepare:clawhub:canary": "node scripts/release/prepare-clawhub-canary.js"
+    "prepare:clawhub:canary": "node scripts/release/prepare-clawhub-canary.js",
+    "prepare:clawhub:oc:canary": "node scripts/release/prepare-clawhub-canary.js --profile oc",
+    "build:oc": "cd oc && npx tsc",
+    "dev:oc": "cd oc && npx tsc --watch"
   },
   "engines": {
     "node": ">=18.0.0"

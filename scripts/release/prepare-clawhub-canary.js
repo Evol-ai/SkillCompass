@@ -6,7 +6,8 @@ const { spawnSync } = require("child_process");
 
 const repoRoot = path.resolve(__dirname, "..", "..");
 
-const INCLUDED_PATHS = [
+// CC profile: Claude Code skill (commands, hooks, SKILL.md)
+const CC_PATHS = [
   ".claude-plugin",
   "commands",
   "hooks",
@@ -24,10 +25,27 @@ const INCLUDED_PATHS = [
   "package-lock.json",
 ];
 
+// OC profile: OpenClaw plugin (compiled TS + shared libs, no CC-specific code)
+// oc/package.json is copied to the artifact root as package.json (the plugin manifest).
+// The root CC package.json is NOT included.
+const OC_PATHS = [
+  "oc/dist",
+  "lib",
+  "prompts",
+  "schemas",
+  "shared",
+  "CHANGELOG.md",
+  "CONTRIBUTING.md",
+  "LICENSE",
+  "README.md",
+  "SECURITY.md",
+];
+
 function parseArgs(argv) {
   const options = {
     outDir: path.join(repoRoot, "clawhub-canary-upload"),
     notePath: path.join(repoRoot, "clawhub-canary-publish.txt"),
+    profile: "cc",
     slug: "skill-compass-canary",
     name: "SkillCompass Canary (Internal)",
     tags: "canary",
@@ -50,6 +68,8 @@ function parseArgs(argv) {
       options.version = argv[++i];
     } else if (arg === "--tags") {
       options.tags = argv[++i];
+    } else if (arg === "--profile") {
+      options.profile = argv[++i];
     } else if (arg === "--config-path") {
       options.configPath = argv[++i];
     } else if (arg === "--skip-verify") {
@@ -93,16 +113,32 @@ function copyRecursive(sourcePath, targetPath) {
   fs.copyFileSync(sourcePath, targetPath);
 }
 
-function createCleanOutput(outDir) {
+function createCleanOutput(outDir, profile) {
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
 
-  for (const relativePath of INCLUDED_PATHS) {
+  const paths = profile === "oc" ? OC_PATHS : CC_PATHS;
+  for (const relativePath of paths) {
     const sourcePath = path.join(repoRoot, relativePath);
     if (!fs.existsSync(sourcePath)) {
       throw new Error(`Missing expected release path: ${relativePath}`);
     }
     copyRecursive(sourcePath, path.join(outDir, relativePath));
+  }
+
+  // OC: copy oc/package.json to artifact root as the plugin manifest,
+  // rewriting "main" and "types" to reflect the artifact layout (oc/dist/ prefix).
+  if (profile === "oc") {
+    const ocPkg = path.join(repoRoot, "oc", "package.json");
+    if (!fs.existsSync(ocPkg)) {
+      throw new Error("Missing oc/package.json for OC profile");
+    }
+    const pkg = JSON.parse(fs.readFileSync(ocPkg, "utf-8"));
+    if (pkg.main) pkg.main = `oc/${pkg.main}`;           // dist/plugin.js → oc/dist/plugin.js
+    if (pkg.types) pkg.types = `oc/${pkg.types}`;         // dist/plugin.d.ts → oc/dist/plugin.d.ts
+    delete pkg.scripts;       // build scripts are dev-only, not needed in published artifact
+    delete pkg.devDependencies;
+    fs.writeFileSync(path.join(outDir, "package.json"), JSON.stringify(pkg, null, 2));
   }
 }
 
@@ -149,7 +185,7 @@ function writeManifestNote(outDir, options, version) {
     "- Reuse the same canary slug every time to avoid cluttering search results.",
     "- The publish bundle intentionally excludes optional example guides to keep the platform artifact focused on runtime files.",
     "- ClawHub tags apply per slug; the canary slug may still receive its own latest tag.",
-    "- After validation, hide the canary entry: clawhub.cmd hide skill-compass-canary --yes",
+    `- After validation, hide the canary entry: clawhub.cmd hide ${options.slug} --yes`,
     "- Delete or update the canary entry after review if needed.",
   ];
   fs.mkdirSync(path.dirname(notePath), { recursive: true });
@@ -159,11 +195,20 @@ function writeManifestNote(outDir, options, version) {
 function main() {
   const options = parseArgs(process.argv.slice(2));
 
+  // Apply OC-specific defaults
+  if (options.profile === "oc") {
+    if (options.slug === "skill-compass-canary") options.slug = "skillcompass-oc-canary";
+    if (options.name === "SkillCompass Canary (Internal)") options.name = "SkillCompass OC Canary (Internal)";
+    if (options.outDir === path.join(repoRoot, "clawhub-canary-upload")) {
+      options.outDir = path.join(repoRoot, "clawhub-oc-canary-upload");
+    }
+  }
+
   if (options.verify) {
     runClawhubVerify();
   }
 
-  createCleanOutput(options.outDir);
+  createCleanOutput(options.outDir, options.profile);
   const version = resolveCanaryVersion(options);
   writeManifestNote(options.outDir, options, version);
 
