@@ -31,6 +31,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install OC dependencies
+        run: cd oc && npm ci
+
       - name: Build OpenClaw plugin
         run: npm run build:oc
 
