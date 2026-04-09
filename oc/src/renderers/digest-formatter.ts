@@ -4,6 +4,12 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { InlineButton, UserConfig } from '../types/openclaw';
+import {
+  localizeSuggestionReason,
+  msg,
+  resolveLocale,
+  type EvidenceEntry
+} from '../locale';
 
 const BASE_DIR = process.env.OPENCLAW_PLUGIN_ROOT || process.cwd();
 const PUSH_STATE_FILE = path.join(BASE_DIR, '.skill-compass', 'oc', 'push-state.json');
@@ -94,29 +100,35 @@ interface Suggestion {
   skill_name: string;
   reason: string;
   rule_id: string;
+  evidence?: EvidenceEntry[] | null;
 }
 
 export function formatDigest(
   suggestions: Suggestion[],
-  added: number
+  added: number,
+  config: UserConfig = {}
 ): { message: string; buttons: InlineButton[] } {
-  const lines = [`\ud83e\udded SkillCompass Weekly \u2014 ${added} suggestion${added !== 1 ? 's' : ''}`];
+  const locale = resolveLocale(config);
+  const lines = [msg(locale, 'weeklyDigest', { count: added, plural_s: added === 1 ? '' : 's' })];
   lines.push('');
 
   suggestions.slice(0, 5).forEach((s, i) => {
-    lines.push(`${i + 1}. ${s.skill_name} \u2014 ${s.reason}`);
+    lines.push(`${i + 1}. ${s.skill_name} \u2014 ${localizeSuggestionReason(locale, s)}`);
   });
 
   if (suggestions.length > 5) {
-    lines.push(`  ... and ${suggestions.length - 5} more`);
+    lines.push(msg(locale, 'andMore', { count: suggestions.length - 5 }));
   }
 
   const buttons: InlineButton[] = suggestions.slice(0, 5).map((s, i) => ({
-    label: `Handle #${i + 1}`,
+    label: msg(locale, 'handleButton', { index: i + 1 }),
     action: 'sc_handle',
     payload: { id: s.id }
   }));
-  buttons.push({ label: 'Dismiss All', action: 'sc_dismiss_all' });
+  buttons.push({
+    label: msg(locale, 'dismissAll'),
+    action: 'sc_dismiss_all'
+  });
 
   return { message: lines.join('\n'), buttons };
 }
@@ -125,23 +137,38 @@ export function formatUpdateNotice(
   skillName: string,
   currentVersion: string,
   latestVersion: string,
-  changelog?: string
+  changelog?: string,
+  config: UserConfig = {}
 ): { message: string; buttons: InlineButton[] } {
+  const locale = resolveLocale(config);
+  const current = currentVersion || msg(locale, 'unknown');
   const lines = [
-    `\ud83e\udded Update available`,
+    msg(locale, 'updateAvailable'),
     '',
-    `${skillName}: ${currentVersion} \u2192 ${latestVersion}`
+    `${skillName}: ${current} \u2192 ${latestVersion}`
   ];
   if (changelog) {
-    lines.push(`Changelog: "${changelog}"`);
+    lines.push(msg(locale, 'changelog', { text: changelog }));
   }
 
   return {
     message: lines.join('\n'),
     buttons: [
-      { label: 'Update + re-scan', action: 'sc_update', payload: { skill: skillName } },
-      { label: 'View changelog', action: 'sc_changelog', payload: { skill: skillName } },
-      { label: 'Skip', action: 'sc_skip', payload: { skill: skillName } }
+      {
+        label: msg(locale, 'updateRescan'),
+        action: 'sc_update',
+        payload: { skill: skillName }
+      },
+      {
+        label: msg(locale, 'viewChangelog'),
+        action: 'sc_changelog',
+        payload: { skill: skillName }
+      },
+      {
+        label: msg(locale, 'skip'),
+        action: 'sc_skip',
+        payload: { skill: skillName }
+      }
     ]
   };
 }

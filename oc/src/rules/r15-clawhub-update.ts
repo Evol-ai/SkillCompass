@@ -1,9 +1,9 @@
-// R15-clawhub-update — ClawHub marketplace version check
-// Replaces R12 (git-based) for OC platform.
+// clawhub-update — ClawHub marketplace version check
+// Replaces check-update (git-based) for OC platform.
 // Signal enrichment happens in weekly-digest cron, not here.
 
 export const r15ClawHubUpdate = {
-  id: 'R15-clawhub-update',
+  id: 'clawhub-update',
   category: 'hygiene',
   priority: 'P3',
   appliesToPackages: true,

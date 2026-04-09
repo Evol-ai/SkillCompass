@@ -1,7 +1,7 @@
 # /eval-rollback — Version Rollback
 
-> **Locale**: 所有用户可见文本跟随会话语言。中文为默认示例，英文等效表述标注为 `EN:`。维度标签见 SKILL.md。
-> EN: `> **Locale**: All user-facing text follows session language. Chinese is the default example; English equivalents are marked with `EN:`. Dimension labels: see SKILL.md.`
+> **Locale**: 所有用户可见文本跟随会话语言。运行时默认英文；若宿主提供 locale，或检测到用户使用受支持的其他语言，则切换到对应语言。本文件中的中文示例仅用于说明。维度标签见 SKILL.md。
+> EN: `> **Locale**: All user-facing text follows session language. Runtime defaults to English and switches to the host-provided locale or detected supported user language when available. Chinese examples in this spec are illustrative only. Dimension labels: see SKILL.md.`
 
 ## Arguments
 
@@ -72,7 +72,7 @@ Use the **Write** tool to save the updated manifest.
 
 ### Step 5.5: Write Audit Log
 
-Log the rollback event to the audit chain so that the Skill Inbox R6 rule (undo-2x) can detect repeated rollbacks:
+Log the rollback event to the audit chain so that the Skill Inbox `undo-2x` rule can detect repeated rollbacks:
 
 Using Node.js (or instruct Claude to execute):
 

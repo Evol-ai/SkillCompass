@@ -15,16 +15,28 @@ function writeSkillFile(filePath, lines) {
   fs.writeFileSync(filePath, `${lines.join("\n")}\n`, "utf8");
 }
 
+function writeJsonFile(filePath, value) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
 async function main() {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "skillcompass-oc-e2e-"));
   try {
     const fixtureRoot = path.join(tempRoot, "fixtures");
     const now = new Date().toISOString();
+    const localeDist = path.resolve("oc", "dist", "locale.js");
 
     process.env.OPENCLAW_PLUGIN_ROOT = tempRoot;
 
     const pluginDist = path.resolve("oc", "dist", "plugin.js");
+    const digestFormatterDist = path.resolve("oc", "dist", "renderers", "digest-formatter.js");
     assert(fs.existsSync(pluginDist), "Missing oc/dist/plugin.js. Run `npm run build:oc` first.");
+    assert(fs.existsSync(localeDist), "Missing oc/dist/locale.js. Run `npm run build:oc` first.");
+    assert(
+      fs.existsSync(digestFormatterDist),
+      "Missing oc/dist/renderers/digest-formatter.js. Run `npm run build:oc` first.",
+    );
 
     const mediumSkillPath = path.join(fixtureRoot, "medium-d3", "SKILL.md");
     const criticalSkillPath = path.join(fixtureRoot, "critical-d3", "SKILL.md");
@@ -90,12 +102,15 @@ async function main() {
     };
 
     const { register, configure } = require(pluginDist);
+    const { detectLocaleFromText, resolveLocale } = require(localeDist);
+    const { formatDigest } = require(digestFormatterDist);
     configure({
       config: {
         preferredChannel: "im",
         quietHoursStart: 25,
         quietHoursEnd: 26,
         dailyPushLimit: 99,
+        locale: "en-US",
       },
       inventory: () => [],
     });
@@ -177,11 +192,146 @@ async function main() {
       "/sc eval classification regressed for non-security high-risk fixture.",
     );
 
+    const jaCmdResult = await sc.handler({
+      raw: `/sc eval ${nonSecurityFixture} \u8a55\u4fa1\u3057\u3066\u304f\u3060\u3055\u3044`,
+      subcommand: "eval",
+      args: [nonSecurityFixture],
+    });
+    assert(
+      jaCmdResult.message.includes(
+        "\u54c1\u8cea\u4e0a\u306e\u554f\u984c\u304c\u898b\u3064\u304b\u308a\u307e\u3057\u305f",
+      ),
+      "/sc eval should switch to Japanese when the user message is Japanese, even if config defaults to English.",
+    );
+
+    const jaKanjiOnlyResult = await sc.handler({
+      raw: `/sc eval ${nonSecurityFixture} \u8a55\u4fa1`,
+      subcommand: "eval",
+      args: [nonSecurityFixture],
+    });
+    assert(
+      jaKanjiOnlyResult.message.includes(
+        "\u54c1\u8cea\u4e0a\u306e\u554f\u984c\u304c\u898b\u3064\u304b\u308a\u307e\u3057\u305f",
+      ),
+      "/sc eval should treat common Japanese kanji prompts as Japanese.",
+    );
+
+    assert(
+      detectLocaleFromText("/sc eval foo por favor") === "es",
+      "Short Spanish prompts should be detected.",
+    );
+    assert(
+      detectLocaleFromText("/sc eval foo evaluer") === "fr",
+      "Short French prompts should be detected.",
+    );
+    assert(
+      detectLocaleFromText("/sc eval foo bitte") === "de",
+      "Short German prompts should be detected.",
+    );
+    assert(
+      resolveLocale({ locale: "en-US" }, "/sc eval foo \u8a55\u4fa1") === "ja",
+      "Detected user language should override a default English locale.",
+    );
+    assert(
+      resolveLocale({ locale: "en-US" }, "/sc status s'il vous plait rapport suggestion")
+        === "fr",
+      "Strong Latin-language signals should override a default English locale.",
+    );
+    assert(
+      resolveLocale({ locale: "en-US" }, "/sc eval my-skill ver") === "en",
+      "Single Latin-language keywords should not override a configured default locale.",
+    );
+
+    const firstSeenAt = new Date(Date.now() - 9 * 86400000).toISOString();
+    writeJsonFile(path.join(tempRoot, ".skill-compass", "oc", "inbox.json"), {
+      suggestions: [
+        {
+          id: "sug_never_used",
+          rule_id: "never-used",
+          skill_name: "stale-skill",
+          category: "hygiene",
+          priority: "P3",
+          reason: "Installed 9 days ago, never invoked",
+          evidence: [
+            { field: "first_seen_at", value: firstSeenAt },
+            { field: "ever_used", value: false },
+          ],
+          status: "pending",
+          created_at: now,
+          cooldown_until: null,
+        },
+      ],
+      skill_cache: [],
+      meta: { last_digest_at: null },
+    });
+
+    const frStatusResult = await sc.handler({
+      raw: "/sc status s'il vous plait rapport suggestion",
+      subcommand: "status",
+      args: [],
+    });
+    assert(
+      frStatusResult.message.includes("jamais invoquee"),
+      "/sc status should localize suggestion reasons when the user message is French.",
+    );
+
+    const digestResult = formatDigest(
+      [
+        {
+          id: "digest_never_used",
+          rule_id: "never-used",
+          skill_name: "stale-skill",
+          reason: "Installed 9 days ago, never invoked",
+          evidence: [
+            { field: "first_seen_at", value: firstSeenAt },
+            { field: "ever_used", value: false },
+          ],
+        },
+      ],
+      1,
+      { locale: "fr-FR" },
+    );
+    assert(
+      digestResult.message.includes("jamais invoquee"),
+      "Weekly digest should localize suggestion reasons for configured locales.",
+    );
+    assert(
+      digestResult.buttons[0].label === "Traiter #1",
+      "Weekly digest buttons should be localized for configured locales.",
+    );
+
+    configure({
+      config: {
+        preferredChannel: "im",
+        quietHoursStart: 25,
+        quietHoursEnd: 26,
+        dailyPushLimit: 99,
+        locale: "fr-FR",
+      },
+      inventory: () => [],
+    });
+
+    const beforeConfiguredLocale = announcements.length;
+    await onUpdated({
+      type: "plugin_updated",
+      timestamp: now,
+      skillPath: criticalSkillPath,
+      skillName: "critical-d3",
+    });
+    assert(
+      announcements.length === beforeConfiguredLocale + 1,
+      "Configured non-English locale should still trigger a security push.",
+    );
+    assert(
+      announcements[announcements.length - 1].message.includes("Risque de securite dans critical-d3"),
+      "Configured French locale should localize lifecycle security alerts.",
+    );
+
     const weekly = crons.get("skillcompass-weekly");
     await weekly.handler();
 
     console.log(
-      "openclaw event-flow ok: medium-no-push, critical-push, directory-resolution, command classification, and cron registration",
+      "openclaw event-flow ok: medium-no-push, critical-push, multilingual localization, and cron registration",
     );
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
