@@ -64,7 +64,6 @@ const OC_PATHS = [
   "CHANGELOG.md",
   "CONTRIBUTING.md",
   "LICENSE",
-  "README.md",
   "SECURITY.md",
 ];
 
@@ -156,6 +155,7 @@ function createCleanOutput(outDir, options, version) {
 
   // OC packages need a root package manifest plus openclaw.plugin.json.
   if (profile === "oc") {
+    const ocReadmeTemplate = path.join(repoRoot, "oc", "README.clawhub.md");
     const ocUnsafeSharedFiles = [
       path.join(outDir, "lib", "update-checker.js"),
     ];
@@ -167,6 +167,9 @@ function createCleanOutput(outDir, options, version) {
 
     const ocPkg = path.join(repoRoot, "oc", "package.json");
     const ocPluginManifest = path.join(repoRoot, "oc", "openclaw.plugin.json");
+    if (!fs.existsSync(ocReadmeTemplate)) {
+      throw new Error("Missing oc/README.clawhub.md for OC profile");
+    }
     if (!fs.existsSync(ocPkg)) {
       throw new Error("Missing oc/package.json for OC profile");
     }
@@ -190,6 +193,11 @@ function createCleanOutput(outDir, options, version) {
     delete pkg.devDependencies;
     fs.writeFileSync(path.join(outDir, "package.json"), JSON.stringify(pkg, null, 2));
     fs.copyFileSync(ocPluginManifest, path.join(outDir, "openclaw.plugin.json"));
+    const readme = fs
+      .readFileSync(ocReadmeTemplate, "utf-8")
+      .replace(/__PACKAGE_NAME__/g, options.slug)
+      .replace(/__PACKAGE_VERSION__/g, version);
+    fs.writeFileSync(path.join(outDir, "README.md"), readme);
   }
 }
 
