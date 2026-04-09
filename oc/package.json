@@ -4,6 +4,19 @@
   "description": "SkillCompass plugin for OpenClaw — skill quality evaluation, usage tracking, and inbox suggestions",
   "main": "dist/plugin.js",
   "types": "dist/plugin.d.ts",
+  "openclaw": {
+    "extensions": [
+      "./dist/plugin.js"
+    ],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2",
+      "minGatewayVersion": "2026.3.24-beta.2"
+    },
+    "build": {
+      "openclawVersion": "2026.3.24-beta.2",
+      "pluginSdkVersion": "2026.3.24-beta.2"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch"
