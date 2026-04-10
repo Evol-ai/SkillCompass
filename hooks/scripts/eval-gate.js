@@ -22,6 +22,7 @@ const SECRET_PATTERNS = P.SECRET_PATTERNS.map(p => ({ regex: p.pattern, label: p
 const DANGEROUS_PATTERNS = P.DANGEROUS_COMMAND_PATTERNS.map(p => ({ regex: p.pattern, label: p.description }));
 const INJECTION_PATTERNS = P.INJECTION_PATTERNS.map(p => ({ regex: p.pattern, label: p.description }));
 const EXFILTRATION_PATTERNS = P.EXFILTRATION_PATTERNS.map(p => ({ regex: p.pattern, label: p.description }));
+const EMBEDDED_SHELL_PATTERNS = (P.EMBEDDED_SHELL_PATTERNS || []).map(p => ({ regex: p.pattern, label: p.description }));
 
 // ── D1 Structure Checks ───────────────────────────────────────────────
 
@@ -105,6 +106,22 @@ function checkSecurity(content) {
   scan(DANGEROUS_PATTERNS, "dangerous_command");
   scan(INJECTION_PATTERNS, "injection");
   scan(EXFILTRATION_PATTERNS, "exfiltration");
+
+  // Scan for embedded shell execution (Claude Code !` syntax)
+  // Scan against FULL content (not stripped) since !` is valid markdown
+  for (const { regex, label } of EMBEDDED_SHELL_PATTERNS) {
+    regex.lastIndex = 0;
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+      const beforeMatch = content.substring(0, match.index);
+      const lineNum = (beforeMatch.match(/\n/g) || []).length + 1;
+      findings.push({
+        severity: "high",
+        message: `${label} (line ~${lineNum}) — executes on host before prompt is sent to model`,
+        category: "embedded_shell",
+      });
+    }
+  }
 
   return findings;
 }

@@ -247,6 +247,19 @@ function runNonGitSidecarChecks() {
   console.log("non-git sidecar ok: post-skill-edit + eval-gate");
 }
 
+function runOpenClawEventFlowChecks() {
+  const result = spawnSync(process.execPath, ["scripts/tests/verify-oc-event-flow.js"], {
+    encoding: "utf8",
+  });
+
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+
+  if (result.status !== 0) {
+    throw new Error(`OpenClaw event-flow checks failed with exit ${result.status}`);
+  }
+}
+
 function main() {
   const filesToCheck = [
     ...listJsFiles("lib"),
@@ -266,7 +279,8 @@ function main() {
   runStaticScanHygieneChecks();
   runPreEvalFixtureChecks();
   runNonGitSidecarChecks();
-  console.log(`verified ${filesToCheck.length} JS files, 1 fixture smoke test, repo self-hosting contracts, static-scan hygiene, pre-eval fixtures, and non-git sidecar hooks`);
+  runOpenClawEventFlowChecks();
+  console.log(`verified ${filesToCheck.length} JS files, 1 fixture smoke test, repo self-hosting contracts, static-scan hygiene, pre-eval fixtures, non-git sidecar hooks, and OpenClaw event-flow checks`);
 }
 
 try {

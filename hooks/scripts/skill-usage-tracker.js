@@ -1,0 +1,181 @@
+#!/usr/bin/env node
+/**
+ * skill-usage-tracker.js — Track skill usage via PostToolUse Skill hook
+ *
+ * Reads hook payload from stdin, extracts skill name, handles collection
+ * qualified names (e.g., "superpowers:writing-plans" → parent "superpowers"),
+ * appends to .skill-compass/cc/usage.jsonl.
+ *
+ * Also checks usage milestones (10/50/100 uses without eval) and outputs
+ * a one-time reminder to stderr.
+ */
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+async function main() {
+  // Read stdin
+  let input;
+  try { input = fs.readFileSync(0, 'utf-8'); } catch { return; }
+  if (!input) return;
+
+  let payload;
+  try { payload = JSON.parse(input); } catch { return; }
+
+  // Extract skill name from payload
+  // PostToolUse Skill payload: { tool_name: "Skill", tool_input: { skill: "name", ... }, ... }
+  const rawSkill = payload?.tool_input?.skill || payload?.tool_input?.name;
+  if (!rawSkill) return;
+
+  // Skip SkillCompass's own commands (don't track self-usage)
+  const scCommands = ['skill-compass', 'skillcompass', 'setup', 'eval-skill', 'eval-improve',
+    'eval-security', 'eval-audit', 'eval-compare', 'eval-merge', 'eval-rollback', 'eval-evolve',
+    'skill-inbox', 'inbox', 'skill-report', 'skill-update', 'all-skills'];
+  if (scCommands.includes(rawSkill) || rawSkill.startsWith('skill-compass:')) return;
+
+  // Determine base directory
+  const baseDir = process.env.CLAUDE_PLUGIN_ROOT || process.cwd();
+  const platformDir = path.join(baseDir, '.skill-compass', 'cc');
+
+  // Parse collection qualified name
+  let parent, child;
+  if (rawSkill.includes(':')) {
+    // Already qualified: "superpowers:writing-plans"
+    const parts = rawSkill.split(':');
+    parent = parts[0];
+    child = parts.slice(1).join(':');
+  } else {
+    // No prefix — try to look up which package this sub-skill belongs to
+    const mapFile = path.join(platformDir, 'package-skill-map.json');
+    let packageMap = {};
+    if (fs.existsSync(mapFile)) {
+      try { packageMap = JSON.parse(fs.readFileSync(mapFile, 'utf-8')); } catch { /* ignore */ }
+    }
+
+    if (packageMap[rawSkill]) {
+      // Found in map: "writing-plans" → parent "superpowers"
+      // But only use the map if this name is NOT also a standalone skill
+      // (avoids misattributing a standalone skill's usage to a package)
+      const setupFiles = [
+        path.join(baseDir, '.skill-compass', 'setup-state.json'),
+        path.join(platformDir, 'setup-state.json')
+      ];
+      let isStandalone = false;
+      for (const setupFile of setupFiles) {
+        try {
+          if (fs.existsSync(setupFile)) {
+            const state = JSON.parse(fs.readFileSync(setupFile, 'utf-8'));
+            isStandalone = (state.inventory || []).some(
+              s => s.name === rawSkill && s.type !== 'package'
+            );
+            break;
+          }
+        } catch { /* ignore */ }
+      }
+
+      if (isStandalone) {
+        parent = rawSkill;
+        child = null;
+      } else {
+        parent = packageMap[rawSkill];
+        child = rawSkill;
+      }
+    } else {
+      // Not in map: treat as standalone skill
+      parent = rawSkill;
+      child = null;
+    }
+  }
+  const usageFile = path.join(platformDir, 'usage.jsonl');
+
+  // Ensure directory
+  if (!fs.existsSync(platformDir)) {
+    fs.mkdirSync(platformDir, { recursive: true });
+  }
+
+  // Read current session ID (written by session-tracker start)
+  let sessionId = null;
+  const sessionFile = path.join(platformDir, 'current-session');
+  try {
+    if (fs.existsSync(sessionFile)) {
+      sessionId = fs.readFileSync(sessionFile, 'utf-8').trim() || null;
+    }
+  } catch { /* non-critical */ }
+
+  // Append usage event
+  const event = {
+    type: 'skill_used',
+    skill: parent,
+    child: child,
+    timestamp: new Date().toISOString(),
+    session_id: sessionId
+  };
+  fs.appendFileSync(usageFile, JSON.stringify(event) + '\n');
+
+  // Milestone check
+  checkMilestone(parent, usageFile, platformDir, baseDir);
+}
+
+function checkMilestone(skillName, usageFile, platformDir, baseDir) {
+  const MILESTONES = [10, 50, 100];
+
+  // Count total uses for this skill
+  if (!fs.existsSync(usageFile)) return;
+  const lines = fs.readFileSync(usageFile, 'utf-8').trim().split('\n').filter(Boolean);
+  let count = 0;
+  for (const line of lines) {
+    try {
+      const e = JSON.parse(line);
+      if (e.type === 'skill_used' && e.skill === skillName) count++;
+    } catch { /* skip */ }
+  }
+
+  // Check if hit a milestone
+  const milestone = MILESTONES.find(m => count === m);
+  if (!milestone) return;
+
+  // Check if already shown this milestone (inbox.json skill_cache)
+  const inboxFile = path.join(platformDir, 'inbox.json');
+  let inbox = { suggestions: [], skill_cache: [], meta: {} };
+  if (fs.existsSync(inboxFile)) {
+    try { inbox = JSON.parse(fs.readFileSync(inboxFile, 'utf-8')); } catch { /* use default */ }
+  }
+
+  let cache = (inbox.skill_cache || []).find(s => s.skill_name === skillName);
+  const shownMilestones = cache?.milestones_shown || [];
+  if (shownMilestones.includes(milestone)) return;
+
+  // Check if skill has a real evaluation (not just a snapshot with null scores)
+  const manifestPaths = [
+    path.join(baseDir, '.skill-compass', 'cc', skillName, 'manifest.json'),
+    path.join(baseDir, '.skill-compass', skillName, 'manifest.json')
+  ];
+  for (const mp of manifestPaths) {
+    if (fs.existsSync(mp)) {
+      try {
+        const m = JSON.parse(fs.readFileSync(mp, 'utf-8'));
+        const hasRealEval = (m.versions || []).some(v =>
+          (v.trigger === 'eval' || v.trigger === 'initial') && v.overall_score != null
+        );
+        if (hasRealEval) return; // genuinely evaluated, skip milestone
+      } catch { /* continue */ }
+    }
+  }
+
+  // Output milestone reminder to stderr
+  process.stderr.write(
+    `\n[SkillCompass] ${skillName} has been used ${milestone} times.\n` +
+    `  Consider evaluating its quality — improvements will benefit every future use.\n\n`
+  );
+
+  // Record milestone as shown
+  if (!cache) {
+    cache = { skill_name: skillName };
+    inbox.skill_cache = inbox.skill_cache || [];
+    inbox.skill_cache.push(cache);
+  }
+  cache.milestones_shown = [...shownMilestones, milestone];
+  fs.writeFileSync(inboxFile, JSON.stringify(inbox, null, 2));
+}
+
+main().catch(() => {});

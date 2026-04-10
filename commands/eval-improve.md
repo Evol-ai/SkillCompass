@@ -4,6 +4,14 @@
 
 - **Recommended model: Claude Opus 4.6** (`claude-opus-4-6`). Directed improvement requires understanding complex rubric feedback and generating precise, targeted edits. Weaker models may produce unfocused rewrites that fail to address the weakest dimension or introduce regressions in other dimensions.
 
+## Interaction Mode
+
+If `--internal` is passed, skip all interactive prompts — return results silently. This flag is set when eval-improve is called by other commands (e.g., from setup or skill-inbox action queue).
+
+If `--ci` is passed, skip all interactive prompts and output pure JSON.
+
+All user-facing text follows the global locale rule from SKILL.md.
+
 ## Arguments
 
 - `<path>` (required): Path to the SKILL.md file to improve.
@@ -36,7 +44,7 @@ From the evaluation result:
 
 If the target dimension is D1 or D2, and the OTHER metadata dimension (D2 or D1 respectively) also scores ≤ 5, group them into a single improvement round:
 - Target becomes `["D1", "D2"]` (both)
-- Display: "Dimensions D1 ({score}) and D2 ({score}) are both weak and share the metadata layer. Improving both in a single round."
+- Display (follow locale): e.g., "结构（{score}）和触发（{score}）都较弱，将一起改进" or "Structure ({score}) and Trigger ({score}) are both weak, improving together"
 
 This grouping ONLY applies to D1+D2 (both affect frontmatter/description). Do NOT group other dimension combinations — they modify different parts of the skill and could interfere.
 
@@ -113,21 +121,66 @@ Mark the verification in output: `"verification": "targeted", "re_evaluated": ["
 - {any other dimension that changed}: {before} → {after}
 - Verdict: {verdict_before} → {verdict_after}
 {if verdict changed to PASS: "✓ This skill now passes quality standards."}
-{if verdict still not PASS: "Next step: run /eval-improve again to target {new_weakest_dimension} ({its_score}/10)."}
 ```
 
 **Rules for this summary:**
 - Use the evaluation `details` and `issues` fields to explain problems in plain language, not dimension codes.
+- Translate dimension codes to names using the map from SKILL.md: D1→结构/Structure, D2→触发/Trigger, D3→安全/Security, D4→功能/Functional, D5→比较/Comparative, D6→独特/Uniqueness (apply per locale).
 - Translate technical findings into user-understandable impact (e.g., "hardcoded database password" not "D3 Critical finding in category secret").
 - Keep each bullet to one sentence.
 - If D1+D2 were grouped, show both dimensions in the summary.
 
+### Flow Continuity (after Improvement Summary)
+
+Skip this section entirely if `--internal` was passed.
+
+After displaying the Improvement Summary, check the new verdict and present a follow-up choice (follow locale for all text):
+
+**If verdict is still CAUTION or FAIL:**
+```
+{维度名称} 从 {old} 提升到 {new}，但仍未达到 PASS。继续优化可进一步提升。
+[继续优化此 skill（推荐）/ 查看其他建议 / 停止]
+```
+or (English locale):
+```
+{Dimension name} improved from {old} to {new}, but verdict is still not PASS. Further improvement is possible.
+[Keep improving this skill (recommended) / View other suggestions / Stop]
+```
+
+**If verdict improved to PASS:**
+```
+✓ 已达到 PASS ✓ 还有可优化空间（{维度名称} {score}/10）。
+[继续打磨 / 停止（推荐）]
+```
+or (English locale):
+```
+✓ Improved to PASS ✓ There is still room to polish ({Dimension name} {score}/10).
+[Keep polishing / Stop (recommended)]
+```
+
+**If target dimension did not improve** (score did not increase by ≥ 1):
+```
+此维度可能已接近上限。[尝试其他维度 / 停止]
+```
+or (English locale):
+```
+This dimension may be near its ceiling. [Try another dimension / Stop]
+```
+
 ### If verification fails:
 
 1. Restore the original SKILL.md from the snapshot taken in Phase 2.
-2. Explain what went wrong:
-   - "Target dimension did not improve" or
-   - "Regression detected: {dimension} dropped from {old} to {new}" or
-   - "Security gate failed after improvement"
+2. Explain what went wrong (follow locale for all messages):
+
+   - **Target dimension did not improve:** show `[尝试其他维度 / 停止]` or `[Try another dimension / Stop]`
+
+   - **Regression detected:** report using the dimension name (not code) per locale — e.g., "功能（{score_before} → {score_after}）出现退步" or "Functional ({score_before} → {score_after}) regressed" — then show:
+     `[回滚 / 保留当前结果]` or `[Rollback / Keep current result]`
+
+   - **Security gate failed:** report using locale — e.g., "安全检查未通过，已回滚" or "Security gate failed after improvement, rolled back" — then show:
+     `[修复安全问题 / 回滚]` or `[Fix security issues / Rollback]`
+
 3. Suggest alternatives: try a different approach, target a different dimension, or manual edit.
 4. Clean up: delete `.skill-compass/.write-lock` if it exists.
+
+   Skip the interactive choices above if `--internal` was passed — just return the failure reason in the result JSON.

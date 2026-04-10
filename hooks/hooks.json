@@ -2,6 +2,16 @@
   "hooks": {
     "PostToolUse": [
       {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT:-${baseDir:-.}}/hooks/scripts/skill-usage-tracker.js\"",
+            "timeout": 3000
+          }
+        ]
+      },
+      {
         "matcher": "Write|Edit",
         "hooks": [
           {
@@ -13,6 +23,28 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT:-${baseDir:-.}}/hooks/scripts/eval-gate.js\"",
             "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT:-${baseDir:-.}}/hooks/scripts/session-tracker.js\" start",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT:-${baseDir:-.}}/hooks/scripts/session-tracker.js\" end",
+            "timeout": 3000
           }
         ]
       }

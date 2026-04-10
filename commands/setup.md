@@ -20,7 +20,7 @@ In auto-trigger mode, setup must never replace or derail the user's original req
 
 When auto-triggered, ask the user first:
 
-> Welcome to SkillCompass. I can do a quick local inventory of your installed skills (~5 seconds) before continuing `{resume_command}`. [OK / Skip]
+> Quick skill inventory (~5 sec) before continuing `{resume_command}`? [OK / Skip]
 
 - If the user says `Skip`:
   - Write `.skill-compass/setup-state.json` with `{"version": 1, "skipped": true, "timestamp": "{ISO}"}`
@@ -43,11 +43,70 @@ Build the scan root list in this priority order:
 
 Resolve only directories that actually exist.
 
-Scan each root for `*/SKILL.md` and `*/skill.md`.
+Scan each root for `*/SKILL.md` and `*/skill.md` (immediate children only — this matches Claude Code's own discovery pattern).
+
+**Do NOT scan recursively.** Sub-skills inside packages (e.g., `superpowers/skills/writing-plans/SKILL.md`) are discovered passively via `PostToolUse Skill` hook when users invoke them. Scanning recursively would pick up internal files (agent definitions, translations, other-platform configs) that aren't user-facing skills.
 
 Exclude:
 - paths containing `node_modules/`, `.git/`, `test-fixtures/`, `.skill-compass/`
 - SkillCompass's own SKILL.md at `{baseDir}`
+
+### Package Detection
+
+For each directory in the scan roots that does NOT have a top-level SKILL.md, check if it looks like an installed package. A directory is a **package** if it has at least one of:
+- `.claude-plugin/` directory
+- `hooks/hooks.json` file
+- `package.json` file
+
+Add packages to `inventory` with `type: "package"` (not `type: "skill"`). Include:
+- `name`: directory name
+- `type`: `"package"`
+- `path`: directory path
+- `has_hooks`: whether `hooks/hooks.json` exists
+- `has_session_start`: whether hooks.json contains a SessionStart entry
+- `is_git`: whether `.git/` exists
+
+Sub-skills inside packages (e.g., `superpowers/skills/writing-plans/SKILL.md`) are NOT added to inventory individually. They are passively discovered via the `PostToolUse Skill` hook when users invoke them through the Skill tool.
+
+### Package Security Scan
+
+For each detected package, recursively find all SKILL.md files within the package directory (`**/SKILL.md`, excluding `node_modules/` and `.git/`). Run D3 security pattern matching only (from `lib/patterns.js`) on each file:
+- Secret patterns
+- Dangerous command patterns
+- Injection patterns
+- Exfiltration patterns
+- Embedded shell patterns (`!` syntax)
+
+This is pattern matching only — no D1/D2 evaluation, no LLM calls. Results are NOT added to inventory. Display inline:
+
+If all clean:
+```
+{package_name}: {N} sub-skill files scanned, no security issues ✓
+```
+
+If issues found:
+```
+{package_name}: {N} sub-skill files scanned, {M} issue(s) found
+  ⚠ {filename}: {finding description}
+```
+EN: Same format, follow locale.
+
+### Package Sub-Skill Map
+
+During the package scan above, build a reverse lookup map: `sub_skill_name → package_name`. For each SKILL.md found inside a package, extract the `name` field from frontmatter (or use the directory name as fallback).
+
+Write the map to `.skill-compass/cc/package-skill-map.json`:
+
+```json
+{
+  "writing-plans": "superpowers",
+  "executing-plans": "superpowers",
+  "brainstorming": "superpowers",
+  "subagent-driven-development": "superpowers"
+}
+```
+
+This map is used by `hooks/scripts/skill-usage-tracker.js` to attribute sub-skill invocations to their parent package when the PostToolUse Skill payload doesn't include the package prefix. This ensures usage records always have the qualified form (`superpowers:writing-plans`) for traceability.
 
 Deduplicate by canonical skill identity:
 - prefer earlier roots in the priority order above
@@ -77,7 +136,13 @@ If more than 20 skills are found:
 For each discovered skill, extract basic info by reading the file and parsing YAML frontmatter only:
 - `name`, `description`, `version`
 - whether it has `commands`, `hooks`, or `globs`
+- `paths` field (if present — glob patterns for conditional activation)
+- `user_invocable` field (if `false`, skill is hidden from /skills menu)
 - source root and last modified time
+
+**Conditional activation skills** (`paths` field present): these only trigger when matching files are edited. Record `activation: "conditional"` and `activation_paths: [...]` in the inventory. Rules like R1 (never used) should NOT flag these as unused — they may simply not have been triggered yet.
+
+**Hidden skills** (`user_invocable: false`): these don't appear in the /skills menu and can't be directly invoked by users. Record `hidden: true` in the inventory. Exclude from usage-based rules (R1, R2, R5, R10) — users can't invoke what they can't see.
 
 Group skills by purpose using keyword matching on the `description` field:
 - **Code/Dev**: `\b(format|lint|test|review|generate|scaffold|refactor|code)\b`
@@ -85,6 +150,32 @@ Group skills by purpose using keyword matching on the `description` field:
 - **Data/API**: `\b(api|data|query|fetch|database|sql|csv|json)\b`
 - **Productivity**: `\b(todo|note|doc|translate|search|manage|write|email)\b`
 - **Other**: anything that does not match above
+
+## Step 4.5: Quick Scan New Skills (D1+D2+D3)
+
+For any skill that is **newly discovered** in this run (not present in the previous `setup-state.json`), run a lightweight D1+D2+D3 scan:
+
+1. Use `lib/quick-scan.js` `QuickScanner.scanOne(filePath, skillName)` on the new skill's SKILL.md path
+2. Display the result inline immediately after the skill's inventory entry:
+
+For clean results:
+```text
+[setup] 新 skill: {name}
+[quick scan] D1={d1} D2={d2} D3={d3} ✓ Clean
+```
+
+For issues found:
+```text
+[setup] 新 skill: {name}
+[quick scan] D1={d1} D2={d2} D3={d3} ⚠ {verdict}
+  → {first finding description}
+  → 建议运行 /eval-skill {name} 做完整评测
+```
+
+3. Write scan results to `.skill-compass/cc/quick-scan-cache.json` via `QuickScanner`
+4. Do not block the setup flow — this is informational output only
+
+If `lib/quick-scan.js` cannot be loaded (e.g., missing dependency), skip this step silently and continue setup.
 
 ## Step 5: Quick Health Check
 
@@ -102,197 +193,110 @@ Threshold rule: only surface findings users are likely to act on immediately. If
 
 ## Step 6: Display Results and Changes Since Last Check
 
-Output the inventory:
+**First run (no previous snapshot):**
+
+Output a one-line inventory summary, quick scan results, context budget, and smart guidance:
 
 ```text
---------------------------------------------
-  {N} skills installed
---------------------------------------------
+{N} 个 skill（Code/Dev: {n}, Deploy/Ops: {n}, Data/API: {n}, Productivity: {n}, Other: {n}）
 
-  Code/Dev
-    1. sql-formatter      Format SQL queries with multi-dialect support
-    2. git-commit-helper  Generate conventional commit messages
+Quick Scan:
+  ✓ Clean: {n}  ⚠ Medium: {n}  ✗ High risk: {n}
 
-  Deploy/Ops
-    3. deploy-helper      SSH deploy to staging/production
-    4. k8s-manager        Kubernetes pod management and logs
+上下文占用 {X} KB / 80 KB（{pct}%）
 
-  Productivity
-    5. api-tester         Test REST API endpoints
-    6. data-cleaner       CSV/JSON data cleaning
+{smart guidance — one choice based on first matching condition below}
 ```
 
-If findings exist, append:
+Smart guidance conditions (first match wins):
 
-```text
-  Quick check found:
+1. Any skill has a High-risk quick scan result → offer to run a full evaluation on the flagged skill
+2. Context budget exceeds 60% → suggest removing or consolidating lower-value skills
+3. Skill count exceeds 8 → suggest reviewing skills for overlap
+4. All healthy → congratulate and suggest exploring what the skills can do
+5. Fewer than 3 skills → suggest where to find more skills
 
-  Security: #3 deploy-helper contains a plaintext API key
-    -> anyone who can read this file can use that key
+Do **not** print raw command strings. Describe the action in plain language as a choice (e.g., "Evaluate the flagged skill now? [Yes / Later]").
 
-  Duplicate: #5 api-tester and #6 data-cleaner have substantial feature overlap
-    -> you may only need one of these
+**StatusLine integration (first run only):**
 
-  Structure: #7 old-formatter is fundamentally broken
-    -> Claude may not load it correctly
+After smart guidance, check if `~/.claude/settings.json` already has a `statusLine` configured.
+
+If NO existing statusLine:
+
+```
+建议在底部状态栏启用提示，有 skill 建议时会显示 🧭 N pending。
+EN: Recommend enabling status bar notifications. When there are skill suggestions, 🧭 N pending will appear at the bottom.
 ```
 
-If no findings:
+Then offer two choices:
 
-```text
-  Quick check: healthy. No critical security issues, hard duplicates, or broken structures found.
+```
+请选择状态栏样式：
+
+1. 极简模式 — 仅显示 SkillCompass 提示
+   🧭 3 pending
+
+2. 完整 HUD — 包含模型、上下文、Git 等信息（需要安装 claude-hud）
+   [Opus] │ my-project git:(main*) │ 🧭 3 pending
+   Context █████░░░░░ 45% │ Usage ██░░░░░░░░ 25%
+
+[极简模式 / 完整 HUD / 跳过]
 ```
 
-If a previous snapshot exists, compute and display changes since the last check:
-- `Added`: skills not present last time
-- `Removed`: skills no longer present
-- `Updated`: same skill, but version, path, or description hash changed
+- **极简模式**: Use the **Bash** tool to write to `~/.claude/settings.json`, adding the `statusLine` field:
+  ```json
+  {
+    "statusLine": {
+      "type": "command",
+      "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/hud-extra.js\""
+    }
+  }
+  ```
+  If the file already exists, merge the `statusLine` field without overwriting other settings.
+  After writing, confirm: "状态栏已启用 ✓ 输入 /inbox 查看建议，或直接问我"下面提示是什么"。"
 
-If there is no previous snapshot, say:
+- **完整 HUD**: Check if `claude-hud` is installed (`~/.claude/plugins/claude-hud/` exists). If yes, configure its `--extra-cmd` to point to `scripts/hud-extra.js`. If not installed, inform the user: "需要先安装 claude-hud：`/plugin install claude-hud`，安装后重新运行 /setup。" and fall back to 极简模式.
+
+- **跳过**: Do nothing, no statusLine configuration.
+
+If YES existing statusLine (user already has one configured):
+Skip silently. Do not overwrite the user's existing configuration.
+
+**Subsequent runs (previous snapshot exists):**
+
+Compute changes since the last snapshot:
+- `新增`: skills not present last time
+- `移除`: skills no longer present
+- `更新`: same skill, version/path/description hash changed
+
+Output:
 
 ```text
-  Baseline saved. Future /setup runs will show changes since this snapshot.
+{N} 个 skill · 新增 {a} · 移除 {r} · 更新 {u}
 ```
 
-If no changes are detected on a later run, say:
+If new skills were found, show the quick scan results for those new skills only (from Step 4.5).
+
+If no changes are detected, output:
 
 ```text
-  No inventory changes since the last check.
-```
-
-If the display was truncated because there are more than 20 skills, append:
-
-```text
-  {M} older skills not shown here. The saved snapshot still includes all {N} discovered skills.
+skill 清单无变化 ✓
 ```
 
 ## Step 7: Auto-Trigger Exit Path
 
 If setup is running in auto-trigger mode:
 - save state immediately after Step 6
-- do **not** ask the user to pick skills to evaluate
 - return control to the dispatcher so it can continue `{resume_command}` exactly once
 
-Optionally add a short note:
+Print a single short note:
 
 ```text
 Quick inventory saved. Continuing with {resume_command}.
-Run /setup anytime for the interactive inventory and evaluation flow.
 ```
 
-## Step 8: Prompt for Action (manual mode only)
-
-In manual mode, prompt the user:
-
-```text
-Enter the skill number(s) you'd like to evaluate and improve (for example: 3 or 3,5,7).
-Enter "all" to evaluate the full deduplicated inventory.
-Press Enter or type "done" to stop.
-```
-
-Wait for the response.
-
-## Step 9: Route to Evaluation (manual mode only)
-
-Based on the user's response:
-
-**Single or multiple numbers (for example `3` or `3,5,7`):**
-
-For each selected skill:
-1. Run `/eval-skill {skill_path} --scope full`
-2. Translate the result into scenario-based language (Step 10)
-3. Ask: `Fix this? ~2 minutes. [Fix / Skip]`
-4. If the user says `Fix`, run `/eval-improve {skill_path}` and show before/after using Step 10
-5. If the user says `Skip`, move to the next selected skill
-
-**`all` / `全部`:**
-
-Use the already-discovered deduplicated inventory from Step 3. Do **not** re-scan roots and do **not** call `/eval-audit` on raw directories from setup mode.
-
-Inform the user of the estimate:
-
-```text
-Batch evaluation of {N} discovered skills, ~2 minutes each, estimated total ~{N*2} minutes. Start?
-```
-
-If confirmed:
-- evaluate the full deduplicated inventory list sequentially with `/eval-skill {skill_path} --scope full`
-- keep SkillCompass itself excluded
-- preserve the inventory order already chosen for setup
-
-**Anything else (`skip`, `done`, empty, or unrecognized):**
-
-```text
-OK. Run /setup anytime to check again, or /skill-compass evaluate {skill} for a single skill.
-```
-
-Stop.
-
-## Step 10: Scenario-Based Output
-
-When presenting evaluation results in setup context, do **not** use dimension codes (`D1-D6`) or raw numeric dimension scores. Translate findings into plain language that non-experts can understand.
-
-Read the `issues` arrays from the evaluation result. Pick the top 3 most impactful issues and translate them:
-
-**Security**
-- hardcoded secret -> `Contains a plaintext key or password - anyone with access to this file can see it`
-- pipe-to-shell -> `Downloads and runs remote code with no safety checks`
-- prompt injection -> `Contains content that could be used to alter Claude's behavior`
-
-**Discoverability**
-- vague description -> `Description is too generic - Claude may not know when to use this skill`
-- no trigger mechanism -> `No clear activation method - Claude may not find it when you need it`
-
-**Stability**
-- no edge handling -> `May fail or produce bad results on unexpected input`
-- no error handling -> `Fails without clearly telling you what went wrong`
-
-**Value**
-- negative comparative delta -> `Asking Claude directly is likely to work better than using this skill`
-
-**Uniqueness**
-- high overlap -> `You already have a similar skill: {similar_skill_name}`
-
-Display only categories that actually have issues:
-
-```text
-  {skill_name} evaluation:
-
-  Security
-    {translated issue}
-
-  Discoverability
-    {translated issue}
-
-  Stability
-    {translated issue}
-
-  Value
-    {translated issue}
-
-  Uniqueness
-    {translated issue}
-
-  Fix this? ~2 minutes. [Fix / Skip]
-```
-
-If all good:
-
-```text
-  {skill_name} looks good - no issues to fix.
-```
-
-After a fix, only show categories where something materially changed, maximum 3 categories:
-
-```text
-  {skill_name} fixed
-
-  Security
-    Before: {plain-language before}
-    After:  {plain-language after}
-```
-
-## Step 11: Save State and Follow-Up
+## Step 8: Save State
 
 After setup completes in either mode, write `.skill-compass/setup-state.json` with a real snapshot, for example:
 
@@ -303,34 +307,55 @@ After setup completes in either mode, write `.skill-compass/setup-state.json` wi
   "timestamp": "{ISO}",
   "roots_scanned": [".claude/skills", "~/.claude/skills", "~/.openclaw/skills"],
   "skills_found": 12,
-  "skills_evaluated": ["deploy-helper", "api-tester"],
   "inventory": [
     {
       "name": "deploy-helper",
       "version": "1.2.0",
       "path": "~/.claude/skills/deploy-helper/SKILL.md",
       "source_root": "~/.claude/skills",
+      "type": "standalone",
+      "file_size": 4096,
       "purpose": "Deploy/Ops",
       "modified_at": "{ISO}",
       "description_hash": "{sha256}"
+    },
+    {
+      "name": "superpowers",
+      "version": "2.0.0",
+      "path": "~/.claude/skills/superpowers",
+      "source_root": "~/.claude/skills",
+      "type": "package",
+      "total_size": 18432,
+      "purpose": "Productivity",
+      "modified_at": "{ISO}",
+      "description_hash": "{sha256}",
+      "children": [
+        {
+          "name": "writing-plans",
+          "qualified": "superpowers:writing-plans",
+          "path": "~/.claude/skills/superpowers/skills/writing-plans/SKILL.md"
+        },
+        {
+          "name": "code-review",
+          "qualified": "superpowers:code-review",
+          "path": "~/.claude/skills/superpowers/skills/code-review/SKILL.md"
+        }
+      ]
     }
   ]
 }
 ```
 
+For each skill in the inventory, apply the `first_seen_at` preservation algorithm:
+
+1. Load the **previous** `setup-state.json` (before overwriting) and build a lookup map: `prevMap[skill.name] = skill`
+2. For each skill in the **current** inventory:
+   - If `prevMap[skill.name]` exists and has a `first_seen_at` value → **preserve it**: `skill.first_seen_at = prevMap[skill.name].first_seen_at`
+   - Otherwise → **set it now**: `skill.first_seen_at = new Date().toISOString()`
+3. Write the updated inventory to `setup-state.json`
+
+This field enables the Skill Inbox R1 and R2 rules to calculate how long a skill has been installed. Without it, all skills appear as "just installed" on every setup run.
+
 Also write `.skill-compass/.setup-done` as a compatibility marker.
 
 Future `/setup` runs must read this snapshot first and show changes relative to it.
-
-If manual mode ends with unevaluated skills still available, say:
-
-```text
-{remaining} more skills are available to evaluate.
-Enter another number to continue, or stop here and come back with /setup later.
-```
-
-If the user stops, end with:
-
-```text
-Inventory complete. Run /setup anytime to check again.
-```

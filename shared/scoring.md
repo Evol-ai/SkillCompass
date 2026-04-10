@@ -41,6 +41,21 @@ Evaluate in order. The FIRST matching rule wins (FAIL > CAUTION > PASS):
 
 D3 is a **gate dimension**. If ANY finding has severity `"critical"`, set `D3.pass = false` and `verdict = "FAIL"` regardless of overall_score. This is non-negotiable.
 
+## D3 Findings-to-Score Mapping
+
+D3 score is computed mechanically from the merged findings list (local validator + LLM supplementation). Start at 10, apply deductions:
+
+| Finding Severity | Deduction per Finding |
+|------------------|-----------------------|
+| critical         | → score = 0, pass = false (gate) |
+| high             | -4 |
+| medium           | -1 |
+| low              | -0.5 |
+
+`D3_score = max(0, 10 - sum(deductions))`. Round to nearest integer.
+
+No judgment needed. The findings determine the score mechanically — same pattern as D5 Delta-to-Score.
+
 ## Improvement Priority Order
 
 When multiple dimensions tie for lowest score, prioritize:
