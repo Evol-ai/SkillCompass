@@ -1,15 +1,14 @@
-# /skill-update — 检查和更新 Skill
+# /skill-update — Check and Update Skills
 
-> **Locale**: 所有用户可见文本跟随会话语言。运行时默认英文；若宿主提供 locale，或检测到用户使用受支持的其他语言，则切换到对应语言。本文件中的中文示例仅用于说明。维度标签见 SKILL.md。
-> EN: All user-facing text follows session language. Runtime defaults to English and switches to the host-provided locale or detected supported user language when available. Chinese examples in this spec are illustrative only. Dimension labels: see SKILL.md.
+> **Locale**: All templates in this spec are written in English. Detect the user's language from the session and translate user-facing text at display time per SKILL.md's Global UX Rules. Dimension labels: see the canonical table in SKILL.md.
 
-检查已安装 skill 的远程更新，引导用户更新并评测。
+Check installed skills for remote updates and guide the user through updating and evaluating them.
 
 ## Arguments
 
-- (no args): 列出所有需要检查的 skill，让用户选择
-- `<skill-name>`: 检查指定 skill 的更新
-- `all`: 检查全部 git 仓库 skill
+- (no args): list all skills that need checking and let the user choose
+- `<skill-name>`: check the specified skill for updates
+- `all`: check all git-repo-backed skills
 
 ## Step 1: Load Inventory and Check Git Status
 
@@ -18,18 +17,17 @@ Use `lib/update-checker.js` to scan all skills:
 ```javascript
 const { UpdateChecker } = require('./lib/update-checker');
 const checker = new UpdateChecker();
-const stale = checker.getStale(inventory, 7); // 7 天未检查的
-const allGit = checker.checkAll(inventory);    // 所有 git 仓库 skill
+const stale = checker.getStale(inventory, 7); // not checked in last 7 days
+const allGit = checker.checkAll(inventory);    // all git-repo-backed skills
 ```
 
 Execute via **Bash** `node -e`.
 
 If no git-based skills found:
 ```
-未发现基于 git 仓库的 skill，无法检查更新。
-手动安装的 skill 请前往来源页面查看是否有新版本。
+No git-repo-backed skills found; cannot check for updates.
+For manually installed skills, check the source page for new versions.
 ```
-EN: "No git-based skills found. For manually installed skills, check the source for updates."
 
 Stop.
 
@@ -42,26 +40,26 @@ Stop.
 **If called with no args**: show the list and let user choose. Follow gstack's AskUserQuestion pattern — re-ground context, simplify, recommend, show options with effort scale.
 
 ```
-{N} 个 skill 可检查更新（基于 git 仓库）：
+{N} skills available to check for updates (git repo-backed):
 
-  1. code-review     上次检查: 12 天前   github.com/user/code-review
-  2. superpowers     上次检查: 9 天前    github.com/obra/superpowers
-  3. doc-writer      上次检查: 15 天前   github.com/user/doc-writer
-  4. ecc             上次检查: 8 天前    github.com/affaan-m/everything-claude-code
+  1. code-review     last checked: 12 days ago   github.com/user/code-review
+  2. superpowers     last checked: 9 days ago    github.com/obra/superpowers
+  3. doc-writer      last checked: 15 days ago   github.com/user/doc-writer
+  4. ecc             last checked: 8 days ago    github.com/affaan-m/everything-claude-code
 
-检查更新需要联网（git fetch），每个约 5 秒。
+Checking updates requires network (git fetch), about 5 seconds each.
 
-输入编号、名称或逗号分隔多个（如 1,3），也可以输入"全部"。
-直接输入其他 skill 名称也可以。
+Enter a number, a name, or comma-separated list (e.g. 1,3), or type "all".
+You can also type any other skill name directly.
 
-[全部检查 / 选择 / 跳过]
+[Check all / Select / Skip]
 ```
 
 User can respond:
 - "1,3" or "code-review, doc-writer" → check selected
-- "全部" or "all" → check all
+- "all" → check all
 - "superpowers" → check just superpowers
-- Any natural language like "前两个" → parse intent
+- Any natural-language phrase like "the first two" → parse intent (accept equivalent input in any language)
 
 ## Step 3: Fetch and Report
 
@@ -69,29 +67,29 @@ For each selected skill, run `checker.fetchAndCheck(skillPath)` via **Bash** `no
 
 **Has updates:**
 ```
-正在检查 code-review...
-  ✓ fetch 完成 · 发现 2 个新提交（v1.2.0 → v1.3.0）
+Checking code-review...
+  ✓ fetch done · 2 new commits found (v1.2.0 → v1.3.0)
 
-  [更新并评测（推荐）/ 查看变更 / 跳过]
+  [Update and evaluate (recommended) / View changes / Skip]
 ```
 
-If user chooses "查看变更", run `git log HEAD..FETCH_HEAD --oneline` and show, then re-offer the choice.
+If user chooses "View changes", run `git log HEAD..FETCH_HEAD --oneline` and show, then re-offer the choice.
 
 **Already up to date:**
 ```
-正在检查 superpowers...
-  ✓ 已是最新
+Checking superpowers...
+  ✓ Already up to date
 ```
 
 **Fetch failed (network error):**
 ```
-正在检查 doc-writer...
-  ⚠ 无法连接远程仓库（网络问题或仓库已移除）
+Checking doc-writer...
+  ⚠ Cannot reach remote (network issue or repo removed)
 ```
 
 ## Step 4: Apply Update
 
-When user chooses "更新并评测":
+When user chooses "Update and evaluate":
 
 1. **Snapshot before pull**: Ensure the current version has a snapshot file in the version management system, so `/eval-rollback` can restore it if the update causes regressions.
 
@@ -112,31 +110,28 @@ When user chooses "更新并评测":
 2. If pull fails — dirty tree:
    ```
    ⚠ Working tree has uncommitted changes. Commit or stash local edits before updating.
-   [查看改动 / 手动处理]
+   [View changes / Handle manually]
    ```
-   EN: "Working tree has uncommitted changes. Commit or stash before updating."
 
 3. If pull fails — not fast-forwardable (diverged history):
    ```
-   ⚠ 更新冲突——本地有独立提交，无法自动合并。
-   [查看差异 / 放弃更新 / 手动处理]
+   ⚠ Update conflict — local branch has independent commits; cannot auto-merge.
+   [View diff / Abandon update / Handle manually]
    ```
-   EN: "Cannot fast-forward — local commits diverge from remote."
 
 4. If pull succeeds:
    - Run a manual D1+D2+D3 quick scan on the updated SKILL.md using `lib/quick-scan.js` via **Bash** `node -e`.
      (Note: `git pull` is a shell operation, not a Write/Edit tool call, so `eval-gate.js` does NOT auto-trigger.)
    - Show result:
    ```
-   ✓ code-review 已更新到 v1.3.0
-     D1=9 D2=8 D3=9 ✓ 快检通过
+   ✓ code-review updated to v1.3.0
+     D1=9 D2=8 D3=9 ✓ Quick scan passed
 
-   上次完整评测 82分（v1.2.0），版本已变更，建议重新评测确认质量。
-   [完整评测（推荐）/ 跳过]
+   Last full eval: 82 points (v1.2.0). Version changed; recommend re-evaluating to confirm quality.
+   [Full evaluation (recommended) / Skip]
    ```
-   EN: `"✓ code-review updated to v1.3.0 / D1=9 D2=8 D3=9 ✓ Quick scan passed / Last full eval: 82 (v1.2.0). Version changed — recommend re-evaluation. [Full eval (recommended) / Skip]"`
 
-5. If user chooses "完整评测":
+5. If user chooses "Full evaluation":
    - Load and execute `commands/eval-skill.md` with `--internal` on the skill
    - Show result + follow-up choices
 
@@ -145,15 +140,15 @@ When user chooses "更新并评测":
 After all selected skills are checked:
 
 ```
-✓ 更新检查完成
-  检查 {N} 个 · 有更新 {U} 个 · 已更新 {A} 个 · 跳过 {S} 个
+✓ Update check complete
+  Checked {N} · updated available {U} · updated {A} · skipped {S}
 
-[返回 /skillcompass / 结束]
+[Back to /skillcompass / Done]
 ```
 
 ## Error Handling
 
-- **git not installed**: "需要 git 命令行工具。" Stop.
+- **git not installed**: "git CLI is required." Stop.
 - **Network timeout**: Show per-skill warning, continue with next.
 - **Pull conflict**: Offer resolve/abort/manual options.
-- **SKILL.md missing after update**: "更新后 SKILL.md 文件缺失，可能仓库结构已变更。[回滚 / 手动检查]"
+- **SKILL.md missing after update**: "SKILL.md is missing after update; the repo structure may have changed. [Rollback / Inspect manually]"

@@ -1,7 +1,6 @@
 # /eval-security — Standalone Security Scan
 
-> **Locale**: 所有用户可见文本跟随会话语言。运行时默认英文；若宿主提供 locale，或检测到用户使用受支持的其他语言，则切换到对应语言。本文件中的中文示例仅用于说明。维度标签见 SKILL.md。
-> EN: `> **Locale**: All user-facing text follows session language. Runtime defaults to English and switches to the host-provided locale or detected supported user language when available. Chinese examples in this spec are illustrative only. Dimension labels: see SKILL.md.`
+> **Locale**: All templates in this spec are written in English. Detect the user's language from the session and translate user-facing text at display time per SKILL.md's Global UX Rules. Dimension labels: see the canonical table in SKILL.md.
 
 ## Arguments
 
@@ -47,26 +46,22 @@ If `--verbose` is not set: omit findings with severity `"low"` from display (sti
 
 After printing the result:
 
-- **Findings exist AND neither `--internal` nor `--ci` is set:** print a status line then present choices (rendered in the detected locale):
+- **Findings exist AND neither `--internal` nor `--ci` is set:** print a status line then present choices:
 
   ```
-  ⚠ 发现 {N} 个安全问题。
-  [修复安全问题 / 查看详情 / 完成]
+  ⚠ {N} security issue(s) found.
+  [Fix security issues / View details / Done]
   ```
 
-  (EN: `⚠ {N} security issue(s) found.`)
+  - **Fix security issues** — invoke the fix workflow to address reported findings.
+  - **View details** — re-display all findings including those hidden by verbosity rules.
+  - **Done** — exit with no further action.
 
-  - **修复安全问题** — invoke the fix workflow to address reported findings.
-  - **查看详情** — re-display all findings including those hidden by verbosity rules.
-  - **完成** — exit with no further action.
-
-- **No findings:** print a single locale-appropriate "clean" message and do not show the choice prompt:
+- **No findings:** print a single "clean" message and do not show the choice prompt:
 
   ```
-  ✓ 安全扫描完成，未发现问题。
+  ✓ Security scan complete, no issues found.
   ```
-
-  (EN: `✓ Security scan complete, no issues found.`)
 
 - **`--internal` or `--ci` flag is set:** skip the choice prompt entirely regardless of findings; exit silently after printing the JSON result.
 

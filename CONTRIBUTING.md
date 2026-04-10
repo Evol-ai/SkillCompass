@@ -47,6 +47,16 @@ schemas/        — JSON schemas for eval results, feedback, manifests
 test-fixtures/  — 25 test skills (benign, malicious, edge cases)
 ```
 
+## Naming & Language Conventions
+
+- **Branch names**: ASCII only, `kebab-case` (e.g., `fix/d5-delta-override`, `feat/d6-rubric-band`). No spaces, no non-Latin characters.
+- **PR titles**: ASCII only. Keep under 70 characters. Use the description/body for details.
+- **Commit messages**: ASCII only. Follow conventional commit format (`fix:`, `feat:`, `docs:`, `refactor:`, `chore:`).
+- **Code and technical files** (`.js`, `.ts`, `.json`, `.yml`, schemas): English only. No non-English comments, identifiers, or string literals.
+- **User-facing templates in `SKILL.md` and `commands/*.md`**: English only. Claude detects the user's locale at runtime and translates at display time per SKILL.md's Global UX Rules.
+- **Runtime i18n resources** (`oc/src/locale.ts`): the one place localized message catalogs live. Add new locales here.
+- **Test fixtures**: may contain any language — fixtures that intentionally test non-English skills belong in `test-fixtures/edge-non-english/` or similar.
+
 ## Pull Request Process
 
 1. **Fork** the repo and create a branch from `dev`

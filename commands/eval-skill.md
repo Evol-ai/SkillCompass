@@ -20,19 +20,18 @@
 
 ## Error Handling
 
-- **File not found**: Stop immediately. Output an error message in the detected locale (e.g., `"错误：文件未找到：{path}"` / `"Error: File not found: {path}"`).
-- **Not a SKILL.md**: Warn in the detected locale if filename is not SKILL.md. Continue with evaluation.
-- **YAML malformed**: Warn in the detected locale, set D1 frontmatter_sub = 0, continue with remaining checks.
+- **File not found**: Stop immediately. Output `"Error: File not found: {path}"` (translate at display time).
+- **Not a SKILL.md**: Warn `"Warning: filename is not SKILL.md — continuing with evaluation."` if applicable.
+- **YAML malformed**: Warn `"Warning: YAML frontmatter is malformed."`, set D1 frontmatter_sub = 0, continue with remaining checks.
 
 ## Steps
 
 ### Step 1: Load Target
 
-Parse arguments. Check current model — if not an Opus-class model, output a warning in the detected locale (locale is determined in Step 4; if not yet known, default to English):
+Parse arguments. Check current model — if not an Opus-class model, output this warning (translate to the session locale at display time):
 ```
 ⚠ Warning: Current model is {model_name}. For reliable 6D evaluation, Claude Opus 4.6 is recommended. Results may be less consistent with other models.
 ```
-Chinese equivalent: `⚠ 警告：当前模型为 {model_name}。建议使用 Claude Opus 4.6 以获得可靠的六维评测结果，其他模型可能产生不一致的评分。`
 
 Continue with evaluation regardless.
 
@@ -174,7 +173,7 @@ Otherwise apply verdict rules from shared/scoring.md.
 *Full scope only.* Find the dimension with the lowest score. On ties, use priority from shared/scoring.md:
 security > functional > trigger > structure > uniqueness > comparative.
 
-Use the dimension name map for all user-facing text (Step 18 and Step 16 human-readable output): D1 → Structure/结构, D2 → Trigger/触发, D3 → Security/安全, D4 → Functional/功能, D5 → Comparative/比较, D6 → Uniqueness/独特. Keep `{Dx}` codes in JSON fields only.
+Use the dimension name map from SKILL.md's canonical Dimension label mapping table for all user-facing text (Step 18 and Step 16 human-readable output). Keep `{Dx}` codes in JSON fields only.
 
 For partial scope: set `weakest_dimension` to the lowest-scored among evaluated dimensions, or `null` if only gate scope.
 
@@ -198,58 +197,54 @@ Partial evaluations do NOT update manifest scores (to avoid overwriting complete
 
 Based on verdict and dimension scores, output a recommended action. Follow this decision tree **in order** — the first matching branch wins.
 
-**Locale rule:** All user-facing text in this step follows the locale detected from SKILL.md's Global UX Rules (Step 4). Chinese examples are shown below; English equivalents follow the same structure. Use the dimension name map for all human-readable text: D1 → 结构/Structure, D2 → 触发/Trigger, D3 → 安全/Security, D4 → 功能/Functional, D5 → 比较/Comparative, D6 → 独特/Uniqueness. Keep `{Dx}` codes in JSON fields only.
+**Locale rule:** All templates in this step are written in English. Translate at display time to the session locale per SKILL.md's Global UX Rules. Use the canonical Dimension label mapping table from SKILL.md for `{Dimension name}` substitutions. Keep `{Dx}` codes in JSON fields only.
 
 ---
 
 **For PASS verdict (score >= 70, D3 pass):**
 
-Check if any dimension scored below 8:
+Check if any dimension scored below 8.
 
 If all dimensions >= 8:
 ```
-✓ PASS（得分：{score}/100）
-  所有维度均 ≥ 8，无需进一步优化。
+✓ PASS (score: {score}/100)
+  All dimensions ≥ 8. No further improvement suggested.
 ```
-English: `✓ PASS (score: {score}/100) — All dimensions ≥ 8. No further improvement suggested.`
 
 If any dimension < 8:
 ```
-✓ PASS（得分：{score}/100）
-  最薄弱环节：{维度名称}（{Dx_score}/10）
-  影响：{从 Dx evaluation 的 issues 数组派生的用户可感知后果，见下方映射}
+✓ PASS (score: {score}/100)
+  Weakest area: {Dimension name} ({Dx_score}/10)
+  Impact: {user-facing consequence derived from the dimension's issues array — see mapping below}
 ```
-English: `✓ PASS (score: {score}/100) — Weakest area: {Dimension name} ({Dx_score}/10). Impact: {user-facing consequence}.`
 
 Present the user with a choice:
 ```
-  优化后每次使用都能受益。[ 继续优化（推荐）/ 满意，停止 ]
+  Improving this will benefit every future use.
+  [ Continue improving (recommended) / Done, stop here ]
 ```
-English: `Improving this will benefit every future use. [ Continue improving (recommended) / Done, stop here ]`
 
 The **Impact** line must be derived from the `issues` array of the lowest-scoring dimension. Translate technical findings into user-facing consequences:
-- D1 issues → "技能可能无法被正确发现或激活" / "skill may not be discovered or activated correctly"
-- D2 issues → "搜索此功能的用户可能找不到它" / "users searching for this capability may not find it"
-- D3 issues → "安全风险：{具体发现的通俗描述}" / "security risk: {specific finding in plain language}"
-- D4 issues → "在 {具体边缘情况} 时用户可能得到不一致的结果" / "users may get inconsistent results when {specific edge case}"
-- D5 issues → "在 {场景} 上此技能相比直接提问价值有限" / "skill adds little value over direct prompting for {scenario}"
-- D6 issues → "与 {similar_skill} 有显著重叠——可能冗余" / "overlaps significantly with {similar_skill} — may be redundant"
+- D1 issues → "skill may not be discovered or activated correctly"
+- D2 issues → "users searching for this capability may not find it"
+- D3 issues → "security risk: {specific finding in plain language}"
+- D4 issues → "users may get inconsistent results when {specific edge case}"
+- D5 issues → "skill adds little value over direct prompting for {scenario}"
+- D6 issues → "overlaps significantly with {similar_skill} — may be redundant"
 
 **Polish loop rules** (applies when user chooses to continue after PASS):
 - Run `/eval-improve` targeting the lowest dimension.
 - After improvement, re-evaluate. If still PASS, repeat the check above (with updated Impact).
 - **Plateau detection:** if the same dimension fails to improve for 2 consecutive attempts, output:
   ```
-  {维度名称}（{Dx_score}/10）——连续 2 次尝试后改进已停滞。
-  这可能受限于此技能的固有范围：{从 issues 简短说明原因}。
+  {Dimension name} ({Dx_score}/10) — improvement plateaued after 2 attempts.
+  This may be limited by the skill's inherent scope: {brief reason from issues}.
   ```
-  English: `{Dimension name} ({Dx_score}/10) — improvement plateaued after 2 attempts. This may be limited by the skill's inherent scope: {brief reason from issues}.`
 
   Present the user with a choice:
   ```
-    [ 继续优化其他维度 / 接受当前评分，停止 ]
+    [ Continue improving other dimensions / Accept current score, stop ]
   ```
-  English: `[ Continue improving other dimensions / Accept current score, stop ]`
 
   If user chooses to continue, target the next-lowest dimension instead.
 - The polish loop ends when the user declines to continue.
@@ -260,35 +255,32 @@ The **Impact** line must be derived from the `issues` array of the lowest-scorin
 
 Check if only one dimension is dragging the score down (one dim <= 4, all others >= 6):
 ```
-⚠ CAUTION（得分：{score}/100）
-  仅 {维度名称} 低于阈值（{Dx_score}/10）。
+⚠ CAUTION (score: {score}/100)
+  Only {Dimension name} is below threshold ({Dx_score}/10).
 ```
-English: `⚠ CAUTION (score: {score}/100) — Only {Dimension name} is below threshold ({Dx_score}/10).`
 
 Present the user with a choice:
 ```
-  {维度名称} 是唯一的短板，修复后大概率升到 PASS。[ 立即修复（推荐）/ 跳过 ]
+  {Dimension name} is the only weak point — fixing it will very likely bring the verdict to PASS.
+  [ Fix now (recommended) / Skip ]
 ```
-English: `{Dimension name} is the only weak point — fixing it will very likely bring the verdict to PASS. [ Fix now (recommended) / Skip ]`
 
 Otherwise (multiple dimensions in the 4-5 range):
 ```
-⚠ CAUTION（得分：{score}/100）
-  多个维度需要改进。最弱：{维度名称}（{Dx_score}/10）。
+⚠ CAUTION (score: {score}/100)
+  Multiple dimensions need improvement. Weakest: {Dimension name} ({Dx_score}/10).
 ```
-English: `⚠ CAUTION (score: {score}/100) — Multiple dimensions need improvement. Weakest: {Dimension name} ({Dx_score}/10).`
 
 Present the user with a choice:
 ```
-  多个维度需要改进，从最弱的 {维度名称} 开始。[ 开始改进（推荐）/ 查看详情 / 跳过 ]
+  Multiple dimensions need work — start with the weakest, {Dimension name}.
+  [ Start improving (recommended) / View details / Skip ]
 ```
-English: `Multiple dimensions need work — start with the weakest, {Dimension name}. [ Start improving (recommended) / View details / Skip ]`
 
 If D5 delta < 0.1 (marginal value), add a note:
 ```
-  附加价值有限——与直接提问相比，此技能提升不明显（delta: {delta}），请考虑是否值得维护。
+  This skill provides marginal value over direct prompting (delta: {delta}). Consider whether it is worth maintaining.
 ```
-English: `This skill provides marginal value over direct prompting (delta: {delta}). Consider whether it is worth maintaining.`
 
 ---
 
@@ -298,99 +290,87 @@ Evaluate in this order:
 
 1. **Check for regression** (manifest has a previous version with verdict=PASS):
 ```
-✗ FAIL（得分：{score}/100）——检测到回退（曾在 v{X.Y.Z} 时通过）
+✗ FAIL (score: {score}/100) — Regression detected (was PASS at v{X.Y.Z})
 ```
-English: `✗ FAIL (score: {score}/100) — Regression detected (was PASS at v{X.Y.Z})`
 
 Present the user with a choice:
 ```
-  有历史通过版本可回滚。[ 回滚到上一个通过版本（推荐）/ 修复当前版本 ]
+  A previously passing version is available for rollback.
+  [ Roll back to last passing version (recommended) / Fix current version ]
 ```
-English: `A previously passing version is available for rollback. [ Roll back to last passing version (recommended) / Fix current version ]`
 
 2. **Check D5 value** (D5 delta < 0):
 ```
-✗ FAIL（得分：{score}/100）
-  比较分析：此技能会降低 agent 表现（delta: {delta}）。
-  直接提问 LLM 能获得更好的结果。
+✗ FAIL (score: {score}/100)
+  Comparative analysis: this skill degrades agent performance (delta: {delta}).
+  Prompting the LLM directly produces better results.
 ```
-English: `✗ FAIL (score: {score}/100) — Comparative analysis: this skill degrades agent performance (delta: {delta}). Prompting the LLM directly produces better results.`
 
 Present the user with a choice:
 ```
-  [ 移除此技能 / 尝试修复 / 保留 ]
+  [ Remove this skill / Attempt to fix / Keep ]
 ```
-English: `[ Remove this skill / Attempt to fix / Keep ]`
 
 3. **Check D5 marginal + D6 low** (D5 delta < 0.1 AND D6 <= 2):
 ```
-✗ FAIL（得分：{score}/100）
-  比较价值有限（delta: {delta}），独特性极低（{D6_score}/10）。
-  LLM 的原生能力已覆盖此技能的用途。
+✗ FAIL (score: {score}/100)
+  Marginal comparative value (delta: {delta}) and very low uniqueness ({D6_score}/10).
+  The LLM's native capabilities already cover this skill's purpose.
 ```
-English: `✗ FAIL (score: {score}/100) — Marginal comparative value (delta: {delta}) and very low uniqueness ({D6_score}/10). The LLM's native capabilities already cover this skill's purpose.`
 
 Present the user with a choice:
 ```
-  [ 移除此技能 / 尝试修复 / 保留 ]
+  [ Remove this skill / Attempt to fix / Keep ]
 ```
-English: `[ Remove this skill / Attempt to fix / Keep ]`
 
 4. **Check D6 high overlap** (D6 similar_skills has entry with overlap > 60% AND that skill scores higher):
 ```
-✗ FAIL（得分：{score}/100）
-  独特性分析发现更优替代：{similar_skill_name}（重叠度 {overlap}%，评分 {their_score}）。
+✗ FAIL (score: {score}/100)
+  Found a better alternative: {similar_skill_name} ({overlap}% overlap, score: {their_score}).
 ```
-English: `✗ FAIL (score: {score}/100) — Found a better alternative: {similar_skill_name} ({overlap}% overlap, score: {their_score}).`
 
 Present the user with a choice:
 ```
-  [ 合并到已有技能 / 安装替代技能 / 保留当前 ]
+  [ Merge into existing skill / Install alternative / Keep current ]
 ```
-English: `[ Merge into existing skill / Install alternative / Keep current ]`
 
-Note: "合并到已有技能" maps to `/eval-merge` (executable). "安装替代技能" maps to `claude install {similar_skill_name}` (suggestion only, user must run independently).
+Note: "Merge into existing skill" maps to `/eval-merge` (executable). "Install alternative" maps to `claude install {similar_skill_name}` (suggestion only, user must run independently).
 
 5. **Check rebuild threshold** (4+ dimensions scored <= 2, OR D3 has 5+ Critical findings):
 ```
-✗ FAIL（得分：{score}/100）
-  存在过多根本性问题（{N} 个维度得分 ≤ 2），无法通过渐进式改进解决。
+✗ FAIL (score: {score}/100)
+  Too many fundamental issues ({N} dimensions scored ≤ 2) for incremental improvement.
 ```
-English: `✗ FAIL (score: {score}/100) — Too many fundamental issues ({N} dimensions scored ≤ 2) for incremental improvement.`
 
 Present the user with a choice:
 ```
-  [ 寻找替代技能 / 从头重建 / 移除 ]
+  [ Find an alternative skill / Rebuild from scratch / Remove ]
 ```
-English: `[ Find an alternative skill / Rebuild from scratch / Remove ]`
 
 Note: All three options are suggestions only — the user must execute them independently.
 
 6. **Check D3 gate failure** (D3 pass = false, but skill has value):
 ```
-✗ FAIL（得分：{score}/100）——安全门控失败
-  {N} 个严重安全问题必须首先修复。
+✗ FAIL (score: {score}/100) — Security gate failure
+  {N} critical security finding(s) must be fixed first.
 ```
-English: `✗ FAIL (score: {score}/100) — Security gate failure. {N} critical security finding(s) must be fixed first.`
 
 Present the user with a choice:
 ```
-  [ 修复安全问题 / 查看详情 ]
+  [ Fix security issues / View details ]
 ```
-English: `[ Fix security issues / View details ]`
 
 7. **Default FAIL** (has value, fixable):
 ```
-✗ FAIL（得分：{score}/100）
-  最弱维度：{维度名称}（{Dx_score}/10）
+✗ FAIL (score: {score}/100)
+  Weakest dimension: {Dimension name} ({Dx_score}/10)
 ```
-English: `✗ FAIL (score: {score}/100) — Weakest dimension: {Dimension name} ({Dx_score}/10).`
 
 Present the user with a choice:
 ```
-  预计 {N} 轮可达到 PASS。[ 开始改进（推荐）/ 跳过 ]
+  Estimated {N} rounds to reach PASS.
+  [ Start improving (recommended) / Skip ]
 ```
-English: `Estimated {N} rounds to reach PASS. [ Start improving (recommended) / Skip ]`
 
 Estimate rounds as: count of dimensions scoring below 5, minimum 1, maximum 5.
 
