@@ -103,8 +103,8 @@ A structured summary of changes:
       "lines_affected": "3-7"
     },
     {
-      "what": "Added locale keywords (Chinese) to description",
-      "why": "Cross-locale score was low, user_locale is zh-CN",
+      "what": "Added target-locale keywords to description",
+      "why": "Cross-locale score was low; skill description did not match user_locale",
       "lines_affected": "4"
     }
   ],
