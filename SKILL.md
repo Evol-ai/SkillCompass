@@ -39,90 +39,9 @@ You are **SkillCompass**, a skill quality and management tool for Claude Code. Y
 
 ## Post-Install Onboarding
 
-**Triggered by SessionStart hook.** The hook compares the current SkillCompass version against the last recorded version. If they differ (first install, reinstall, or update), it injects a message into your context. When you see "run the Post-Install Onboarding" in your context, execute the steps below on the user's first interaction. Do not wait for a command.
+**Triggered by SessionStart hook.** `hooks/scripts/session-tracker.js` compares the current SkillCompass version against `.skill-compass/cc/last-version`. If they differ (first install, reinstall, or update), the hook injects a context message asking Claude to run the Post-Install Onboarding on the user's first interaction.
 
-### Step 1: Introduce
-
-```
-🧭 SkillCompass
-
-评测 skill 质量，找到最薄弱的环节，定向改进。
-同时追踪使用情况，帮你发现闲置或有风险的 skill。
-```
-EN: "Evaluate skill quality, find the weakest area, and improve it. Also tracks usage to help you spot idle or risky skills."
-
-### Step 2: Quick Scan (automatic, no permission needed)
-
-Silently run skill discovery (scan immediate children `*/SKILL.md` in each skill root — same as `/setup` Step 3, do NOT recurse) and D1+D2+D3 quick scan on all discovered skills. Save `setup-state.json`. Then show results:
-
-If issues found:
-```
-正在扫描已安装的 skill...
-
-发现 {N} 个 skill{，包括 M 个集合 if any}。
-{K} 个有安全或结构风险，其余通过快检 ✓
-
-[查看有风险的 skill / 继续]
-```
-
-If all clean:
-```
-正在扫描已安装的 skill...
-
-发现 {N} 个 skill{，包括 M 个集合 if any}，全部通过快检 ✓
-
-[继续]
-```
-
-### Step 3: StatusLine Configuration
-
-Check if `~/.claude/settings.json` already has a `statusLine` configured.
-
-If NO existing statusLine:
-```
-SkillCompass 会自动追踪 skill 使用情况。
-有建议时，底部会显示 🧭 N pending，输入 /skillcompass 查看。
-
-[启用底部提示 🧭 / 跳过]
-```
-
-If user chooses 启用, offer two modes:
-```
-[极简模式 — 仅 🧭 提示 / 完整 HUD — 含模型、上下文等信息]
-```
-
-- **极简模式**: Write statusLine config to `~/.claude/settings.json` pointing to `scripts/hud-extra.js`
-- **完整 HUD**: Check for claude-hud, configure `--extra-cmd`, or fall back to 极简
-- **跳过**: Do nothing
-
-If YES existing statusLine: skip silently.
-
-### Step 4: Finish
-
-```
-✓ 设置完成。SkillCompass 在后台工作：
-  · 追踪 skill 使用频率
-  · 发现闲置或有问题的 skill
-  · 有建议时底部 🧭 提示
-
-随时输入 /skillcompass 查看和管理。
-```
-
-After displaying the finish message, write the current version to the version tracking file so the onboarding won't trigger again next session:
-
-```bash
-node -e "
-const fs = require('fs');
-const path = require('path');
-const baseDir = process.env.CLAUDE_PLUGIN_ROOT || '.';
-const vFile = path.join(baseDir, '.skill-compass', 'cc', 'last-version');
-const pkg = JSON.parse(fs.readFileSync(path.join(baseDir, 'package.json'), 'utf-8'));
-fs.mkdirSync(path.dirname(vFile), { recursive: true });
-fs.writeFileSync(vFile, pkg.version);
-"
-```
-
-**After onboarding, do NOT show the inbox view. The user was not asking for inbox — they were just starting a session. Return control to whatever the user intended to do.**
+When you see that message, use the **Read** tool to load `{baseDir}/commands/post-install-onboarding.md` and follow it exactly. Do not wait for a slash command.
 
 ---
 
@@ -155,18 +74,18 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 
 | Command | File | Purpose |
 |---------|------|---------|
-| **/skillcompass** | `commands/skill-compass.md` | **唯一主入口** — 智能响应：有建议时展示建议，无建议时展示摘要，支持自然语言 |
+| **/skillcompass** | `commands/skill-compass.md` | **Sole main entry** — smart response: shows suggestions if any, otherwise a summary; accepts natural language |
 
-### Shortcut Aliases（不主动推广，知道的人可用）
+### Shortcut Aliases (not actively promoted; available for users who know them)
 
 | Command | Routes to | Purpose |
 |---------|-----------|---------|
-| /all-skills | `commands/skill-inbox.md` (arg: all) | 全部 skill 列表 |
-| /skill-report | `commands/skill-report.md` | Skill 生态报告 |
-| /skill-update | `commands/skill-update.md` | 检查和更新 skill |
-| /inbox | `commands/skill-inbox.md` | 建议视图（历史别名） |
-| /skill-compass | `commands/skill-compass.md` | /skillcompass 的连字符版本 |
-| /skill-inbox | `commands/skill-inbox.md` | /inbox 的完整名称 |
+| /all-skills | `commands/skill-inbox.md` (arg: all) | Full skill list |
+| /skill-report | `commands/skill-report.md` | Skill ecosystem report |
+| /skill-update | `commands/skill-update.md` | Check and update skills |
+| /inbox | `commands/skill-inbox.md` | Suggestion view (legacy alias) |
+| /skill-compass | `commands/skill-compass.md` | Hyphenated form of /skillcompass |
+| /skill-inbox | `commands/skill-inbox.md` | Full name of /inbox |
 
 ### Evaluation Commands
 
@@ -203,14 +122,16 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 
 3. **Smart entry (`/skillcompass` without arguments):**
    - Check `.skill-compass/setup-state.json`. If not exist → run Post-Install Onboarding (above).
-   - Read inbox pending count from `.skill-compass/cc/inbox.json`.
+   - If `inventory` is missing or empty → show `"No skills installed yet. Install some and rerun /skillcompass."` and stop.
+   - Read inbox pending count from `.skill-compass/cc/inbox.json`. If the file is missing, unreadable, or malformed → treat pending as `0` and continue.
    - If pending > 0 → load `{baseDir}/commands/skill-inbox.md` (show suggestions).
    - If pending = 0 → show one-line summary + choices:
      ```
-     🧭 {N} 个 skill · 最常用 {top_skill}({count}次/周) · {status}
-     [查看全部 skill / 查看报告 / 评测某个 skill]
+     🧭 {N} skills · Most used: {top_skill} ({count}/week) · {status}
+     [View all skills / View report / Evaluate a skill]
      ```
-     Where `{status}` is "全部健康 ✓" or "{K} 个有风险" based on latest scan.
+     Where `{status}` is "All healthy ✓" or "{K} at risk" based on latest scan.
+   - On any other unexpected read error → fall back to `/setup` for a clean re-initialization.
 
 4. For any command requiring setup state, check `.skill-compass/setup-state.json`. If not exist, auto-initialize (same as `/inbox` first-run behavior in `skill-inbox.md`).
 
@@ -246,52 +167,34 @@ From frontmatter, detect in priority order:
 
 ### Locale
 
-Detect the user's language from their first message in the session. All human-readable output (prompts, confirmations, error messages, recommendations) MUST match the detected language. Apply these rules:
+**All templates in SKILL.md and `commands/*.md` are written in English.** Detect the user's language from their first message in the session and translate at display time. Apply these rules:
 
-- Technical terms never translate: PASS, CAUTION, FAIL, SKILL.md, skill names, file paths
-- **Dimension label mapping** (canonical, all commands MUST reference this table):
+- Technical terms never translate: PASS, CAUTION, FAIL, SKILL.md, skill names, file paths, command names, category keys (Code/Dev, Deploy/Ops, Data/API, Productivity, Other)
+- **Canonical dimension labels** — all commands MUST use these exact English labels, then translate faithfully to the user's locale at display time:
 
-  | Code | 中文 | English |
-  |------|------|---------|
-  | D1 | 结构 | Structure |
-  | D2 | 触发 | Trigger |
-  | D3 | 安全 | Security |
-  | D4 | 功能 | Functional |
-  | D5 | 比较 | Comparative |
-  | D6 | 独特 | Uniqueness |
+  | Code | Label |
+  |------|-------|
+  | D1 | Structure |
+  | D2 | Trigger |
+  | D3 | Security |
+  | D4 | Functional |
+  | D5 | Comparative |
+  | D6 | Uniqueness |
 
-  In user-facing text: use `{中文名}` for Chinese locale, `{English名}` for English locale.
   In JSON output fields: always use `D1`-`D6` codes.
-  Do NOT invent alternative labels (e.g. "功能清晰度", "触发精准度" are wrong — use the table above).
-- JSON output fields (`schemas/eval-result.json`) stay in English always — only translate `details`, `summary`, `reason` text values
-- Category labels translate: Code/Dev→代码/开发, Deploy/Ops→部署/运维, Data/API→数据/接口, Productivity→效率工具, Other→其他
+  Do NOT invent alternative labels (e.g. "Structural clarity", "Trigger accuracy" are wrong — use the labels above). When translating, render the faithful equivalent of the canonical label in the target locale; do not paraphrase.
+- JSON output fields (`schemas/eval-result.json`) stay in English always — only translate `details`, `summary`, `reason` text values at display time.
 
 ### Interaction Conventions
 
-All commands follow these interaction rules:
-
-1. **Choices, not commands.** Never show raw command strings as recommendations. Instead offer action choices the user can select:
-   - YES: `[立即修复 / 跳过]` or `[Fix now / Skip]`
-   - NO: ~~`Recommended: /eval-improve`~~
-
-2. **Dual-channel interaction.** Support both structured choices AND natural language simultaneously:
-   - Provide `[选项A / 选项B / 选项C]` format for keyboard navigation (up/down keys to select)
-   - Also accept free-form text expressing the same intent (e.g. user types "帮我修一下" instead of selecting "立即修复")
-   - Never force either mode — both are always valid
-
-3. **Context in choices.** Don't just list actions — briefly explain what each does and why the user might want it. Example:
-   - YES: "最薄弱的是触发机制（5.5/10），优化后 skill 被正确调用的概率会提高。" then `[立即修复 / 跳过]`
-   - NO: `[立即修复 / 跳过]`（无上下文）
-
-4. **`--internal` flag.** When a command is called by another command (e.g. eval-improve calls eval-skill internally), pass `--internal`. Commands receiving `--internal` MUST skip all interactive prompts and return results only. This prevents nested prompt loops.
-
-5. **`--ci` guard.** All interactive choices are skipped when `--ci` is present. Output is pure JSON to stdout.
-
-6. **Flow continuity.** After every command completes, offer a relevant next step choice (unless `--internal` or `--ci`). The choices should naturally lead the user forward, not dump them back to a blank prompt.
-
-7. **Max 3 choices.** Never show more than 3 options at once. If more exist, show the top 3 by relevance.
-
-8. **Hooks are lightweight.** Hook scripts (PostToolUse, SessionStart, PreCompact, etc.) primarily do data collection and write to files (usage.jsonl, inbox.json). stderr output should be minimal — at most one short line for important state changes (e.g. "3 条新建议已生成"). Detailed information, interactive choices, and explanations belong in Claude's conversational responses, not in hook output.
+1. **Choices, not raw commands.** Offer action choices `[Fix now / Skip]`, never dump command strings like `Recommended: /eval-improve`.
+2. **Dual-channel.** Present `[Option A / Option B / Option C]` for keyboard selection, but also accept free-form natural language expressing the same intent in any language. Both modes are always valid.
+3. **Context before choice.** Briefly explain what each option does and why it matters (one sentence), then present the choices. Example: "Trigger is the weakest (5.5/10); fixing it will raise invocation accuracy." → `[Fix now / Skip]`.
+4. **`--internal` flag.** When a command invokes another command internally, pass `--internal`. The callee skips all interactive prompts and returns results only. Prevents nested prompt loops.
+5. **`--ci` guard.** `--ci` suppresses all interactive output. Stdout is pure JSON.
+6. **Flow continuity.** After every command completes (unless `--internal` or `--ci`), offer a relevant next-step choice. Never leave the user at a blank prompt.
+7. **Max 3 choices.** Show at most 3 options at once; pick the top 3 by relevance.
+8. **Hooks are lightweight.** Hook scripts collect data and write files. stderr output is minimal — at most one short status line. Detailed info, interactive choices, and explanations belong in Claude's conversational responses, not hook output.
 
 ### First-Run Guidance
 
@@ -299,18 +202,18 @@ When setup completes for the first time (no previous `setup-state.json` existed)
 
 ```
 Discovery flow:
-  1. Show one-line summary: "{N} 个 skill（Code/Dev: {n}, Productivity: {n}, ...）"
+  1. Show one-line summary: "{N} skills (Code/Dev: {n}, Productivity: {n}, ...)"
   2. Run Quick Scan D1+D2+D3 on all skills
-  3. Show context budget one-liner: "上下文占用 {X} KB / 80 KB（{pct}%）"
+  3. Show context budget one-liner: "Context usage: {X} KB / 80 KB ({pct}%)"
   4. Smart guidance — show ONLY the first matching condition:
 
      Condition                          Guidance
-     ─────────────────────────────────  ────────────────────────────
-     Has high-risk skill (any D ≤ 4)    Surface risky skills + offer [评测修复 / 稍后处理]
-     Context > 60%                      "上下文使用较高" + offer [查看哪些可清理 → /skill-inbox all]
-     Skill count > 8                    "skill 较多" + offer [浏览整理 → /skill-inbox all]
-     Skill count 3-8, all healthy       "一切就绪 ✓ 有建议时通过 /skill-inbox 通知"
-     Skill count 1-2                    "可直接使用" + offer [了解质量 → /eval-skill {name}]
+     ─────────────────────────────────  ─────────────────────────────────────────────
+     Has high-risk skill (any D ≤ 4)    Surface risky skills + offer [Evaluate & fix / Later]
+     Context > 60%                      "Context usage is high" + offer [See what can be cleaned → /skill-inbox all]
+     Skill count > 8                    "Many skills installed" + offer [Browse → /skill-inbox all]
+     Skill count 3-8, all healthy       "All set ✓ You'll be notified via /skill-inbox when suggestions arrive"
+     Skill count 1-2                    "Ready to use" + offer [Check quality → /eval-skill {name}]
 ```
 
 Do NOT show a list of all commands. Do NOT show the full skill inventory (that's `/skill-inbox all`'s job).

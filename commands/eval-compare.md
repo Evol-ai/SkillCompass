@@ -1,7 +1,6 @@
 # /eval-compare — Version Comparison
 
-> **Locale**: 所有用户可见文本跟随会话语言。运行时默认英文；若宿主提供 locale，或检测到用户使用受支持的其他语言，则切换到对应语言。本文件中的中文示例仅用于说明。维度标签见 SKILL.md。
-> EN: `> **Locale**: All user-facing text follows session language. Runtime defaults to English and switches to the host-provided locale or detected supported user language when available. Chinese examples in this spec are illustrative only. Dimension labels: see SKILL.md.`
+> **Locale**: All templates in this spec are written in English. Detect the user's language from the session and translate user-facing text at display time per SKILL.md's Global UX Rules. Dimension labels: see the canonical table in SKILL.md.
 
 ## Arguments
 
@@ -18,13 +17,13 @@ For each argument:
 - If it's a `name@version` identifier: look up `.skill-compass/{name}/snapshots/{version}.md` using the **Read** tool.
 - If version not found: output `"Version not found: {identifier}"` and stop.
 
-**Cross-skill check:** If both arguments use `name@version` syntax and the skill names differ, warn in the session locale — for example in Chinese: `"正在对比不同的 skill（{name_a} 与 {name_b}），结果可能缺乏参考意义。"` — then present the choice:
+**Cross-skill check:** If both arguments use `name@version` syntax and the skill names differ, warn the user that they are comparing different skills ({name_a} vs {name_b}) and the result may lack meaningful reference value, then present the choice:
 
 ```
-[继续对比 / 取消]
+[Continue comparing / Cancel]
 ```
 
-If the user chooses 取消 (or the equivalent in the session locale), stop.
+If the user chooses Cancel, stop.
 
 ### Step 2: Check Cached Results
 
@@ -35,21 +34,21 @@ If not: run eval-skill flow on the version to generate fresh results.
 
 ### Step 3: Compare
 
-Generate a side-by-side comparison. Dimension names in the table header follow the session locale (English defaults shown; Chinese equivalents in parentheses):
+Generate a side-by-side comparison:
 
 ```
 Version Comparison: sql-optimizer
-| 维度 / Dimension          | v1.0.0 | v1.0.0-evo.2 | 变化 / Delta |
-|---------------------------|--------|--------------|--------------|
-| D1 结构 Structure         |      6 |            7 | ↑ +1         |
-| D2 触发 Trigger           |      3 |            6 | ↑ +3 *       |
-| D3 安全 Security          |      2 |            7 | ↑ +5 *       |
-| D4 功能 Functional        |      4 |            4 | → 0          |
-| D5 对比 Comparative       |      3 |            3 | → 0          |
-| D6 独特 Uniqueness        |      7 |            7 | → 0          |
-|---------------------------|--------|--------------|--------------|
-| 总分 Overall              |     38 |           52 | ↑ +14        |
-| 结论 Verdict              |   FAIL |      CAUTION |              |
+| Dimension       | v1.0.0 | v1.0.0-evo.2 | Delta  |
+|-----------------|--------|--------------|--------|
+| D1 Structure    |      6 |            7 | ↑ +1   |
+| D2 Trigger      |      3 |            6 | ↑ +3 * |
+| D3 Security     |      2 |            7 | ↑ +5 * |
+| D4 Functional   |      4 |            4 | → 0    |
+| D5 Comparative  |      3 |            3 | → 0    |
+| D6 Uniqueness   |      7 |            7 | → 0    |
+|-----------------|--------|--------------|--------|
+| Overall         |     38 |           52 | ↑ +14  |
+| Verdict         |   FAIL |      CAUTION |        |
 ```
 
 Significance flag (*): delta > 2 points.
@@ -67,14 +66,14 @@ Output assessment as part of the report.
 
 Skip this step if `--internal` or `--ci` is set.
 
-After the report is printed, output a status line then present the following choice in the session locale (English defaults shown; Chinese equivalents in parentheses):
+After the report is printed, output a status line then present the following choice:
 
 ```
-✓ 对比完成。
-下一步 / Next step:
-[改进较弱版本（推荐）/ Improve weaker version (recommended)]  [回滚 / Roll back]  [完成 / Done]
+✓ Comparison complete.
+Next step:
+[Improve weaker version (recommended) / Roll back / Done]
 ```
 
-- **改进较弱版本（推荐）/ Improve weaker version (recommended)**: Identify the lower-scoring version, then run the eval-skill improvement flow targeting its weakest dimension.
-- **回滚 / Roll back**: Restore the previously active snapshot for the skill (confirms before acting).
-- **完成 / Done**: Exit with no further action.
+- **Improve weaker version (recommended)**: Identify the lower-scoring version, then run the eval-skill improvement flow targeting its weakest dimension.
+- **Roll back**: Restore the previously active snapshot for the skill (confirms before acting).
+- **Done**: Exit with no further action.

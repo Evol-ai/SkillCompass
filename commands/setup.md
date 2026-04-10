@@ -160,16 +160,16 @@ For any skill that is **newly discovered** in this run (not present in the previ
 
 For clean results:
 ```text
-[setup] 新 skill: {name}
+[setup] new skill: {name}
 [quick scan] D1={d1} D2={d2} D3={d3} ✓ Clean
 ```
 
 For issues found:
 ```text
-[setup] 新 skill: {name}
+[setup] new skill: {name}
 [quick scan] D1={d1} D2={d2} D3={d3} ⚠ {verdict}
   → {first finding description}
-  → 建议运行 /eval-skill {name} 做完整评测
+  → Recommend running /eval-skill {name} for a full evaluation
 ```
 
 3. Write scan results to `.skill-compass/cc/quick-scan-cache.json` via `QuickScanner`
@@ -198,12 +198,12 @@ Threshold rule: only surface findings users are likely to act on immediately. If
 Output a one-line inventory summary, quick scan results, context budget, and smart guidance:
 
 ```text
-{N} 个 skill（Code/Dev: {n}, Deploy/Ops: {n}, Data/API: {n}, Productivity: {n}, Other: {n}）
+{N} skills (Code/Dev: {n}, Deploy/Ops: {n}, Data/API: {n}, Productivity: {n}, Other: {n})
 
 Quick Scan:
   ✓ Clean: {n}  ⚠ Medium: {n}  ✗ High risk: {n}
 
-上下文占用 {X} KB / 80 KB（{pct}%）
+Context usage: {X} KB / 80 KB ({pct}%)
 
 {smart guidance — one choice based on first matching condition below}
 ```
@@ -225,26 +225,25 @@ After smart guidance, check if `~/.claude/settings.json` already has a `statusLi
 If NO existing statusLine:
 
 ```
-建议在底部状态栏启用提示，有 skill 建议时会显示 🧭 N pending。
-EN: Recommend enabling status bar notifications. When there are skill suggestions, 🧭 N pending will appear at the bottom.
+Recommend enabling status line notifications. When suggestions exist, 🧭 N pending will appear at the bottom of the screen.
 ```
 
 Then offer two choices:
 
 ```
-请选择状态栏样式：
+Choose a status line style:
 
-1. 极简模式 — 仅显示 SkillCompass 提示
+1. Minimal — shows only the SkillCompass hint
    🧭 3 pending
 
-2. 完整 HUD — 包含模型、上下文、Git 等信息（需要安装 claude-hud）
+2. Full HUD — model, context, Git info, and more (requires claude-hud)
    [Opus] │ my-project git:(main*) │ 🧭 3 pending
    Context █████░░░░░ 45% │ Usage ██░░░░░░░░ 25%
 
-[极简模式 / 完整 HUD / 跳过]
+[Minimal / Full HUD / Skip]
 ```
 
-- **极简模式**: Use the **Bash** tool to write to `~/.claude/settings.json`, adding the `statusLine` field:
+- **Minimal**: Use the **Bash** tool to write to `~/.claude/settings.json`, adding the `statusLine` field:
   ```json
   {
     "statusLine": {
@@ -254,11 +253,11 @@ Then offer two choices:
   }
   ```
   If the file already exists, merge the `statusLine` field without overwriting other settings.
-  After writing, confirm: "状态栏已启用 ✓ 输入 /inbox 查看建议，或直接问我"下面提示是什么"。"
+  After writing, confirm: "Status line enabled ✓ Type /inbox to view suggestions."
 
-- **完整 HUD**: Check if `claude-hud` is installed (`~/.claude/plugins/claude-hud/` exists). If yes, configure its `--extra-cmd` to point to `scripts/hud-extra.js`. If not installed, inform the user: "需要先安装 claude-hud：`/plugin install claude-hud`，安装后重新运行 /setup。" and fall back to 极简模式.
+- **Full HUD**: Check if `claude-hud` is installed (`~/.claude/plugins/claude-hud/` exists). If yes, configure its `--extra-cmd` to point to `scripts/hud-extra.js`. If not installed, inform the user: "claude-hud is required. Install with `/plugin install claude-hud`, then rerun /setup." and fall back to Minimal.
 
-- **跳过**: Do nothing, no statusLine configuration.
+- **Skip**: Do nothing, no statusLine configuration.
 
 If YES existing statusLine (user already has one configured):
 Skip silently. Do not overwrite the user's existing configuration.
@@ -266,14 +265,14 @@ Skip silently. Do not overwrite the user's existing configuration.
 **Subsequent runs (previous snapshot exists):**
 
 Compute changes since the last snapshot:
-- `新增`: skills not present last time
-- `移除`: skills no longer present
-- `更新`: same skill, version/path/description hash changed
+- `added`: skills not present last time
+- `removed`: skills no longer present
+- `updated`: same skill, version/path/description hash changed
 
 Output:
 
 ```text
-{N} 个 skill · 新增 {a} · 移除 {r} · 更新 {u}
+{N} skills · added {a} · removed {r} · updated {u}
 ```
 
 If new skills were found, show the quick scan results for those new skills only (from Step 4.5).
@@ -281,7 +280,7 @@ If new skills were found, show the quick scan results for those new skills only 
 If no changes are detected, output:
 
 ```text
-skill 清单无变化 ✓
+Skill inventory unchanged ✓
 ```
 
 ## Step 7: Auto-Trigger Exit Path

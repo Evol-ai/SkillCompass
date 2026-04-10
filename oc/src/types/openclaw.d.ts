@@ -122,6 +122,6 @@ export interface UserConfig {
   quietHoursStart?: number; // 0-23, default 22
   quietHoursEnd?: number;   // 0-23, default 9
   dailyPushLimit?: number;  // default 3
-  locale?: string;          // optional explicit locale, e.g. en-US / zh-CN
+  locale?: string;          // optional explicit BCP 47 locale tag, e.g. en-US, ja-JP, es-ES
   userLocale?: string;      // host-provided locale alias
 }
