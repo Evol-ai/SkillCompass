@@ -65,7 +65,7 @@ if (mode === 'start') {
     if (needsOnboarding) {
       // First install, reinstall, or version update — trigger onboarding
       contextMessage = `SkillCompass ${currentVersion} ${lastVersion ? `(updated from ${lastVersion})` : '(first install)'}. `
-        + 'On the user\'s first message, run the Post-Install Onboarding from SKILL.md.';
+        + 'On the user\'s first message, run the Post-Install Onboarding: use the Read tool to load commands/post-install-onboarding.md and follow it exactly.';
     } else {
       // Normal session — check inbox state
       let inbox = { suggestions: [], skill_cache: [], meta: { last_digest_at: null } };

@@ -39,89 +39,9 @@ You are **SkillCompass**, a skill quality and management tool for Claude Code. Y
 
 ## Post-Install Onboarding
 
-**Triggered by SessionStart hook.** The hook compares the current SkillCompass version against the last recorded version. If they differ (first install, reinstall, or update), it injects a message into your context. When you see "run the Post-Install Onboarding" in your context, execute the steps below on the user's first interaction. Do not wait for a command.
+**Triggered by SessionStart hook.** `hooks/scripts/session-tracker.js` compares the current SkillCompass version against `.skill-compass/cc/last-version`. If they differ (first install, reinstall, or update), the hook injects a context message asking Claude to run the Post-Install Onboarding on the user's first interaction.
 
-### Step 1: Introduce
-
-```
-🧭 SkillCompass
-
-Evaluate skill quality, find the weakest area, and improve it.
-Also tracks usage to help you spot idle or risky skills.
-```
-
-### Step 2: Quick Scan (automatic, no permission needed)
-
-Silently run skill discovery (scan immediate children `*/SKILL.md` in each skill root — same as `/setup` Step 3, do NOT recurse) and D1+D2+D3 quick scan on all discovered skills. Save `setup-state.json`. Then show results:
-
-If issues found:
-```
-Scanning installed skills...
-
-Found {N} skill(s){, including M collections if any}.
-{K} have security or structural risks; the rest passed the quick scan ✓
-
-[View risky skills / Continue]
-```
-
-If all clean:
-```
-Scanning installed skills...
-
-Found {N} skill(s){, including M collections if any}, all passed the quick scan ✓
-
-[Continue]
-```
-
-### Step 3: StatusLine Configuration
-
-Check if `~/.claude/settings.json` already has a `statusLine` configured.
-
-If NO existing statusLine:
-```
-SkillCompass tracks skill usage automatically.
-When suggestions exist, the status line shows 🧭 N pending — type /skillcompass to view.
-
-[Enable status line 🧭 / Skip]
-```
-
-If user chooses Enable, offer two modes:
-```
-[Minimal — just the 🧭 hint / Full HUD — model, context, and more]
-```
-
-- **Minimal**: Write statusLine config to `~/.claude/settings.json` pointing to `scripts/hud-extra.js`
-- **Full HUD**: Check for claude-hud, configure `--extra-cmd`, or fall back to Minimal
-- **Skip**: Do nothing
-
-If YES existing statusLine: skip silently.
-
-### Step 4: Finish
-
-```
-✓ Setup complete. SkillCompass runs in the background:
-  · Tracks skill usage frequency
-  · Surfaces idle or problematic skills
-  · Shows 🧭 in the status line when there are suggestions
-
-Type /skillcompass anytime to view and manage skills.
-```
-
-After displaying the finish message, write the current version to the version tracking file so the onboarding won't trigger again next session:
-
-```bash
-node -e "
-const fs = require('fs');
-const path = require('path');
-const baseDir = process.env.CLAUDE_PLUGIN_ROOT || '.';
-const vFile = path.join(baseDir, '.skill-compass', 'cc', 'last-version');
-const pkg = JSON.parse(fs.readFileSync(path.join(baseDir, 'package.json'), 'utf-8'));
-fs.mkdirSync(path.dirname(vFile), { recursive: true });
-fs.writeFileSync(vFile, pkg.version);
-"
-```
-
-**After onboarding, do NOT show the inbox view. The user was not asking for inbox — they were just starting a session. Return control to whatever the user intended to do.**
+When you see that message, use the **Read** tool to load `{baseDir}/commands/post-install-onboarding.md` and follow it exactly. Do not wait for a slash command.
 
 ---
 
@@ -202,7 +122,8 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 
 3. **Smart entry (`/skillcompass` without arguments):**
    - Check `.skill-compass/setup-state.json`. If not exist → run Post-Install Onboarding (above).
-   - Read inbox pending count from `.skill-compass/cc/inbox.json`.
+   - If `inventory` is missing or empty → show `"No skills installed yet. Install some and rerun /skillcompass."` and stop.
+   - Read inbox pending count from `.skill-compass/cc/inbox.json`. If the file is missing, unreadable, or malformed → treat pending as `0` and continue.
    - If pending > 0 → load `{baseDir}/commands/skill-inbox.md` (show suggestions).
    - If pending = 0 → show one-line summary + choices:
      ```
@@ -210,6 +131,7 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
      [View all skills / View report / Evaluate a skill]
      ```
      Where `{status}` is "All healthy ✓" or "{K} at risk" based on latest scan.
+   - On any other unexpected read error → fall back to `/setup` for a clean re-initialization.
 
 4. For any command requiring setup state, check `.skill-compass/setup-state.json`. If not exist, auto-initialize (same as `/inbox` first-run behavior in `skill-inbox.md`).
 
@@ -265,30 +187,14 @@ From frontmatter, detect in priority order:
 
 ### Interaction Conventions
 
-All commands follow these interaction rules:
-
-1. **Choices, not commands.** Never show raw command strings as recommendations. Instead offer action choices the user can select:
-   - YES: `[Fix now / Skip]`
-   - NO: ~~`Recommended: /eval-improve`~~
-
-2. **Dual-channel interaction.** Support both structured choices AND natural language simultaneously:
-   - Provide `[Option A / Option B / Option C]` format for keyboard navigation (up/down keys to select)
-   - Also accept free-form text expressing the same intent in any language — users may type the equivalent phrase in their own language instead of selecting the displayed option
-   - Never force either mode — both are always valid
-
-3. **Context in choices.** Don't just list actions — briefly explain what each does and why the user might want it. Example:
-   - YES: "The weakest dimension is Trigger (5.5/10); improving it will raise the odds the skill is invoked correctly." then `[Fix now / Skip]`
-   - NO: `[Fix now / Skip]` (no context)
-
-4. **`--internal` flag.** When a command is called by another command (e.g. eval-improve calls eval-skill internally), pass `--internal`. Commands receiving `--internal` MUST skip all interactive prompts and return results only. This prevents nested prompt loops.
-
-5. **`--ci` guard.** All interactive choices are skipped when `--ci` is present. Output is pure JSON to stdout.
-
-6. **Flow continuity.** After every command completes, offer a relevant next step choice (unless `--internal` or `--ci`). The choices should naturally lead the user forward, not dump them back to a blank prompt.
-
-7. **Max 3 choices.** Never show more than 3 options at once. If more exist, show the top 3 by relevance.
-
-8. **Hooks are lightweight.** Hook scripts (PostToolUse, SessionStart, PreCompact, etc.) primarily do data collection and write to files (usage.jsonl, inbox.json). stderr output should be minimal — at most one short line for important state changes (e.g. "3 new suggestions generated"). Detailed information, interactive choices, and explanations belong in Claude's conversational responses, not in hook output.
+1. **Choices, not raw commands.** Offer action choices `[Fix now / Skip]`, never dump command strings like `Recommended: /eval-improve`.
+2. **Dual-channel.** Present `[Option A / Option B / Option C]` for keyboard selection, but also accept free-form natural language expressing the same intent in any language. Both modes are always valid.
+3. **Context before choice.** Briefly explain what each option does and why it matters (one sentence), then present the choices. Example: "Trigger is the weakest (5.5/10); fixing it will raise invocation accuracy." → `[Fix now / Skip]`.
+4. **`--internal` flag.** When a command invokes another command internally, pass `--internal`. The callee skips all interactive prompts and returns results only. Prevents nested prompt loops.
+5. **`--ci` guard.** `--ci` suppresses all interactive output. Stdout is pure JSON.
+6. **Flow continuity.** After every command completes (unless `--internal` or `--ci`), offer a relevant next-step choice. Never leave the user at a blank prompt.
+7. **Max 3 choices.** Show at most 3 options at once; pick the top 3 by relevance.
+8. **Hooks are lightweight.** Hook scripts collect data and write files. stderr output is minimal — at most one short status line. Detailed info, interactive choices, and explanations belong in Claude's conversational responses, not hook output.
 
 ### First-Run Guidance
 
