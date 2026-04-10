@@ -1,7 +1,6 @@
 # /eval-merge — Three-Way Version Merge
 
-> **Locale**: 所有用户可见文本跟随会话语言。运行时默认英文；若宿主提供 locale，或检测到用户使用受支持的其他语言，则切换到对应语言。本文件中的中文示例仅用于说明。维度标签见 SKILL.md。
-> EN: `> **Locale**: All user-facing text follows session language. Runtime defaults to English and switches to the host-provided locale or detected supported user language when available. Chinese examples in this spec are illustrative only. Dimension labels: see SKILL.md.`
+> **Locale**: All templates in this spec are written in English. Detect the user's language from the session and translate user-facing text at display time per SKILL.md's Global UX Rules. Dimension labels: see the canonical table in SKILL.md.
 
 ## Arguments
 
@@ -62,16 +61,16 @@ If regression detected (any dimension dropped > 2 points):
 - Unless `--internal` or `--ci` is active, print a status line then present this choice:
 
   ```
-  ⚠ 合并后检测到回归。
-  检测到合并后评分下降，请选择：
-  › 回滚到合并前
-    保留合并结果
-    对比两个版本
+  ⚠ Post-merge regression detected.
+  The merged version scored lower than the pre-merge version. Choose:
+  › Rollback to pre-merge
+    Keep merged result
+    Compare the two versions
   ```
 
-  - **回滚到合并前**: restore SKILL.md from pre-merge snapshot and revert the manifest update. Confirm rollback completed.
-  - **保留合并结果**: keep the merged version as-is and continue. Note the regression in the audit log.
-  - **对比两个版本**: display a side-by-side diff of the pre-merge and merged versions for each regressed dimension, then re-present the choice above.
+  - **Rollback to pre-merge**: restore SKILL.md from pre-merge snapshot and revert the manifest update. Confirm rollback completed.
+  - **Keep merged result**: keep the merged version as-is and continue. Note the regression in the audit log.
+  - **Compare the two versions**: display a side-by-side diff of the pre-merge and merged versions for each regressed dimension, then re-present the choice above.
 
   If `--internal` or `--ci` is active: keep the merged result, log the regression, and continue without prompting.
 
@@ -80,13 +79,13 @@ If regression detected (any dimension dropped > 2 points):
 After the merge (and any regression handling) completes successfully, present the following choice unless `--internal` or `--ci` is active:
 
 ```
-✓ 合并完成。建议重新评测确认质量。
-接下来？
-› 重新评测（推荐）
-  完成
+✓ Merge complete. Recommend re-evaluating to confirm quality.
+Next step?
+› Re-evaluate (recommended)
+  Done
 ```
 
-- **重新评测（推荐）**: immediately run `/eval-skill <path> --scope full` on the merged version.
-- **完成**: exit the command and return control to the user.
+- **Re-evaluate (recommended)**: immediately run `/eval-skill <path> --scope full` on the merged version.
+- **Done**: exit the command and return control to the user.
 
 If `--internal` or `--ci` is active: exit silently after writing results.

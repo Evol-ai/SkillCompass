@@ -158,6 +158,7 @@ function createCleanOutput(outDir, options, version) {
     const ocReadmeTemplate = path.join(repoRoot, "oc", "README.clawhub.md");
     const ocUnsafeSharedFiles = [
       path.join(outDir, "lib", "update-checker.js"),
+      path.join(outDir, "lib", "git-skill-reader.js"),
     ];
     for (const unsafeFile of ocUnsafeSharedFiles) {
       if (fs.existsSync(unsafeFile)) {

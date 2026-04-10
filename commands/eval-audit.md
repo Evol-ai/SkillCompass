@@ -1,7 +1,6 @@
 # /eval-audit — Batch Skill Evaluation
 
-> **Locale**: 所有用户可见文本跟随会话语言。运行时默认英文；若宿主提供 locale，或检测到用户使用受支持的其他语言，则切换到对应语言。本文件中的中文示例仅用于说明。维度标签见 SKILL.md。
-> EN: `> **Locale**: All user-facing text follows session language. Runtime defaults to English and switches to the host-provided locale or detected supported user language when available. Chinese examples in this spec are illustrative only. Dimension labels: see SKILL.md.`
+> **Locale**: All templates in this spec are written in English. Detect the user's language from the session and translate user-facing text at display time per SKILL.md's Global UX Rules. Dimension labels: see the canonical table in SKILL.md.
 
 ## Arguments
 
@@ -22,13 +21,10 @@ Use the **Glob** tool to find all `**/SKILL.md` files recursively under the spec
 
 Exclude: `test-fixtures/`, `node_modules/`, `archive/`, `.git/`, `.skill-compass/`.
 
-If no SKILL.md files found: display a locale-appropriate message, then — unless `--internal` or `--ci` is set — offer:
+If no SKILL.md files found: display the message, then — unless `--internal` or `--ci` is set — offer:
 
 ```
-[locale: zh] 未在 {directory} 中找到 skill。
-  [运行 /setup 检查全局] [指定其他目录] [取消]
-
-[locale: en] No skills found in {directory}.
+No skills found in {directory}.
   [Run /setup to check global] [Specify another directory] [Cancel]
 ```
 
@@ -36,11 +32,10 @@ If `--internal` or `--ci`: output the error message only (no choices) and stop.
 
 ### Step 2: Evaluate Each Skill
 
-For each discovered SKILL.md, display locale-appropriate progress — unless `--internal` is set, in which case output minimal machine-readable progress only:
+For each discovered SKILL.md, display progress — unless `--internal` is set, in which case output minimal machine-readable progress only:
 
 ```
-[locale: zh] [{N}/{total}] 正在评测：{skill-name}...
-[locale: en] [{N}/{total}] Evaluating: {skill-name}...
+[{N}/{total}] Evaluating: {skill-name}...
 ```
 
 - **Full mode** (default): use the **Read** tool to load `{baseDir}/commands/eval-skill.md` and follow its evaluation flow for each skill, passing `--internal`.
@@ -58,20 +53,9 @@ Collect all results into an array. Compute summary counts:
 
 Sort results worst-first (lowest overall_score at top).
 
-Display locale-appropriate summary table — unless `--internal` is set:
+Display the summary table — unless `--internal` is set:
 
 ```
-[locale: zh]
-Skill 批量评测汇总：
-| # | Skill           | 分数  | 结果    | 最弱维度   |
-|---|-----------------|-------|---------|------------|
-| 1 | deploy-helper   |    28 | FAIL    | 安全       |
-| 2 | my-formatter    |    55 | CAUTION | 触发       |
-| 3 | sql-optimizer   |    71 | PASS    | 结构       |
-
-总计：3 个 skill | 1 PASS | 1 CAUTION | 1 FAIL
-
-[locale: en]
 Skill Audit Summary:
 | # | Skill           | Score | Verdict | Weakest    |
 |---|-----------------|-------|---------|------------|
@@ -88,37 +72,21 @@ After the summary — unless `--internal` or `--ci` is set — display a status 
 
 If all skills passed:
 ```
-[locale: zh] ✓ 批量评测完成：{N} 个 skill，{PASS} 个通过
-  [查看详细报告] [完成]
-
-[locale: en] ✓ Batch evaluation complete: {N} skills, {PASS} passed
+✓ Batch evaluation complete: {N} skills, {PASS} passed
   [View detailed report] [Done]
 ```
 
 If any skills failed:
 ```
-[locale: zh] ⚠ 批量评测完成：{N} 个 skill，{FAIL} 个未通过
-  [查看未通过的 skill / 结束]
-
-[locale: en] ⚠ Batch evaluation complete: {N} skills, {FAIL} failed
+⚠ Batch evaluation complete: {N} skills, {FAIL} failed
   [View failed skills / Done]
 ```
 
 ### Security-Only Mode Output
 
-When `--security-only` is active, each result contains only the D3 security evaluation (conforming to the security portion of `schemas/eval-result.json`). The summary table replaces Score/Verdict/Weakest with D3-specific columns. Display locale-appropriate text — unless `--internal` is set:
+When `--security-only` is active, each result contains only the D3 security evaluation (conforming to the security portion of `schemas/eval-result.json`). The summary table replaces Score/Verdict/Weakest with D3-specific columns. Display — unless `--internal` is set:
 
 ```
-[locale: zh]
-安全审计汇总：
-| # | Skill           | D3 安全分 | 通过   | 严重     | 高危 |
-|---|-----------------|-----------|--------|----------|------|
-| 1 | deploy-helper   |         0 | 否     |        2 |    1 |
-| 2 | my-formatter    |         8 | 是     |        0 |    0 |
-
-总计：2 个 skill | 1 通过 | 1 失败
-
-[locale: en]
 Security Audit Summary:
 | # | Skill           | D3 Score | Pass  | Critical | High |
 |---|-----------------|----------|-------|----------|------|
@@ -132,13 +100,10 @@ Total: 2 skills | 1 pass | 1 fail
 
 Only when `--fix` is passed. Requires `--budget`.
 
-If `--fix` is passed without `--budget`: display a locale-appropriate error and stop. Do not show raw command strings:
+If `--fix` is passed without `--budget`: display an error and stop. Do not show raw command strings:
 
 ```
-[locale: zh] 错误：--fix 需要 --budget <数字> 来限制 token 消耗。
-  示例预算：200,000 token。请重新运行并加上 --budget 参数。
-
-[locale: en] Error: --fix requires --budget <number> to limit token consumption.
+Error: --fix requires --budget <number> to limit token consumption.
   Example budget: 200,000 tokens. Re-run and add the --budget argument.
 ```
 
@@ -149,45 +114,31 @@ If `--fix` is passed without `--budget`: display a locale-appropriate error and 
 3. For each skill to fix:
    a. **Budget check:** if `tokens_spent + 60000 > budget`, do NOT silently skip. Unless `--internal` or `--ci` is set, offer:
       ```
-      [locale: zh] 预算已用尽（已用 {tokens_spent} / 上限 {budget} token）。
-        [增加预算继续] [停止]
-
-      [locale: en] Budget exhausted ({tokens_spent}/{budget} tokens used).
+      Budget exhausted ({tokens_spent}/{budget} tokens used).
         [Increase budget and continue] [Stop]
       ```
       If `--internal` or `--ci`: output a machine-readable budget-exhausted message and break.
-   b. Display locale-appropriate fix progress — unless `--internal` is set:
+   b. Display fix progress — unless `--internal` is set:
       ```
-      [locale: zh] [{i}/{total_to_fix}] 正在改进 {skill-name}：目标维度 {weakest_dimension_label}（{score}/10）...
-      [locale: en] [{i}/{total_to_fix}] Improving {skill-name}: targeting {weakest_dimension_label} ({score}/10)...
+      [{i}/{total_to_fix}] Improving {skill-name}: targeting {weakest_dimension_label} ({score}/10)...
       ```
-      Dimension label uses translated form (e.g., D4→功能/Functional) matching detected locale.
+      `{weakest_dimension_label}` uses the canonical Dimension label from SKILL.md.
    c. Unless `--internal` or `--ci` is set: show the proposed diff and **ask user to confirm** before writing. If declined, skip this skill.
    d. Run eval-improve flow (load `{baseDir}/commands/eval-improve.md`) for this skill, passing `--internal`.
    e. Update `tokens_spent += 60000`.
-   f. Display locale-appropriate result — unless `--internal` is set:
+   f. Display result — unless `--internal` is set:
       ```
-      [locale: zh] {skill-name}：{old_score} → {new_score}（{old_verdict} → {new_verdict}）
-      [locale: en] {skill-name}: {old_score} → {new_score} ({old_verdict} → {new_verdict})
+      {skill-name}: {old_score} → {new_score} ({old_verdict} → {new_verdict})
       ```
    g. Unless `--internal` or `--ci` is set: after each skill fix, offer:
       ```
-      [locale: zh] [继续] [停止]
-      [locale: en] [Continue] [Stop]
+      [Continue] [Stop]
       ```
       If the user chooses Stop, break out of the fix loop.
 
-4. Display locale-appropriate fix summary — unless `--internal` is set:
+4. Display fix summary — unless `--internal` is set:
 
 ```
-[locale: zh]
-修复汇总：
-  已改进：2 个 skill
-  已跳过（预算）：1 个 skill
-  已跳过（用户拒绝）：0 个 skill
-  预估 token 消耗：~120K
-
-[locale: en]
 Fix Summary:
   Improved: 2 skills
   Skipped (budget): 1 skill

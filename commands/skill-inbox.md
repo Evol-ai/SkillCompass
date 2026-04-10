@@ -1,4 +1,4 @@
-# /skill-inbox — Skill 建议收件箱
+# /skill-inbox — Skill Suggestion Inbox
 
 Unified entry point for managing skill suggestions and browsing all installed skills. Provides two views: suggestions (default) and all skills.
 
@@ -17,8 +17,8 @@ Unified entry point for managing skill suggestions and browsing all installed sk
    4. Show a brief summary:
 
       ```
-      发现 {N} 个 skill{, M 个有安全风险 if any high risk}。
-      使用数据会自动积累，有建议时通知你。
+      Found {N} skill(s){, M with security risks if any high risk}.
+      Usage data accumulates automatically; you'll be notified when suggestions appear.
       ```
 
    Then check for statusLine configuration (see `setup.md` StatusLine integration section). If no statusLine is configured, offer the choice.
@@ -81,7 +81,7 @@ Compute:
 Always display:
 
 ```
-Skill Inbox — 建议 ({pendingCount})  |  全部 skill ({totalSkills})
+Skill Inbox — Suggestions ({pendingCount})  |  All skills ({totalSkills})
 ```
 
 ## Step 3: Route to View
@@ -100,68 +100,68 @@ Show up to 3 suggestions at a time. Present each conversationally — explain wh
 Example output:
 
 ```
-Skill Inbox — 建议 (3)  |  全部 skill (12)
+Skill Inbox — Suggestions (3)  |  All skills (12)
 
-1. old-formatter — 安装 30 天，从未被调用过
-   占 7.1KB 上下文但没有产出价值，清理后可释放空间。
+1. old-formatter — installed 30 days ago, never invoked
+   Uses 7.1KB of context without producing value; cleaning it up frees space.
 
-2. k8s-deploy — 前两周使用 8 次，最近 7 天突然停用
-   可能找到了替代方案，或遇到了问题。
+2. k8s-deploy — used 8 times in the prior two weeks, suddenly stopped in the last 7 days
+   May indicate the user found an alternative or hit a problem.
 
-3. translate — 仅使用过 1 次（3月15日），之后再未调用
-   可能是一次性需求。
+3. translate — used only once (March 15), never again
+   May have been a one-off need.
 ```
 
-For state-changing actions, present keyboard-selectable choices per suggestion. The user can also respond with natural language for non-state-changing queries (e.g. "看看全部 skill"、"哪些没用过"), but state changes (pin/delete/mute/snooze) should go through explicit choice confirmation.
+For state-changing actions, present keyboard-selectable choices per suggestion. The user can also respond with natural language for non-state-changing queries (e.g. "show all skills", "which haven't been used"), but state changes (pin/delete/mute/snooze) should go through explicit choice confirmation.
 
 After the list, prompt:
 
 ```
-选择一个建议查看操作选项，或直接告诉我你想怎么处理。
+Choose a suggestion to see action options, or tell me how you'd like to handle it.
 ```
 
 When user selects a suggestion (by number or by name), show the action choices as keyboard-selectable options:
 
 ```
-old-formatter — 安装 30 天，从未被调用过
+old-formatter — installed 30 days ago, never invoked
 
-  [保留（不再提醒清理）]
-  [评估质量]
-  [删除]
-  [稍后提醒（14 天后）]
-  [查看详情]
+  [Pin (stop suggesting cleanup)]
+  [Evaluate quality]
+  [Delete]
+  [Remind later (in 14 days)]
+  [View details]
 
 ```
 
-"查看详情" expands to show rule_id, evidence, cooldown info — only when user explicitly asks.
+"View details" expands to show rule_id, evidence, cooldown info — only when user explicitly asks.
 
 ### If no suggestions
 
 Output:
 
 ```
-全部处理完毕 ✓ skill 使用数据在自动积累中。
+All suggestions processed ✓ Skill usage data is accumulating.
 
-[查看全部 skill / 查看 skill 报告 / 结束]
+[View all skills / View skill report / Done]
 ```
 
 Stop.
 
 ### Handle Actions
 
-Wait for the user's input in the form `{n} {action}`. Parse the suggestion number and action keyword (accept both Chinese and English forms per the table below).
+Wait for the user's input in the form `{n} {action}`. Parse the suggestion number and action keyword per the table below.
 
 For each action, execute the corresponding store methods via the **Bash** tool, then print the confirmation message.
 
-| Action keyword | Chinese | What to execute | Confirmation output |
-|----------------|---------|-----------------|---------------------|
-| pin / 保留 | 保留 | `store.pinSkill(skillName)`, `store.accept(sugId)`, `store.resolve(sugId)` | `✓ 已保留 {name}，Hygiene 类规则不再提醒` |
-| eval / 评估 | 评估 | `store.accept(sugId)` | `✓ 已加入评估队列。运行 /eval-skill {name}` |
-| improve / 优化 | 优化 | `store.accept(sugId)` | `✓ 已加入优化队列。运行 /eval-improve {name}` |
-| delete / 删除 | 删除 | `store.accept(sugId)` | `✓ 已标记待删除。确认删除请手动移除 SKILL.md 文件` |
-| snooze / 稍后提醒 | 稍后提醒 | `store.snooze(sugId, 14)` | `✓ 已延后 14 天提醒` |
-| dismiss / 忽略 | 忽略 | `store.dismiss(sugId, cooldownDays)` | `✓ 已忽略，一段时间内不再提醒此建议` |
-| mute / 不再关注 | 不再关注 | `store.disableSkill(skillName)`, `store.accept(sugId)`, `store.resolve(sugId)` | `✓ 已标记为不再关注。SkillCompass 不再为此 skill 生成建议，但不影响 skill 本身的运行。` |
+| Action keyword | What to execute | Confirmation output |
+|----------------|-----------------|---------------------|
+| pin | `store.pinSkill(skillName)`, `store.accept(sugId)`, `store.resolve(sugId)` | `✓ Pinned {name}; Hygiene rules will no longer suggest cleanup.` |
+| eval | `store.accept(sugId)` | `✓ Added to eval queue. Run /eval-skill {name}.` |
+| improve | `store.accept(sugId)` | `✓ Added to improve queue. Run /eval-improve {name}.` |
+| delete | `store.accept(sugId)` | `✓ Marked for deletion. To confirm deletion, manually remove the SKILL.md file.` |
+| snooze | `store.snooze(sugId, 14)` | `✓ Snoozed for 14 days.` |
+| dismiss | `store.dismiss(sugId, cooldownDays)` | `✓ Dismissed; this suggestion is suppressed for a while.` |
+| mute | `store.disableSkill(skillName)`, `store.accept(sugId)`, `store.resolve(sugId)` | `✓ Marked as no longer tracked. SkillCompass will stop generating suggestions for this skill, but will not affect the skill's own execution.` |
 
 <!-- Internal: cooldown days by rule (doubled after dismiss):
 R1=14, R2=21, R4=28, R5=14, R6=14, R7=28, R8=28, R9=14, R10=28, R11=14
@@ -181,12 +181,12 @@ const store = new InboxStore('cc', baseDir);
 After printing the action confirmation, check remaining pending suggestions:
 - If there are remaining pending suggestions, show:
   ```
-  还有 {N} 条建议。[继续处理 / 结束]
+  {N} more suggestion(s) remaining. [Continue / Done]
   ```
 - If no remaining suggestions, show:
   ```
-  全部处理完毕 ✓
-  [查看全部 skill / 查看 skill 报告 / 结束]
+  All suggestions processed ✓
+  [View all skills / View skill report / Done]
   ```
 
 Then re-display the next pending suggestions (Step 4 again, paginating forward). If all suggestions for the current batch of 3 have been acted on and more remain, show the next batch. If none remain, show the empty state message.
@@ -196,10 +196,10 @@ Then re-display the next pending suggestions (Step 4 again, paginating forward).
 Read the `inventory` array from setup-state.json. For each skill entry, determine its status:
 
 **Activity** — based on usage data from `lib/usage-reader.js`:
-- `活跃(N次/周)`: `use_count_7d > 0` — show the 7-day count
-- `活跃(N次/2周)`: `use_count_7d = 0` but `use_count_14d > 0` — show the 14-day count
-- `闲置`: `ever_used` is true but `use_count_14d = 0`
-- `从未使用`: `ever_used` is false
+- `active(N/week)`: `use_count_7d > 0` — show the 7-day count
+- `active(N/2wk)`: `use_count_7d = 0` but `use_count_14d > 0` — show the 14-day count
+- `idle`: `ever_used` is true but `use_count_14d = 0`
+- `never_used`: `ever_used` is false
 
 Load usage data by running via the **Bash** tool:
 
@@ -213,13 +213,13 @@ console.log(JSON.stringify(allSignals));
 "
 ```
 
-`allSignals` is a map keyed by skill name. If the script fails or returns `{}`, treat all skills as `从未使用`.
+`allSignals` is a map keyed by skill name. If the script fails or returns `{}`, treat all skills as `never_used`.
 
 Activity and usage data from `lib/usage-reader.js`. Run via Bash `node -e` with UsageReader.getAllSignals().
 
 **Special status** — check `inboxData.skillCache` for the skill name:
-- If `skillCache[name].pinned === true` → label `已 pin`
-- If `skillCache[name].disabled === true` → label `已忽略`
+- If `skillCache[name].pinned === true` → label `pinned`
+- If `skillCache[name].disabled === true` → label `muted`
   Special status overrides activity label.
 
 **Group skills by category** using the `purpose` field from the inventory entry (Code/Dev, Deploy/Ops, Data/API, Productivity, Other). Assign the same way as `/setup`: keyword-match on `description` if `purpose` is absent.
@@ -247,15 +247,15 @@ Display grouped output (number skills sequentially across all groups):
 Where:
 - `badge`: `✓` (clean/PASS), `⚠` (medium/CAUTION), `✗` (high_risk/FAIL), `—` (no eval data)
 - `eval_info`:
-  - If manifest has full eval: `{score}分 · eval {date}`
+  - If manifest has full eval: `{score} · eval {date}`
   - If only quick-scan-cache: `D1={d1} · scan {date}`
   - If neither: empty
 
 Then prompt:
 
 ```
-选择一个 skill 查看详情，或告诉我你想做什么（比如"把没用过的列出来"、"superpowers 评估一下"）。
-输入 inbox 返回建议视图。
+Choose a skill to view details, or tell me what you want to do (e.g., "list unused skills", "evaluate superpowers").
+Type `inbox` to return to the suggestion view.
 ```
 
 ### Handle Skill Selection
@@ -263,31 +263,31 @@ Then prompt:
 When the user enters a number, look up the corresponding skill from the numbered list. Show detail:
 
 ```
-{name} {version}  ·  {status}  ·  最后活动 {modified_at|从未}
+{name} {version}  ·  {status}  ·  last active {modified_at|never}
 
-路径：{path}
-分类：{purpose}
-安装于：{first_seen_at}
-版本数：{version_count|1}
+Path:       {path}
+Category:   {purpose}
+Installed:  {first_seen_at}
+Versions:   {version_count|1}
 
-  [保留（pin）]
-  [不再关注]
-  [评估质量]
-  [优化]
-  [删除]
-  [返回列表]
+  [Pin]
+  [Mute]
+  [Evaluate quality]
+  [Improve]
+  [Delete]
+  [Back to list]
 ```
 
 Wait for the user's action input. Handle each action (no suggestion ID here — update skill cache directly):
 
 | Action | What to execute | Confirmation output |
 |--------|-----------------|---------------------|
-| pin / 保留 | `store.pinSkill(name)` | `✓ 已保留` |
-| 不再关注 / mute | `store.disableSkill(name)` | `✓ 已标记为不再关注。SkillCompass 不再为此 skill 生成建议，但不影响 skill 本身的运行。` |
-| 评估 / eval | (no store call) | `运行 /eval-skill {name}` |
-| 优化 / improve | (no store call) | `运行 /eval-improve {name}` |
-| 删除 / delete | (no store call) | `确认删除请手动移除 SKILL.md 文件` |
-| 返回 / back | (no store call) | Return to All Skills View (Step 5) |
+| pin | `store.pinSkill(name)` | `✓ Pinned` |
+| mute | `store.disableSkill(name)` | `✓ Marked as no longer tracked. SkillCompass will stop generating suggestions for this skill, but will not affect the skill's own execution.` |
+| eval | (no store call) | `Run /eval-skill {name}` |
+| improve | (no store call) | `Run /eval-improve {name}` |
+| delete | (no store call) | `To confirm deletion, manually remove the SKILL.md file.` |
+| back | (no store call) | Return to All Skills View (Step 5) |
 
 Execute pin/disable actions via the **Bash** tool:
 
@@ -303,5 +303,5 @@ const store = new InboxStore('cc', baseDir);
 After the action confirmation, ask if the user wants to select another skill or return to a view:
 
 ```
-继续查看其他 skill？输入编号，或输入 inbox 返回建议视图，或直接按 Enter 退出。
+Continue viewing other skills? Enter a number, type `inbox` to return to the suggestion view, or press Enter to exit.
 ```
