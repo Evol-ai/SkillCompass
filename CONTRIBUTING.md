@@ -53,7 +53,7 @@ test-fixtures/  — 25 test skills (benign, malicious, edge cases)
 - **PR titles**: ASCII only. Keep under 70 characters. Use the description/body for details.
 - **Commit messages**: ASCII only. Follow conventional commit format (`fix:`, `feat:`, `docs:`, `refactor:`, `chore:`).
 - **Code and technical files** (`.js`, `.ts`, `.json`, `.yml`, schemas): English only. No non-English comments, identifiers, or string literals.
-- **User-facing templates in `SKILL.md` and `commands/*.md`**: English only. Claude detects the user's locale at runtime and translates at display time per SKILL.md's Global UX Rules.
+- **User-facing templates in `SKILL.md` and `commands/*.md`**: English only at rest. Claude detects the user's locale at runtime and translates at display time per `SKILL.md`'s Global UX Rules.
 - **Runtime i18n resources** (`oc/src/locale.ts`): the one place localized message catalogs live. Add new locales here.
 - **Test fixtures**: may contain any language — fixtures that intentionally test non-English skills belong in `test-fixtures/edge-non-english/` or similar.
 
