@@ -8,6 +8,7 @@ import type {
   UserConfig
 } from '../types/openclaw';
 import { shouldPush } from '../renderers/digest-formatter';
+import { msg, resolveLocale } from '../locale';
 
 export function registerLifecycleHooks(
   api: OpenClawApi,
@@ -63,6 +64,7 @@ async function scanAndAlert(
     );
 
     if (hasCriticalFinding && shouldPush(config)) {
+      const locale = resolveLocale(config);
       // Pick the first D3 critical/high finding, not just any finding
       const d3Finding = (result.findings || []).find(
         (f: { source?: string; severity?: string }) =>
@@ -72,11 +74,19 @@ async function scanAndAlert(
       );
       const desc = d3Finding?.message || 'security concern detected';
       await api.channels.announce({
-        message: `\u26a0 Security risk in ${skillName}: ${desc}`,
+        message: msg(locale, 'securityRisk', { skill: skillName, details: desc }),
         channel: config.preferredChannel,
         buttons: [
-          { label: 'View Details', action: 'sc_eval', payload: { skill: skillName } },
-          { label: 'Dismiss', action: 'sc_dismiss', payload: { skill: skillName } }
+          {
+            label: msg(locale, 'viewDetails'),
+            action: 'sc_eval',
+            payload: { skill: skillName }
+          },
+          {
+            label: msg(locale, 'dismiss'),
+            action: 'sc_dismiss',
+            payload: { skill: skillName }
+          }
         ]
       });
     }

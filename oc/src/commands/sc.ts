@@ -1,7 +1,15 @@
 // sc.ts — /sc structured commands for SkillCompass on OpenClaw
 // Subcommands: status, eval, report, dismiss, snooze
 
-import type { OpenClawApi, CommandArgs, CommandResponse, InlineButton } from '../types/openclaw';
+import type { OpenClawApi, CommandArgs, CommandResponse, InlineButton, UserConfig } from '../types/openclaw';
+import {
+  localizeSkillType,
+  localizeSuggestionReason,
+  msg,
+  resolveLocale,
+  type EvidenceEntry,
+  type SupportedLocale
+} from '../locale';
 
 // Matches the real InboxStore API from lib/inbox-store.js
 interface InboxStore {
@@ -13,6 +21,7 @@ interface InboxStore {
     rule_id: string;
     category: string;
     priority: string;
+    evidence?: EvidenceEntry[] | null;
   }>;
   dismiss(id: string, cooldownDays?: number): unknown;
   snooze(id: string, days?: number): unknown;
@@ -25,34 +34,39 @@ interface InboxStore {
   }>;
 }
 
-export function registerCommands(api: OpenClawApi, store: InboxStore): void {
+export function registerCommands(
+  api: OpenClawApi,
+  store: InboxStore,
+  getUserConfig: () => UserConfig = () => ({})
+): void {
   api.registerCommand({
     name: 'sc',
     description: 'SkillCompass — skill quality and usage management',
     handler: async (args: CommandArgs): Promise<CommandResponse> => {
+      const locale = resolveLocale(getUserConfig(), args.raw);
       const sub = args.subcommand || args.args[0] || 'status';
       const rest = args.subcommand ? args.args : args.args.slice(1);
 
       switch (sub) {
         case 'status':
-          return handleStatus(store);
+          return handleStatus(store, locale);
         case 'eval':
-          return handleEval(rest[0]);
+          return handleEval(rest[0], locale);
         case 'report':
-          return handleReport(store);
+          return handleReport(store, locale);
         case 'dismiss':
-          return handleDismiss(store, rest[0]);
+          return handleDismiss(store, rest[0], locale);
         case 'snooze':
-          return handleSnooze(store, rest[0]);
+          return handleSnooze(store, rest[0], locale);
         default:
           return {
             message: [
-              'Unknown subcommand. Available:',
-              '  /sc status   — Overview and pending suggestions',
-              '  /sc eval <skill> — Evaluate a skill',
-              '  /sc report   — Skill portfolio report',
-              '  /sc dismiss <id> — Dismiss a suggestion',
-              '  /sc snooze <id>  — Snooze a suggestion'
+              msg(locale, 'unknownSubcommand'),
+              msg(locale, 'subcommandStatus'),
+              msg(locale, 'subcommandEval'),
+              msg(locale, 'subcommandReport'),
+              msg(locale, 'subcommandDismiss'),
+              msg(locale, 'subcommandSnooze')
             ].join('\n')
           };
       }
@@ -60,32 +74,40 @@ export function registerCommands(api: OpenClawApi, store: InboxStore): void {
   });
 }
 
-function handleStatus(store: InboxStore): CommandResponse {
+function handleStatus(store: InboxStore, locale: SupportedLocale): CommandResponse {
   const summary = store.getSummary();
   const pending = store.getPending();
   const cache = store.getAllSkillCache();
+  const preview = pending.slice(0, 5);
 
   const lines = [
-    `\ud83e\udded ${cache.length} skills tracked. ${summary.pending} suggestion${summary.pending !== 1 ? 's' : ''} pending.`
+    msg(locale, 'statusSummary', {
+      count: cache.length,
+      pending: summary.pending,
+      plural_s: summary.pending === 1 ? '' : 's'
+    })
   ];
 
-  if (pending.length > 0) {
+  if (preview.length > 0) {
     lines.push('');
-    pending.slice(0, 5).forEach((s, i) => {
-      lines.push(`  ${i + 1}. ${s.skill_name} \u2014 ${s.reason}`);
+    preview.forEach((s, i) => {
+      lines.push(`  ${i + 1}. ${s.skill_name} \u2014 ${localizeSuggestionReason(locale, s)}`);
     });
     if (pending.length > 5) {
-      lines.push(`  ... and ${pending.length - 5} more`);
+      lines.push(msg(locale, 'andMore', { count: pending.length - 5 }));
     }
   }
 
-  const buttons: InlineButton[] = pending.slice(0, 5).map((s, i) => ({
-    label: `Handle #${i + 1}`,
+  const buttons: InlineButton[] = preview.map((s, i) => ({
+    label: msg(locale, 'handleButton', { index: i + 1 }),
     action: 'sc_handle',
     payload: { id: s.id }
   }));
   if (pending.length > 0) {
-    buttons.push({ label: 'View All', action: 'sc_view_all' });
+    buttons.push({
+      label: msg(locale, 'viewAll'),
+      action: 'sc_view_all'
+    });
   }
 
   return { message: lines.join('\n'), buttons };
@@ -182,15 +204,15 @@ function resolveSkillPath(skillName: string): string | null {
   return null;
 }
 
-function handleEval(skillName?: string): CommandResponse {
+function handleEval(skillName: string | undefined, locale: SupportedLocale): CommandResponse {
   if (!skillName) {
-    return { message: 'Usage: /sc eval <skill-name | path/to/SKILL.md>' };
+    return { message: msg(locale, 'usageEval') };
   }
 
   try {
     const filePath = resolveSkillPath(skillName);
     if (!filePath) {
-      return { message: `Skill "${skillName}" not found.` };
+      return { message: msg(locale, 'skillNotFound', { skill: skillName }) };
     }
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -200,7 +222,7 @@ function handleEval(skillName?: string): CommandResponse {
 
     if (!result || result.verdict === 'error') {
       const errMsg = result?.findings?.[0]?.message || 'scan failed';
-      return { message: `Cannot scan "${skillName}": ${errMsg}` };
+      return { message: msg(locale, 'cannotScan', { skill: skillName, error: errMsg }) };
     }
 
     // QuickScanner returns top-level d1, d2, d3, verdict, findings
@@ -208,13 +230,13 @@ function handleEval(skillName?: string): CommandResponse {
     const isD3Issue = result.d3 !== null && result.d3 <= 4;
     let verdictLine: string;
     if (result.verdict === 'high_risk' && isD3Issue) {
-      verdictLine = '\u26a0 Security issues detected';
+      verdictLine = msg(locale, 'securityIssuesDetected');
     } else if (result.verdict === 'high_risk') {
-      verdictLine = '\u26a0 Quality issues detected (not security)';
+      verdictLine = msg(locale, 'qualityIssuesDetected');
     } else if (result.verdict === 'medium') {
-      verdictLine = '\u26a0 Quality concerns found';
+      verdictLine = msg(locale, 'qualityConcernsFound');
     } else {
-      verdictLine = '\u2713 Clean';
+      verdictLine = msg(locale, 'clean');
     }
     const lines = [
       `D1=${result.d1 ?? '?'} D2=${result.d2 ?? '?'} D3=${result.d3 ?? '?'}`,
@@ -224,16 +246,23 @@ function handleEval(skillName?: string): CommandResponse {
     return {
       message: lines.join('\n'),
       buttons: [
-        { label: 'Full eval (D4-D6)', action: 'sc_full_eval', payload: { skill: skillName } },
-        { label: 'Skip', action: 'sc_skip' }
+        {
+          label: msg(locale, 'fullEval'),
+          action: 'sc_full_eval',
+          payload: { skill: skillName }
+        },
+        {
+          label: msg(locale, 'skip'),
+          action: 'sc_skip'
+        }
       ]
     };
   } catch {
-    return { message: `Quick scan unavailable. Run a full evaluation manually.` };
+    return { message: msg(locale, 'quickScanUnavailable') };
   }
 }
 
-function handleReport(store: InboxStore): CommandResponse {
+function handleReport(store: InboxStore, locale: SupportedLocale): CommandResponse {
   const cache = store.getAllSkillCache();
   const summary = store.getSummary();
 
@@ -242,46 +271,62 @@ function handleReport(store: InboxStore): CommandResponse {
   let neverEvaluated = 0;
 
   for (const s of cache) {
-    const t = s.type || 'standalone';
-    byType[t] = (byType[t] || 0) + 1;
+    const kind = s.type || 'standalone';
+    byType[kind] = (byType[kind] || 0) + 1;
     totalUses += s.total_use_count || 0;
     if (!s.last_eval_at) neverEvaluated++;
   }
 
   const typeStr = Object.entries(byType)
-    .map(([t, n]) => `${t}: ${n}`)
+    .map(([kind, n]) => `${localizeSkillType(locale, kind)}: ${n}`)
     .join(', ');
 
   const lines = [
-    `\ud83e\udded Skill Portfolio`,
+    msg(locale, 'skillPortfolio'),
     '',
-    `Skills: ${cache.length} (${typeStr})`,
-    `Total uses (all time): ${totalUses}`,
-    `Never evaluated: ${neverEvaluated}`,
-    `Pending suggestions: ${summary.pending}`
+    msg(locale, 'skillsLine', { count: cache.length, types: typeStr }),
+    msg(locale, 'totalUses', { count: totalUses }),
+    msg(locale, 'neverEvaluated', { count: neverEvaluated }),
+    msg(locale, 'pendingSuggestions', { count: summary.pending })
   ];
 
   return { message: lines.join('\n') };
 }
 
-function handleDismiss(store: InboxStore, id?: string): CommandResponse {
-  if (!id) return { message: 'Usage: /sc dismiss <suggestion-id>' };
+function handleDismiss(
+  store: InboxStore,
+  id: string | undefined,
+  locale: SupportedLocale
+): CommandResponse {
+  if (!id) {
+    return { message: msg(locale, 'usageDismiss') };
+  }
   try {
     const result = store.dismiss(id, 30);
-    if (!result) return { message: `Suggestion "${id}" not found.` };
-    return { message: `Dismissed suggestion ${id} (30-day cooldown).` };
+    if (!result) {
+      return { message: msg(locale, 'suggestionNotFound', { id }) };
+    }
+    return { message: msg(locale, 'dismissedSuggestion', { id, days: 30 }) };
   } catch {
-    return { message: `Failed to dismiss "${id}".` };
+    return { message: msg(locale, 'dismissFailed', { id }) };
   }
 }
 
-function handleSnooze(store: InboxStore, id?: string): CommandResponse {
-  if (!id) return { message: 'Usage: /sc snooze <suggestion-id>' };
+function handleSnooze(
+  store: InboxStore,
+  id: string | undefined,
+  locale: SupportedLocale
+): CommandResponse {
+  if (!id) {
+    return { message: msg(locale, 'usageSnooze') };
+  }
   try {
     const result = store.snooze(id, 14);
-    if (!result) return { message: `Suggestion "${id}" not found.` };
-    return { message: `Snoozed suggestion ${id} for 14 days.` };
+    if (!result) {
+      return { message: msg(locale, 'suggestionNotFound', { id }) };
+    }
+    return { message: msg(locale, 'snoozedSuggestion', { id, days: 14 }) };
   } catch {
-    return { message: `Failed to snooze "${id}".` };
+    return { message: msg(locale, 'snoozeFailed', { id }) };
   }
 }

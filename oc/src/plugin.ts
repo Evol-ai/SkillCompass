@@ -26,8 +26,8 @@ export function register(api: OpenClawApi): void {
   // Initialize engine for OC platform, anchored to plugin root
   const engine = new InboxEngine('oc', OC_BASE_DIR);
 
-  // Swap R12 (git-based) for R15 (ClawHub API)
-  engine.removeRule('R12-check-update');
+  // Swap check-update (git-based) for clawhub-update (ClawHub API)
+  engine.removeRule('check-update');
   engine.registerRule(r15ClawHubUpdate);
 
   // Register hooks — pass getter so lifecycle always reads latest config
@@ -44,7 +44,7 @@ export function register(api: OpenClawApi): void {
   );
 
   // Register /sc commands
-  registerCommands(api, engine.store);
+  registerCommands(api, engine.store, () => _userConfig);
 }
 
 /**

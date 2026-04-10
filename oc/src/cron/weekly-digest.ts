@@ -60,7 +60,7 @@ export function registerWeeklyDigest(
                 };
                 updateNotices.push({
                   skill: skill.name,
-                  current: skill.version || 'unknown',
+                  current: skill.version || '',
                   latest: latest.version,
                   changelog: latest.changelog
                 });
@@ -78,7 +78,7 @@ export function registerWeeklyDigest(
       // Push digest if there are new suggestions
       if (result.added > 0 && shouldPush(config)) {
         const pending = engine.store.getPending();
-        const digest = formatDigest(pending, result.added);
+        const digest = formatDigest(pending, result.added, config);
         await api.channels.announce({
           message: digest.message,
           channel: config.preferredChannel,
@@ -92,7 +92,7 @@ export function registerWeeklyDigest(
         for (const notice of updateNotices) {
           if (!shouldPush(config)) break;
           const msg = formatUpdateNotice(
-            notice.skill, notice.current, notice.latest, notice.changelog
+            notice.skill, notice.current, notice.latest, notice.changelog, config
           );
           await api.channels.announce({
             message: msg.message,
