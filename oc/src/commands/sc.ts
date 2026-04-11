@@ -10,6 +10,7 @@ import {
   type EvidenceEntry,
   type SupportedLocale
 } from '../locale';
+import { getOpenClawBaseDir } from '../runtime';
 
 // Matches the real InboxStore API from lib/inbox-store.js
 interface InboxStore {
@@ -116,7 +117,7 @@ function handleStatus(store: InboxStore, locale: SupportedLocale): CommandRespon
 function resolveSkillPath(skillName: string): string | null {
   const fs = require('node:fs');
   const path = require('node:path');
-  const baseDir = process.env.OPENCLAW_PLUGIN_ROOT || process.cwd();
+  const baseDir = getOpenClawBaseDir();
   const home = process.env.HOME || process.env.USERPROFILE || '';
 
   // If it looks like a path (contains / or \), treat it as a direct file path
