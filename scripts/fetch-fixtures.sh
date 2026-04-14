@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Fetch test fixtures from the separate private repo.
+# Fetch test fixtures from the separate repo.
 # Usage: bash scripts/fetch-fixtures.sh
 # ============================================================
 set -euo pipefail
