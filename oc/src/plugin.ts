@@ -7,6 +7,7 @@ import { registerUsageTracking } from './hooks/after-tool';
 import { registerLifecycleHooks } from './hooks/plugin-lifecycle';
 import { registerWeeklyDigest } from './cron/weekly-digest';
 import { registerCommands } from './commands/sc';
+import { getOpenClawBaseDir } from './runtime';
 
 // Shared lib — resolved at runtime from the package root
 // From oc/dist/plugin.js, need ../../lib/ to reach root lib/
@@ -14,7 +15,7 @@ import { registerCommands } from './commands/sc';
 const { InboxEngine } = require('../../lib/inbox-engine');
 
 // Resolve plugin root consistently — all state files go here
-const OC_BASE_DIR = process.env.OPENCLAW_PLUGIN_ROOT || process.cwd();
+const OC_BASE_DIR = getOpenClawBaseDir();
 
 // Mutable config — updated via configure(), read via getters
 // so downstream modules always see the latest values.

@@ -10,8 +10,9 @@ import {
   resolveLocale,
   type EvidenceEntry
 } from '../locale';
+import { getOpenClawBaseDir } from '../runtime';
 
-const BASE_DIR = process.env.OPENCLAW_PLUGIN_ROOT || process.cwd();
+const BASE_DIR = getOpenClawBaseDir();
 const PUSH_STATE_FILE = path.join(BASE_DIR, '.skill-compass', 'oc', 'push-state.json');
 
 interface PushState {

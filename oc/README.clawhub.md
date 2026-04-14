@@ -27,6 +27,7 @@ openclaw plugins install clawhub:__PACKAGE_NAME__
 
 - This ClawHub package is prebuilt. No `npm install`, `git clone`, or manual `rsync` step is required.
 - The plugin writes local state under `.skill-compass/` inside the OpenClaw plugin root.
+- When `OPENCLAW_PLUGIN_ROOT` is unavailable, the plugin falls back to its installed package root, not your current working directory.
 - The plugin reads installed skill metadata to generate evaluation and inbox signals.
 
 ## Configuration

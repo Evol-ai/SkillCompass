@@ -16,6 +16,7 @@ type MessageKey =
   | 'usageEval'
   | 'skillNotFound'
   | 'cannotScan'
+  | 'scanFailed'
   | 'securityIssuesDetected'
   | 'qualityIssuesDetected'
   | 'qualityConcernsFound'
@@ -122,6 +123,7 @@ MESSAGES.en = {
   usageEval: 'Usage: /sc eval <skill-name | path/to/SKILL.md>',
   skillNotFound: 'Skill "{skill}" not found.',
   cannotScan: 'Cannot scan "{skill}": {error}',
+  scanFailed: 'scan failed',
   securityIssuesDetected: '⚠ Security issues detected',
   qualityIssuesDetected: '⚠ Quality issues detected (not security)',
   qualityConcernsFound: '⚠ Quality concerns found',
@@ -180,6 +182,7 @@ MESSAGES.zh = {
   usageEval: '\u7528\u6cd5\uff1a/sc eval <skill-name | path/to/SKILL.md>',
   skillNotFound: '\u672a\u627e\u5230 skill "{skill}"\u3002',
   cannotScan: '\u65e0\u6cd5\u626b\u63cf "{skill}"\uff1a{error}',
+  scanFailed: '\u626b\u63cf\u5931\u8d25',
   securityIssuesDetected: '\u26a0 \u53d1\u73b0\u5b89\u5168\u95ee\u9898',
   qualityIssuesDetected: '\u26a0 \u53d1\u73b0\u8d28\u91cf\u95ee\u9898\uff08\u975e\u5b89\u5168\uff09',
   qualityConcernsFound: '\u26a0 \u53d1\u73b0\u8d28\u91cf\u9690\u60a3',
@@ -238,6 +241,7 @@ MESSAGES.es = {
   usageEval: 'Uso: /sc eval <skill-name | path/to/SKILL.md>',
   skillNotFound: 'No se encontro la skill "{skill}".',
   cannotScan: 'No se puede escanear "{skill}": {error}',
+  scanFailed: 'el escaneo fallo',
   securityIssuesDetected: '⚠ Se detectaron problemas de seguridad',
   qualityIssuesDetected: '⚠ Se detectaron problemas de calidad (no de seguridad)',
   qualityConcernsFound: '⚠ Se encontraron riesgos de calidad',
@@ -296,6 +300,7 @@ MESSAGES.fr = {
   usageEval: 'Utilisation : /sc eval <skill-name | path/to/SKILL.md>',
   skillNotFound: 'Skill "{skill}" introuvable.',
   cannotScan: 'Impossible de scanner "{skill}" : {error}',
+  scanFailed: 'echec du scan',
   securityIssuesDetected: '⚠ Problemes de securite detectes',
   qualityIssuesDetected: '⚠ Problemes de qualite detectes (hors securite)',
   qualityConcernsFound: '⚠ Risques de qualite detectes',
@@ -354,6 +359,7 @@ MESSAGES.de = {
   usageEval: 'Verwendung: /sc eval <skill-name | path/to/SKILL.md>',
   skillNotFound: 'Skill "{skill}" wurde nicht gefunden.',
   cannotScan: '"{skill}" kann nicht gescannt werden: {error}',
+  scanFailed: 'Scan fehlgeschlagen',
   securityIssuesDetected: '⚠ Sicherheitsprobleme erkannt',
   qualityIssuesDetected: '⚠ Qualitatsprobleme erkannt (keine Sicherheitsprobleme)',
   qualityConcernsFound: '⚠ Qualitatsrisiken gefunden',
@@ -412,6 +418,7 @@ MESSAGES.ja = {
   usageEval: '\u4f7f\u3044\u65b9: /sc eval <skill-name | path/to/SKILL.md>',
   skillNotFound: 'skill "{skill}" \u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3002',
   cannotScan: '"{skill}" \u3092\u30b9\u30ad\u30e3\u30f3\u3067\u304d\u307e\u305b\u3093: {error}',
+  scanFailed: '\u30b9\u30ad\u30e3\u30f3\u306b\u5931\u6557\u3057\u307e\u3057\u305f',
   securityIssuesDetected: '\u26a0 \u30bb\u30ad\u30e5\u30ea\u30c6\u30a3\u554f\u984c\u304c\u898b\u3064\u304b\u308a\u307e\u3057\u305f',
   qualityIssuesDetected: '\u26a0 \u54c1\u8cea\u4e0a\u306e\u554f\u984c\u304c\u898b\u3064\u304b\u308a\u307e\u3057\u305f\uff08\u30bb\u30ad\u30e5\u30ea\u30c6\u30a3\u3067\u306f\u3042\u308a\u307e\u305b\u3093\uff09',
   qualityConcernsFound: '\u26a0 \u54c1\u8cea\u4e0a\u306e\u61f8\u5ff5\u304c\u898b\u3064\u304b\u308a\u307e\u3057\u305f',
@@ -470,6 +477,7 @@ MESSAGES.ko = {
   usageEval: '\uc0ac\uc6a9\ubc95: /sc eval <skill-name | path/to/SKILL.md>',
   skillNotFound: 'skill "{skill}"\uc744 \ucc3e\uc744 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4.',
   cannotScan: '"{skill}"\uc744 \uc2a4\uce94\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4: {error}',
+  scanFailed: '\uc2a4\uce94 \uc2e4\ud328',
   securityIssuesDetected: '\u26a0 \ubcf4\uc548 \ubb38\uc81c\uac00 \ubc1c\uacac\ub418\uc5c8\uc2b5\ub2c8\ub2e4',
   qualityIssuesDetected: '\u26a0 \ud488\uc9c8 \ubb38\uc81c\uac00 \ubc1c\uacac\ub418\uc5c8\uc2b5\ub2c8\ub2e4 (\ubcf4\uc548 \ubb38\uc81c\ub294 \uc544\ub2d9\ub2c8\ub2e4)',
   qualityConcernsFound: '\u26a0 \ud488\uc9c8 \uc6b0\ub824\uc0ac\ud56d\uc774 \ubc1c\uacac\ub418\uc5c8\uc2b5\ub2c8\ub2e4',
@@ -528,6 +536,7 @@ MESSAGES.ru = {
   usageEval: '\u0418\u0441\u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u043d\u0438\u0435: /sc eval <skill-name | path/to/SKILL.md>',
   skillNotFound: 'Skill "{skill}" \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d.',
   cannotScan: '\u041d\u0435\u043b\u044c\u0437\u044f \u043f\u0440\u043e\u0441\u043a\u0430\u043d\u0438\u0440\u043e\u0432\u0430\u0442\u044c "{skill}": {error}',
+  scanFailed: '\u0441\u043a\u0430\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c',
   securityIssuesDetected: '\u26a0 \u041e\u0431\u043d\u0430\u0440\u0443\u0436\u0435\u043d\u044b \u043f\u0440\u043e\u0431\u043b\u0435\u043c\u044b \u0431\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u0441\u0442\u0438',
   qualityIssuesDetected: '\u26a0 \u041d\u0430\u0439\u0434\u0435\u043d\u044b \u043f\u0440\u043e\u0431\u043b\u0435\u043c\u044b \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u0430 (\u043d\u0435 \u0431\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u0441\u0442\u0438)',
   qualityConcernsFound: '\u26a0 \u041d\u0430\u0439\u0434\u0435\u043d\u044b \u0440\u0438\u0441\u043a\u0438 \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u0430',
