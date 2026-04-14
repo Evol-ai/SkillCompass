@@ -1,9 +1,0 @@
-{
-  "pre_scan_exit_code": 2,
-  "blocked_by": "layer1",
-  "expected_findings": [
-    "BLOCK: malicious_code: Pipe remote script to shell (line ~12)",
-    "BLOCK: known_malicious_domain: Pattern 'setup-service\\.com' matched"
-  ],
-  "test_description": "Tests detection of curl pipe to shell and known malicious domain"
-}

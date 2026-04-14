@@ -11,7 +11,7 @@ For the full contributor guide, workflow, and repo structure, read `CONTRIBUTING
 - **Code and technical files** (`.js`, `.ts`, `.json`, `.yml`, schemas): English only. No non-English comments, identifiers, or string literals.
 - **User-facing templates in `SKILL.md` and `commands/*.md`**: English only at rest. Claude detects the user's locale at runtime and translates at display time per `SKILL.md`'s Global UX Rules.
 - **Runtime i18n resources** (`oc/src/locale.ts`): the one place localized message catalogs live. Add new locales here.
-- **Test fixtures**: may contain any language — fixtures that intentionally test non-English skills belong in `test-fixtures/edge-non-english/` or similar.
+- **Test fixtures**: stored in a [separate repo](https://github.com/Evol-ai/SkillCompass-test-fixtures). Fetch with `npm run fetch-fixtures`. May contain any language.
 
 ## Source of Truth
 

@@ -76,9 +76,12 @@ if ! command -v node &>/dev/null; then
 fi
 
 if [ ! -d "$SC_DIR/test-fixtures" ]; then
-  echo "ERROR: Test fixtures not found at $SC_DIR/test-fixtures"
-  echo "Ensure SkillCompass dev branch is checked out."
-  exit 1
+  echo "Test fixtures not found. Fetching from separate repo..."
+  bash "$SC_DIR/scripts/fetch-fixtures.sh" || {
+    echo "ERROR: Failed to fetch test fixtures."
+    echo "Run: bash scripts/fetch-fixtures.sh"
+    exit 1
+  }
 fi
 
 # Create results directory

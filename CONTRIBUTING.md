@@ -44,7 +44,7 @@ lib/            — JavaScript validators + patterns + utilities
 hooks/scripts/  — PostToolUse hooks (eval-gate, post-skill-edit, output-guard)
 shared/         — Scoring rules, skill registry, threat signatures
 schemas/        — JSON schemas for eval results, feedback, manifests
-test-fixtures/  — 25 test skills (benign, malicious, edge cases)
+test-fixtures/  — 25 test skills (separate repo, fetch with: npm run fetch-fixtures)
 ```
 
 ## Naming & Language Conventions
@@ -55,7 +55,7 @@ test-fixtures/  — 25 test skills (benign, malicious, edge cases)
 - **Code and technical files** (`.js`, `.ts`, `.json`, `.yml`, schemas): English only. No non-English comments, identifiers, or string literals.
 - **User-facing templates in `SKILL.md` and `commands/*.md`**: English only at rest. Claude detects the user's locale at runtime and translates at display time per `SKILL.md`'s Global UX Rules.
 - **Runtime i18n resources** (`oc/src/locale.ts`): the one place localized message catalogs live. Add new locales here.
-- **Test fixtures**: may contain any language — fixtures that intentionally test non-English skills belong in `test-fixtures/edge-non-english/` or similar.
+- **Test fixtures**: stored in a [separate repo](https://github.com/Evol-ai/SkillCompass-test-fixtures) to avoid false positive security audit flags. Fetch with `npm run fetch-fixtures`. May contain any language — fixtures that intentionally test non-English skills belong in `test-fixtures/edge-non-english/` or similar.
 
 ## Pull Request Process
 

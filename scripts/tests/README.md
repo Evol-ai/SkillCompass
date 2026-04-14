@@ -83,7 +83,13 @@ tests/
 
 ## Fixture Requirements
 
-All fixtures must be at `$SC_DIR/test-fixtures/`:
+Test fixtures are stored in a [separate repo](https://github.com/Evol-ai/SkillCompass-test-fixtures) to avoid false positive security audit flags. Fetch them before running tests:
+
+```bash
+npm run fetch-fixtures
+```
+
+All fixtures will be placed at `$SC_DIR/test-fixtures/`:
 - `d1-broken-structure/` through `d6-duplicate/` (dimension weakness)
 - `atom-formatter/`, `composite-workflow/` (type/trigger)
 - `edge-empty/`, `edge-no-yaml/`, `edge-yaml-only/`, `edge-huge/`, `edge-non-english/`

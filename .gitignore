@@ -42,6 +42,9 @@ clawhub-canary-publish.txt
 # OC compiled output (regenerated via npm run build:oc)
 oc/dist/
 
+# Test fixtures (fetched from separate repo: Evol-ai/SkillCompass-test-fixtures)
+test-fixtures/
+
 # Runtime state (user-specific)
 .skill-compass/
 

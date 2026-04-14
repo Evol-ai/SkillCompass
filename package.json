@@ -21,6 +21,7 @@
     "local-state"
   ],
   "scripts": {
+    "fetch-fixtures": "bash scripts/fetch-fixtures.sh",
     "verify:local": "node scripts/tests/verify-local.js",
     "verify:oc:event": "node scripts/tests/verify-oc-event-flow.js",
     "verify:clawhub": "node scripts/tests/verify-clawhub.js",
