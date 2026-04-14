@@ -222,7 +222,7 @@ function handleEval(skillName: string | undefined, locale: SupportedLocale): Com
     const result = scanner.scanOne(filePath, skillName);
 
     if (!result || result.verdict === 'error') {
-      const errMsg = result?.findings?.[0]?.message || 'scan failed';
+      const errMsg = result?.findings?.[0]?.message || msg(locale, 'scanFailed');
       return { message: msg(locale, 'cannotScan', { skill: skillName, error: errMsg }) };
     }
 
