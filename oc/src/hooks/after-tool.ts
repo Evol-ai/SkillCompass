@@ -4,9 +4,10 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { OpenClawApi, AfterAgentToolEvent } from '../types/openclaw';
+import { getOpenClawBaseDir } from '../runtime';
 
 // Resolve from plugin root, not caller cwd
-const BASE_DIR = process.env.OPENCLAW_PLUGIN_ROOT || process.cwd();
+const BASE_DIR = getOpenClawBaseDir();
 const USAGE_FILE = path.join(BASE_DIR, '.skill-compass', 'oc', 'usage.jsonl');
 
 // SkillCompass's own commands — don't track self-usage
