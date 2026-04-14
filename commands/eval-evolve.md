@@ -30,6 +30,7 @@
     `claude plugin install ralph-wiggum@claude-code-plugins` and continue.
   - If the user chooses **Cancel**: stop immediately with no further action.
   - If `--internal` is passed, skip the prompt and run the install command directly.
+  - **Security note**: No third-party code is fetched or executed without explicit user consent. The plugin install only proceeds after the user actively selects "Install".
 
 ## What This Command Does
 
