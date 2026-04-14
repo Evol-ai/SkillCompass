@@ -58,7 +58,15 @@
 
 > **Prerequisites:** Claude Opus 4.6 (complex reasoning + consistent scoring) &middot; Node.js v18+ (local validators)
 
-### Claude Code
+### One-Command Install (recommended)
+
+```bash
+npx skills add Evol-ai/SkillCompass
+```
+
+Supports **45+ agents** including Claude Code, Codex, Cursor, Cline, Gemini CLI, GitHub Copilot, and more. The CLI auto-detects installed agents and sets up the skill in the right location.
+
+### Claude Code (manual)
 
 ```bash
 git clone https://github.com/Evol-ai/SkillCompass.git
