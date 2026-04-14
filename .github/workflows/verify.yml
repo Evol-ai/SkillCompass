@@ -24,8 +24,6 @@ jobs:
 
       - name: Fetch test fixtures
         run: git clone https://github.com/Evol-ai/SkillCompass-test-fixtures.git test-fixtures
-        env:
-          GH_TOKEN: ${{ secrets.FIXTURES_TOKEN }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -55,8 +53,6 @@ jobs:
 
       - name: Fetch test fixtures
         run: git clone https://github.com/Evol-ai/SkillCompass-test-fixtures.git test-fixtures
-        env:
-          GH_TOKEN: ${{ secrets.FIXTURES_TOKEN }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
