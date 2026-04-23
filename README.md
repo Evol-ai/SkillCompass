@@ -12,11 +12,10 @@
 </p>
 
 <p align="center">
-  <a href="https://clawhub.ai/skill/skill-compass"><img src="https://img.shields.io/badge/ClawHub-skill--compass-orange.svg" alt="ClawHub" /></a>
   <a href="https://linux.do/"><img src="https://img.shields.io/badge/Community-LINUX%20DO-blue.svg" alt="LINUX DO Community" /></a>
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
   <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg" alt="Node >= 18" />
-  <img src="https://img.shields.io/badge/model-Claude%20Opus%204.6-purple.svg" alt="Claude Opus 4.6" />
+  <img src="https://img.shields.io/badge/model-Claude%20Opus%204.6%20%2F%204.7-purple.svg" alt="Claude Opus 4.6 / 4.7" />
 </p>
 
 ---
@@ -57,7 +56,7 @@
 
 ## Quick Start
 
-> **Prerequisites:** Claude Opus 4.6 (complex reasoning + consistent scoring) &middot; Node.js v18+ (local validators)
+> **Prerequisites:** Claude Opus 4.6 / 4.7 (complex reasoning + consistent scoring) &middot; Node.js v18+ (local validators)
 
 ### One-Command Install (recommended)
 
