@@ -123,6 +123,17 @@ Full scoring rules: use **Read** to load `{baseDir}/shared/scoring.md`.
 3. **Smart entry (`/skillcompass` without arguments):**
    - Check `.skill-compass/setup-state.json`. If not exist → run Post-Install Onboarding (above).
    - If `inventory` is missing or empty → show `"No skills installed yet. Install some and rerun /skillcompass."` and stop.
+   - **Filesystem sync check**: Compare cached inventory count with actual filesystem:
+     - Use **Glob** tool to count `~/.claude/skills/*/SKILL.md` files
+     - If count differs from `inventory.length`:
+       - Calculate delta (positive = new skills, negative = removed skills)
+       - Prompt user with **AskUserQuestion**:
+         - If delta > 0: "Detected {delta} new skill(s) in ~/.claude/skills/. Rescan inventory now?"
+         - If delta < 0: "Detected {abs(delta)} skill(s) removed from ~/.claude/skills/. Update inventory?"
+         - Options: `[Yes (Recommended) / No, use cached inventory]`
+       - If user selects "Yes": run inventory rescan (same logic as `/setup` command)
+       - If user selects "No": continue with cached inventory (log warning in metadata)
+     - If counts match: continue normally
    - Read inbox pending count from `.skill-compass/cc/inbox.json`. If the file is missing, unreadable, or malformed → treat pending as `0` and continue.
    - If pending > 0 → load `{baseDir}/commands/skill-inbox.md` (show suggestions).
    - If pending = 0 → show one-line summary + choices:
