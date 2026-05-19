@@ -189,6 +189,7 @@ No point-to-point integration needed. The Pre-Accept Gate intercepts all SKILL.m
 |------|----------------------|-------|
 | **Claudeception** | Extracts skill → auto-evaluation catches security holes + redundancy → directed fix | [guide](examples/guide-claudeception.md) |
 | **Self-Improving Agent** | Logs errors → feed as signals → SkillCompass maps to dimensions and fixes | [guide](examples/guide-self-improving-agent.md) |
+| **TweetClaw / OpenClaw plugins** | Review a networked skill before allowing tools, API keys, or private X/Twitter workflows | [guide](examples/guide-openclaw-plugin-evaluation.md) |
 
 ---
 
